@@ -8,10 +8,6 @@
 #include <string.h>
 #include "SDI12/SDI12.h"
 
-#define SDI_PIN PIN_PA09
-#define SDI_PIN_PORT PORTA
-#define SDI_PIN_PINMASK 0x200 // 1<<9
-#define PARITY_2 178
 #define SDI12_MAX_NUMBER_TRANSACTION_ATTEMPTS 5
 
 #define DEBUG_A
@@ -29,16 +25,7 @@
 #define BIT_TIMING_HALF_DELAY_CYCLES 456
 #endif
 
-
-
 char charAddParity(char address);
-void SDI12_Setup(void);
-enum SDI12_ReturnCode SDI12_PerformTransaction(const char *message, const uint8_t messageLen, char *outBuffer, const uint8_t outBufferLen);
-void SDI12_RequestSensorReading(struct SDI_transactionPacket *transactionPacket);
-bool SDI12_GetSensedValues(struct SDI_transactionPacket *transactionPacket, float *outValues);
-bool SDI12_TIME_FORMAT_UNIT_TEST(void);
-bool SDI12_GetTimeFromResponse(const char *response, uint16_t *outTime);
-
 
 void SDI12_Setup(void){
 	struct port_config conf;

@@ -20,6 +20,10 @@ struct SDI_transactionPacket{
 };
 
 
-
+void SDI12_Setup(void);
+enum SDI12_ReturnCode SDI12_PerformTransaction(const char *message, const uint8_t messageLen, char *outBuffer, const uint8_t outBufferLen);
+void SDI12_RequestSensorReading(struct SDI_transactionPacket *transactionPacket);
+bool SDI12_GetSensedValues(struct SDI_transactionPacket *transactionPacket, float *outValues);
+bool SDI12_GetTimeFromResponse(const char *response, uint16_t *outTime);
 
 #endif /* SDI12_H_ */

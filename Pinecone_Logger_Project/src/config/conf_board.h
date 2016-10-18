@@ -47,4 +47,10 @@
 #ifndef CONF_BOARD_H
 #define CONF_BOARD_H
 
+#define SDI_PIN PIN_PA09
+#define SDI_PIN_PORT PORTA
+#define SDI_PIN_PINMASK 0x200 // 1<<9
+
+#define DEND_ANALOG_PIN ADC_POSITIVE_INPUT_PIN0		//PA02
+
 #endif // CONF_BOARD_H
