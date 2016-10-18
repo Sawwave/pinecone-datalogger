@@ -52,6 +52,9 @@
  * running the ASF driver selector tool. Any changes will be discarded.
  */
 
+// From module: ADC - Analog-to-Digital Converter (Polled APIs)
+#include <adc.h>
+
 // From module: Common SAM0 compiler driver
 #include <compiler.h>
 #include <status_codes.h>
@@ -59,14 +62,47 @@
 // From module: Common build items for user board support templates
 #include <user_board.h>
 
+// From module: Delay routines
+#include <delay.h>
+
+// From module: EXTINT - External Interrupt (Callback APIs)
+#include <extint.h>
+#include <extint_callback.h>
+
+// From module: FatFS file system
+#include <diskio.h>
+#include <ff.h>
+#include <ffconf.h>
+#include <integer.h>
+
 // From module: Generic board support
 #include <board.h>
 
 // From module: Interrupt management - SAM implementation
 #include <interrupt.h>
 
+// From module: Memory Control Access Interface
+#include <ctrl_access.h>
+
+// From module: PORT - GPIO Pin Control
+#include <port.h>
+
 // From module: Part identification macros
 #include <parts.h>
+
+// From module: RTC - Real Time Counter in Count Mode (Callback APIs)
+#include <rtc_count.h>
+#include <rtc_count_interrupt.h>
+#include <rtc_tamper.h>
+
+// From module: SD/MMC stack on SPI interface
+#include <sd_mmc.h>
+
+// From module: SERCOM Polled API
+#include <sercom.h>
+
+// From module: SERCOM SPI - Serial Peripheral Interface (Polled APIs)
+#include <spi.h>
 
 // From module: SYSTEM - Clock Management for SAMD20
 #include <clock.h>
@@ -86,5 +122,16 @@
 
 // From module: SYSTEM - Reset Management for SAM D20/D21/R21/D09/D10/D11/DA0/DA1
 #include <reset.h>
+
+// From module: Sleep manager - SAMD implementation
+#include <samd/sleepmgr.h>
+#include <sleepmgr.h>
+
+// From module: Supported ports of FatFS
+#include <diskio.h>
+
+// From module: WDT - Watchdog Timer (Callback APIs)
+#include <wdt.h>
+#include <wdt_callback.h>
 
 #endif // ASF_H
