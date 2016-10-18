@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Atmel Studio Solution File, Format Version 11.00
+Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "Pinecone_Logger_Project", "Pinecone_Logger_Project\Pinecone_Logger_Project.cproj", "{82174B4C-3924-4335-988E-23BBDC4B905A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|ARM = Debug|ARM
+		Release|ARM = Release|ARM
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{82174B4C-3924-4335-988E-23BBDC4B905A}.Debug|ARM.ActiveCfg = Debug|ARM
+		{82174B4C-3924-4335-988E-23BBDC4B905A}.Debug|ARM.Build.0 = Debug|ARM
+		{82174B4C-3924-4335-988E-23BBDC4B905A}.Release|ARM.ActiveCfg = Release|ARM
+		{82174B4C-3924-4335-988E-23BBDC4B905A}.Release|ARM.Build.0 = Release|ARM
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
