@@ -26,7 +26,7 @@ void ConfigureDendroADC(struct adc_module *adcModule)
 	adc_init(adcModule, ADC, &adcConfig);
 }
 
-double ReadDendro(struct adc_module *adcModule, double travelDistance)
+double ReadDendro(struct adc_module *adcModule)
 {
 	adc_enable(adcModule);
 	uint16_t adcReadingValue;
@@ -34,10 +34,8 @@ double ReadDendro(struct adc_module *adcModule, double travelDistance)
 	while(adc_read(adcModule, &adcReadingValue) == STATUS_BUSY)
 	{	;	}
 	double ratioTraveled = ((double)adcReadingValue / 0x1000);
-	double currentPosition = ratioTraveled * travelDistance;
+	double currentPosition = ratioTraveled * DENDROMETER_TRAVEL_DISTANCE_MICROMETERS;
 	
 	adc_disable(adcModule);
 	return currentPosition;
-
-	
 }

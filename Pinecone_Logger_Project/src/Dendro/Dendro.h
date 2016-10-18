@@ -11,6 +11,6 @@
 #include<stdint.h>
 
 void ConfigureDendroADC(struct adc_module *adcModule);
-double ReadDendro(struct adc_module *adcModule, double travelDistance);
+double ReadDendro(struct adc_module *adcModule);
 
 #endif /* DENDRO_H_ */
