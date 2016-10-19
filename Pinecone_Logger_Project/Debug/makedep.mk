@@ -12,6 +12,8 @@ src\ASF\sam0\drivers\tc\tc_interrupt.c
 
 src\ASF\sam0\drivers\tc\tc_sam_d_r\tc.c
 
+src\DS1302\DS1302.c
+
 src\MAX31856\MAX31856.c
 
 src\TimedSleep\TimedSleep.c
