@@ -97,7 +97,17 @@ src/ASF/common2/components/memory/sd_mmc/sd_mmc.d \
  ../src/ASF/sam0/drivers/system/reset/reset_sam_d_r/reset.h \
  ../src/ASF/sam0/drivers/adc/adc_sam_d_r/adc_feature.h \
  ../src/ASF/common2/boards/user_board/user_board.h \
- ../src/config/conf_board.h ../src/ASF/common2/services/delay/delay.h \
+ ../src/config/conf_board.h ../src/MAX31856/MAX31856.h \
+ ../src/ASF/sam0/drivers/sercom/spi/spi.h \
+ ../src/ASF/sam0/drivers/port/port.h \
+ ../src/ASF/sam0/drivers/sercom/sercom.h \
+ ../src/ASF/sam0/drivers/system/interrupt/system_interrupt.h \
+ ../src/ASF/sam0/drivers/system/interrupt/system_interrupt_samd20/system_interrupt_features.h \
+ ../src/ASF/sam0/drivers/sercom/sercom_pinout.h \
+ c:\program\ files\ (x86)\atmel\atmel\ toolchain\arm\ gcc\native\4.8.1443\arm-gnu-toolchain\arm-none-eabi\include\string.h \
+ c:\program\ files\ (x86)\atmel\atmel\ toolchain\arm\ gcc\native\4.8.1443\arm-gnu-toolchain\lib\gcc\arm-none-eabi\4.8.4\include-fixed\sys\cdefs.h \
+ c:\program\ files\ (x86)\atmel\atmel\ toolchain\arm\ gcc\native\4.8.1443\arm-gnu-toolchain\arm-none-eabi\include\sys\string.h \
+ ../src/config/conf_spi.h ../src/ASF/common2/services/delay/delay.h \
  ../src/ASF/common2/services/delay/sam0/cycle_counter.h \
  ../src/ASF/sam0/drivers/extint/extint.h \
  ../src/ASF/sam0/drivers/extint/extint_callback.h \
@@ -111,24 +121,17 @@ src/ASF/common2/components/memory/sd_mmc/sd_mmc.d \
  ../src/ASF/thirdparty/fatfs/fatfs-r0.09/src/integer.h \
  ../src/ASF/common/boards/board.h \
  ../src/ASF/common/services/storage/ctrl_access/ctrl_access.h \
- ../src/config/conf_access.h ../src/ASF/sam0/drivers/port/port.h \
- ../src/ASF/sam0/drivers/rtc/rtc_calendar.h ../src/config/conf_clocks.h \
- ../src/ASF/sam0/drivers/rtc/rtc_tamper.h \
+ ../src/config/conf_access.h ../src/ASF/sam0/drivers/rtc/rtc_calendar.h \
+ ../src/config/conf_clocks.h ../src/ASF/sam0/drivers/rtc/rtc_tamper.h \
  ../src/ASF/common2/components/memory/sd_mmc/sd_mmc.h \
- ../src/config/conf_sd_mmc.h ../src/ASF/sam0/drivers/sercom/sercom.h \
- ../src/ASF/sam0/drivers/system/interrupt/system_interrupt.h \
- ../src/ASF/sam0/drivers/system/interrupt/system_interrupt_samd20/system_interrupt_features.h \
- ../src/ASF/sam0/drivers/sercom/sercom_pinout.h \
- ../src/ASF/sam0/drivers/sercom/spi/spi.h \
- c:\program\ files\ (x86)\atmel\atmel\ toolchain\arm\ gcc\native\4.8.1443\arm-gnu-toolchain\arm-none-eabi\include\string.h \
- c:\program\ files\ (x86)\atmel\atmel\ toolchain\arm\ gcc\native\4.8.1443\arm-gnu-toolchain\lib\gcc\arm-none-eabi\4.8.4\include-fixed\sys\cdefs.h \
- c:\program\ files\ (x86)\atmel\atmel\ toolchain\arm\ gcc\native\4.8.1443\arm-gnu-toolchain\arm-none-eabi\include\sys\string.h \
- ../src/config/conf_spi.h \
+ ../src/config/conf_sd_mmc.h ../src/ASF/sam0/drivers/sercom/spi/spi.h \
  ../src/ASF/common/services/sleepmgr/samd/sleepmgr.h \
  ../src/config/conf_sleepmgr.h \
  ../src/ASF/common/services/sleepmgr/sleepmgr.h \
  ../src/ASF/common/services/sleepmgr/samd/sleepmgr.h \
- ../src/ASF/sam0/drivers/wdt/wdt.h \
+ ../src/ASF/sam0/drivers/tc/tc.h \
+ ../src/ASF/sam0/drivers/tc/tc_interrupt.h \
+ ../src/ASF/sam0/drivers/tc/tc.h ../src/ASF/sam0/drivers/wdt/wdt.h \
  ../src/ASF/sam0/drivers/wdt/wdt_callback.h \
  ../src/ASF/sam0/drivers/wdt/wdt.h \
  ../src/ASF/sam0/drivers/wdt/wdt_callback.h \
@@ -336,6 +339,28 @@ c:\program\ files\ (x86)\atmel\atmel\ toolchain\arm\ gcc\native\4.8.1443\arm-gnu
 
 ../src/config/conf_board.h:
 
+../src/MAX31856/MAX31856.h:
+
+../src/ASF/sam0/drivers/sercom/spi/spi.h:
+
+../src/ASF/sam0/drivers/port/port.h:
+
+../src/ASF/sam0/drivers/sercom/sercom.h:
+
+../src/ASF/sam0/drivers/system/interrupt/system_interrupt.h:
+
+../src/ASF/sam0/drivers/system/interrupt/system_interrupt_samd20/system_interrupt_features.h:
+
+../src/ASF/sam0/drivers/sercom/sercom_pinout.h:
+
+c:\program\ files\ (x86)\atmel\atmel\ toolchain\arm\ gcc\native\4.8.1443\arm-gnu-toolchain\arm-none-eabi\include\string.h:
+
+c:\program\ files\ (x86)\atmel\atmel\ toolchain\arm\ gcc\native\4.8.1443\arm-gnu-toolchain\lib\gcc\arm-none-eabi\4.8.4\include-fixed\sys\cdefs.h:
+
+c:\program\ files\ (x86)\atmel\atmel\ toolchain\arm\ gcc\native\4.8.1443\arm-gnu-toolchain\arm-none-eabi\include\sys\string.h:
+
+../src/config/conf_spi.h:
+
 ../src/ASF/common2/services/delay/delay.h:
 
 ../src/ASF/common2/services/delay/sam0/cycle_counter.h:
@@ -366,8 +391,6 @@ c:\program\ files\ (x86)\atmel\atmel\ toolchain\arm\ gcc\native\4.8.1443\arm-gnu
 
 ../src/config/conf_access.h:
 
-../src/ASF/sam0/drivers/port/port.h:
-
 ../src/ASF/sam0/drivers/rtc/rtc_calendar.h:
 
 ../src/config/conf_clocks.h:
@@ -378,23 +401,7 @@ c:\program\ files\ (x86)\atmel\atmel\ toolchain\arm\ gcc\native\4.8.1443\arm-gnu
 
 ../src/config/conf_sd_mmc.h:
 
-../src/ASF/sam0/drivers/sercom/sercom.h:
-
-../src/ASF/sam0/drivers/system/interrupt/system_interrupt.h:
-
-../src/ASF/sam0/drivers/system/interrupt/system_interrupt_samd20/system_interrupt_features.h:
-
-../src/ASF/sam0/drivers/sercom/sercom_pinout.h:
-
 ../src/ASF/sam0/drivers/sercom/spi/spi.h:
-
-c:\program\ files\ (x86)\atmel\atmel\ toolchain\arm\ gcc\native\4.8.1443\arm-gnu-toolchain\arm-none-eabi\include\string.h:
-
-c:\program\ files\ (x86)\atmel\atmel\ toolchain\arm\ gcc\native\4.8.1443\arm-gnu-toolchain\lib\gcc\arm-none-eabi\4.8.4\include-fixed\sys\cdefs.h:
-
-c:\program\ files\ (x86)\atmel\atmel\ toolchain\arm\ gcc\native\4.8.1443\arm-gnu-toolchain\arm-none-eabi\include\sys\string.h:
-
-../src/config/conf_spi.h:
 
 ../src/ASF/common/services/sleepmgr/samd/sleepmgr.h:
 
@@ -403,6 +410,12 @@ c:\program\ files\ (x86)\atmel\atmel\ toolchain\arm\ gcc\native\4.8.1443\arm-gnu
 ../src/ASF/common/services/sleepmgr/sleepmgr.h:
 
 ../src/ASF/common/services/sleepmgr/samd/sleepmgr.h:
+
+../src/ASF/sam0/drivers/tc/tc.h:
+
+../src/ASF/sam0/drivers/tc/tc_interrupt.h:
+
+../src/ASF/sam0/drivers/tc/tc.h:
 
 ../src/ASF/sam0/drivers/wdt/wdt.h:
 

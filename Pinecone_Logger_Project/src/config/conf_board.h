@@ -43,6 +43,7 @@
 /*
  * Support and FAQ: visit <a href="http://www.atmel.com/design-support/">Atmel Support</a>
  */
+#include "MAX31856/MAX31856.h"
 
 #ifndef CONF_BOARD_H
 #define CONF_BOARD_H
@@ -53,5 +54,7 @@
 
 #define DEND_ANALOG_PIN ADC_POSITIVE_INPUT_PIN0		//PA02
 #define DENDROMETER_TRAVEL_DISTANCE_MICROMETERS 12700.0	//12.7 millimeters
+
+#define MAX31856_THERMOCOUPLE_TYPE_USED MAX31856_THERMOCOUPLE_TYPE_T
 
 #endif // CONF_BOARD_H

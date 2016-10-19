@@ -8,6 +8,12 @@ src\ASF\sam0\drivers\adc\adc_sam_d_r\adc.c
 
 src\ASF\sam0\drivers\extint\extint_sam_d_r\extint.c
 
+src\ASF\sam0\drivers\tc\tc_interrupt.c
+
+src\ASF\sam0\drivers\tc\tc_sam_d_r\tc.c
+
+src\MAX31856\MAX31856.c
+
 src\TimedSleep\TimedSleep.c
 
 src\ASF\sam0\drivers\rtc\rtc_sam_d_r\rtc_calendar.c
