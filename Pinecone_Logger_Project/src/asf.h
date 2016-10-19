@@ -129,6 +129,10 @@
 // From module: Supported ports of FatFS
 #include <diskio.h>
 
+// From module: TC - Timer Counter (Callback APIs)
+#include <tc.h>
+#include <tc_interrupt.h>
+
 // From module: WDT - Watchdog Timer (Callback APIs)
 #include <wdt.h>
 #include <wdt_callback.h>

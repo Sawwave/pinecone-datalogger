@@ -688,6 +688,7 @@
     <Folder Include="src\config\" />
     <Folder Include="src\DHT22" />
     <Folder Include="src\Dendro" />
+    <Folder Include="src\TimedSleep" />
     <Folder Include="src\SDI12" />
   </ItemGroup>
   <ItemGroup>
@@ -698,6 +699,12 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\ASF\sam0\drivers\extint\extint_sam_d_r\extint.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\TimedSleep\TimedSleep.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\TimedSleep\TimedSleep.h">
       <SubType>compile</SubType>
     </Compile>
     <None Include="src\ASF\sam0\drivers\rtc\rtc_calendar.h">

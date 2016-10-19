@@ -8,6 +8,8 @@ src\ASF\sam0\drivers\adc\adc_sam_d_r\adc.c
 
 src\ASF\sam0\drivers\extint\extint_sam_d_r\extint.c
 
+src\TimedSleep\TimedSleep.c
+
 src\ASF\sam0\drivers\rtc\rtc_sam_d_r\rtc_calendar.c
 
 src\ASF\sam0\drivers\sercom\sercom.c

@@ -116,6 +116,7 @@ SUBDIRS :=  \
 ../src/config/ \
 ../src/DHT22 \
 ../src/Dendro \
+../src/TimedSleep \
 ../src/SDI12
 
 
@@ -124,6 +125,7 @@ C_SRCS +=  \
 ../src/ASF/common2/components/memory/sd_mmc/sd_mmc.c \
 ../src/ASF/sam0/drivers/adc/adc_sam_d_r/adc.c \
 ../src/ASF/sam0/drivers/extint/extint_sam_d_r/extint.c \
+../src/TimedSleep/TimedSleep.c \
 ../src/ASF/sam0/drivers/rtc/rtc_sam_d_r/rtc_calendar.c \
 ../src/ASF/sam0/drivers/sercom/sercom.c \
 ../src/ASF/thirdparty/fatfs/fatfs-port-r0.09/diskio.c \
@@ -165,6 +167,7 @@ OBJS +=  \
 src/ASF/common2/components/memory/sd_mmc/sd_mmc.o \
 src/ASF/sam0/drivers/adc/adc_sam_d_r/adc.o \
 src/ASF/sam0/drivers/extint/extint_sam_d_r/extint.o \
+src/TimedSleep/TimedSleep.o \
 src/ASF/sam0/drivers/rtc/rtc_sam_d_r/rtc_calendar.o \
 src/ASF/sam0/drivers/sercom/sercom.o \
 src/ASF/thirdparty/fatfs/fatfs-port-r0.09/diskio.o \
@@ -199,6 +202,7 @@ OBJS_AS_ARGS +=  \
 src/ASF/common2/components/memory/sd_mmc/sd_mmc.o \
 src/ASF/sam0/drivers/adc/adc_sam_d_r/adc.o \
 src/ASF/sam0/drivers/extint/extint_sam_d_r/extint.o \
+src/TimedSleep/TimedSleep.o \
 src/ASF/sam0/drivers/rtc/rtc_sam_d_r/rtc_calendar.o \
 src/ASF/sam0/drivers/sercom/sercom.o \
 src/ASF/thirdparty/fatfs/fatfs-port-r0.09/diskio.o \
@@ -233,6 +237,7 @@ C_DEPS +=  \
 src/ASF/common2/components/memory/sd_mmc/sd_mmc.d \
 src/ASF/sam0/drivers/adc/adc_sam_d_r/adc.d \
 src/ASF/sam0/drivers/extint/extint_sam_d_r/extint.d \
+src/TimedSleep/TimedSleep.d \
 src/ASF/sam0/drivers/rtc/rtc_sam_d_r/rtc_calendar.d \
 src/ASF/sam0/drivers/sercom/sercom.d \
 src/ASF/thirdparty/fatfs/fatfs-port-r0.09/diskio.d \
@@ -267,6 +272,7 @@ C_DEPS_AS_ARGS +=  \
 src/ASF/common2/components/memory/sd_mmc/sd_mmc.d \
 src/ASF/sam0/drivers/adc/adc_sam_d_r/adc.d \
 src/ASF/sam0/drivers/extint/extint_sam_d_r/extint.d \
+src/TimedSleep/TimedSleep.d \
 src/ASF/sam0/drivers/rtc/rtc_sam_d_r/rtc_calendar.d \
 src/ASF/sam0/drivers/sercom/sercom.d \
 src/ASF/thirdparty/fatfs/fatfs-port-r0.09/diskio.d \
@@ -377,6 +383,8 @@ LINKER_SCRIPT_DEP+=  \
 
 
 
+
+
 src/ASF/common2/components/memory/sd_mmc/%.o: ../src/ASF/common2/components/memory/sd_mmc/%.c
 	@echo Building file: $<
 	@echo Invoking: ARM/GNU C Compiler : 4.8.4
@@ -392,6 +400,13 @@ src/ASF/sam0/drivers/adc/adc_sam_d_r/%.o: ../src/ASF/sam0/drivers/adc/adc_sam_d_
 	
 
 src/ASF/sam0/drivers/extint/extint_sam_d_r/%.o: ../src/ASF/sam0/drivers/extint/extint_sam_d_r/%.c
+	@echo Building file: $<
+	@echo Invoking: ARM/GNU C Compiler : 4.8.4
+	$(QUOTE)C:\Program Files (x86)\Atmel\Atmel Toolchain\ARM GCC\Native\4.8.1443\arm-gnu-toolchain\bin\arm-none-eabi-gcc.exe$(QUOTE)  -x c -mthumb -D__SAMD20J18__ -DDEBUG -DBOARD=USER_BOARD -DARM_MATH_CM0PLUS=true -DCYCLE_MODE -DADC_CALLBACK_MODE=false -DEXTINT_CALLBACK_MODE=true -DSPI_CALLBACK_MODE=false -DWDT_CALLBACK_MODE=true -DRTC_CALENDAR_ASYNC=false  -I"../common2/applications/user_application/user_board/config_samd20" -I"../src/ASF/sam0/utils/header_files" -I"../src/ASF/thirdparty/CMSIS/Lib/GCC" -I"../src/ASF/sam0/drivers/system/power/power_sam_d_r" -I"../src/ASF/sam0/drivers/system/reset" -I"../src/config" -I"../src/ASF/common/utils" -I"../src/ASF/sam0/drivers/system/interrupt/system_interrupt_samd20" -I"../src/ASF/sam0/drivers/system/pinmux" -I"../src/ASF/sam0/utils/cmsis/samd20/include" -I"../src/ASF/sam0/drivers/system/power" -I"../src" -I"../src/ASF/sam0/utils/preprocessor" -I"../src/ASF/sam0/utils/cmsis/samd20/source" -I"../src/ASF/common/boards" -I"../src/ASF/sam0/drivers/system" -I"../src/ASF/sam0/drivers/system/reset/reset_sam_d_r" -I"../src/ASF/sam0/drivers/system/clock/clock_samd20" -I"../src/ASF/sam0/drivers/system/clock" -I"../src/ASF/sam0/drivers/system/interrupt" -I"../src/ASF/sam0/utils" -I"../src/ASF/thirdparty/CMSIS/Include" -I"../src/ASF/common2/boards/user_board" -I"../src/ASF/common/services/storage/ctrl_access" -I"../src/ASF/sam0/drivers/port" -I"../src/ASF/thirdparty/fatfs/fatfs-r0.09/src" -I"../src/ASF/common/services/sleepmgr" -I"../src/ASF/common2/components/memory/sd_mmc" -I"../src/ASF/common2/services/delay" -I"../src/ASF/common2/services/delay/sam0" -I"../src/ASF/sam0/drivers/adc" -I"../src/ASF/sam0/drivers/adc/adc_sam_d_r" -I"../src/ASF/sam0/drivers/extint" -I"../src/ASF/sam0/drivers/extint/extint_sam_d_r" -I"../src/ASF/sam0/drivers/rtc" -I"../src/ASF/sam0/drivers/rtc/rtc_sam_d_r" -I"../src/ASF/sam0/drivers/sercom" -I"../src/ASF/sam0/drivers/sercom/spi" -I"../src/ASF/sam0/drivers/wdt" -I"../src/ASF/thirdparty/fatfs/fatfs-port-r0.09/sam0"  -O1 -fdata-sections -ffunction-sections -mlong-calls -g3 -Wall -mcpu=cortex-m0plus -c -pipe -fno-strict-aliasing -Wall -Wstrict-prototypes -Wmissing-prototypes -Werror-implicit-function-declaration -Wpointer-arith -std=gnu99 -ffunction-sections -fdata-sections -Wchar-subscripts -Wcomment -Wformat=2 -Wimplicit-int -Wmain -Wparentheses -Wsequence-point -Wreturn-type -Wswitch -Wtrigraphs -Wunused -Wuninitialized -Wunknown-pragmas -Wfloat-equal -Wundef -Wshadow -Wbad-function-cast -Wwrite-strings -Wsign-compare -Waggregate-return  -Wmissing-declarations -Wformat -Wmissing-format-attribute -Wno-deprecated-declarations -Wpacked -Wredundant-decls -Wnested-externs -Wlong-long -Wunreachable-code -Wcast-align --param max-inline-insns-single=500 -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 
+	@echo Finished building: $<
+	
+
+src/TimedSleep/%.o: ../src/TimedSleep/%.c
 	@echo Building file: $<
 	@echo Invoking: ARM/GNU C Compiler : 4.8.4
 	$(QUOTE)C:\Program Files (x86)\Atmel\Atmel Toolchain\ARM GCC\Native\4.8.1443\arm-gnu-toolchain\bin\arm-none-eabi-gcc.exe$(QUOTE)  -x c -mthumb -D__SAMD20J18__ -DDEBUG -DBOARD=USER_BOARD -DARM_MATH_CM0PLUS=true -DCYCLE_MODE -DADC_CALLBACK_MODE=false -DEXTINT_CALLBACK_MODE=true -DSPI_CALLBACK_MODE=false -DWDT_CALLBACK_MODE=true -DRTC_CALENDAR_ASYNC=false  -I"../common2/applications/user_application/user_board/config_samd20" -I"../src/ASF/sam0/utils/header_files" -I"../src/ASF/thirdparty/CMSIS/Lib/GCC" -I"../src/ASF/sam0/drivers/system/power/power_sam_d_r" -I"../src/ASF/sam0/drivers/system/reset" -I"../src/config" -I"../src/ASF/common/utils" -I"../src/ASF/sam0/drivers/system/interrupt/system_interrupt_samd20" -I"../src/ASF/sam0/drivers/system/pinmux" -I"../src/ASF/sam0/utils/cmsis/samd20/include" -I"../src/ASF/sam0/drivers/system/power" -I"../src" -I"../src/ASF/sam0/utils/preprocessor" -I"../src/ASF/sam0/utils/cmsis/samd20/source" -I"../src/ASF/common/boards" -I"../src/ASF/sam0/drivers/system" -I"../src/ASF/sam0/drivers/system/reset/reset_sam_d_r" -I"../src/ASF/sam0/drivers/system/clock/clock_samd20" -I"../src/ASF/sam0/drivers/system/clock" -I"../src/ASF/sam0/drivers/system/interrupt" -I"../src/ASF/sam0/utils" -I"../src/ASF/thirdparty/CMSIS/Include" -I"../src/ASF/common2/boards/user_board" -I"../src/ASF/common/services/storage/ctrl_access" -I"../src/ASF/sam0/drivers/port" -I"../src/ASF/thirdparty/fatfs/fatfs-r0.09/src" -I"../src/ASF/common/services/sleepmgr" -I"../src/ASF/common2/components/memory/sd_mmc" -I"../src/ASF/common2/services/delay" -I"../src/ASF/common2/services/delay/sam0" -I"../src/ASF/sam0/drivers/adc" -I"../src/ASF/sam0/drivers/adc/adc_sam_d_r" -I"../src/ASF/sam0/drivers/extint" -I"../src/ASF/sam0/drivers/extint/extint_sam_d_r" -I"../src/ASF/sam0/drivers/rtc" -I"../src/ASF/sam0/drivers/rtc/rtc_sam_d_r" -I"../src/ASF/sam0/drivers/sercom" -I"../src/ASF/sam0/drivers/sercom/spi" -I"../src/ASF/sam0/drivers/wdt" -I"../src/ASF/thirdparty/fatfs/fatfs-port-r0.09/sam0"  -O1 -fdata-sections -ffunction-sections -mlong-calls -g3 -Wall -mcpu=cortex-m0plus -c -pipe -fno-strict-aliasing -Wall -Wstrict-prototypes -Wmissing-prototypes -Werror-implicit-function-declaration -Wpointer-arith -std=gnu99 -ffunction-sections -fdata-sections -Wchar-subscripts -Wcomment -Wformat=2 -Wimplicit-int -Wmain -Wparentheses -Wsequence-point -Wreturn-type -Wswitch -Wtrigraphs -Wunused -Wuninitialized -Wunknown-pragmas -Wfloat-equal -Wundef -Wshadow -Wbad-function-cast -Wwrite-strings -Wsign-compare -Waggregate-return  -Wmissing-declarations -Wformat -Wmissing-format-attribute -Wno-deprecated-declarations -Wpacked -Wredundant-decls -Wnested-externs -Wlong-long -Wunreachable-code -Wcast-align --param max-inline-insns-single=500 -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 

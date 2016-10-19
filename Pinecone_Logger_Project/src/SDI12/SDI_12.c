@@ -26,6 +26,7 @@
 #endif
 
 char charAddParity(char address);
+bool SDI12_TIME_FORMAT_UNIT_TEST(void);
 
 void SDI12_Setup(void){
 	struct port_config conf;
