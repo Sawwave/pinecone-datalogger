@@ -22,4 +22,6 @@ enum Dht22Status{ DHT_STATUS_OKAY, DHT_STATUS_TIMEOUT, DHT_STATUS_CHECKSUM_ERROR
 	If this is not done, the sensor will have undefined behavior. */
 enum Dht22Status GetDht22Reading(double *temp, double *relativeHumidity, const uint8_t dhtPin);
 
+void Dht22Setup(const uint8_t dhtPin);
+
 #endif /* DHT22_H_ */
