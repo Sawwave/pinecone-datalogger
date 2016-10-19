@@ -32,6 +32,12 @@
 int main (void)
 {
 	system_init();
+	struct port_config cfg;
+	port_get_config_defaults(&cfg);
+	cfg.direction = PORT_PIN_DIR_OUTPUT;
+	cfg.input_pull = PORT_PIN_PULL_NONE;
+	//cfg.powersave = true;
+	port_pin_set_config(PIN_PA11, &cfg);
 
 	/* Insert application code here, after the board has been initialized. */
 }
