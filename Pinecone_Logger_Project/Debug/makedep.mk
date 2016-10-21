@@ -16,6 +16,8 @@ src\DS1302\DS1302.c
 
 src\MAX31856\MAX31856.c
 
+src\SD_FileUtils\SD_FileUtils.c
+
 src\TimedSleep\TimedSleep.c
 
 src\ASF\sam0\drivers\rtc\rtc_sam_d_r\rtc_calendar.c

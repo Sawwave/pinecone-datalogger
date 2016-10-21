@@ -34,8 +34,9 @@
 #include "TimedSleep/TimedSleep.h"
 #include "SDI12/SDI12.h"
 #include "Dendro/Dendro.h"
+#include "SD_FileUtils/SD_FileUtils.h"
 
-void componentInit(void);
+void componentInit(FATFS *fileSystem);
 bool MAX31856_VOLATILE_REGISTERS_TEST(void);
 
 struct spi_module spiMasterModule;
@@ -46,18 +47,26 @@ struct adc_module adcModule;
 int main (void)
 {
 
-	FIL fileObject;
 	FATFS fileSystem;
 	
 	system_init();
 	
 	//WAKE UP DS1302, SD card,
-	componentInit();
+	componentInit(&fileSystem);
 	
 	tryReadTimeFile();
 	createDataFileIfMissing();
 	while(1){
-		ungetc();
+		//open the the datalog file
+		FIL dataFile;
+		f_open(&dataFile, SD_DATALOG_FILENAME, FA_OPEN_EXISTING);
+		
+		//move to the end of the file, minus 1 character so we'll overwrite the ending ]
+		DWORD fileSize = f_size(&dataFile);
+		if(fileSize != 0){
+			fileSize -= 1;
+		}
+		f_lseek(&dataFile, fileSize);
 	}
 }
 
@@ -72,7 +81,7 @@ void componentInit(FATFS *fatFileSystem){
 	//wake up SD card
 	SdCardInit(fatFileSystem, &mountingResult);
 	//wake up MAX31856
-	amplifierStatus =  Max31856ConfigureRegisters(&spiMasterModule, &slaveInst, MAX31856_THERMOCOUPLE_TYPE_USED)
+	amplifierStatus =  Max31856ConfigureRegisters(&spiMasterModule, &spiSlaveInstance, MAX31856_THERMOCOUPLE_TYPE_USED);
 	ConfigureDendroADC(&adcModule);
 }
 
