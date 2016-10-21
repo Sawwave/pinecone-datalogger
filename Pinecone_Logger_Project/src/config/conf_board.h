@@ -50,7 +50,7 @@
 
 #define SD_VOLUME_NUMBER 0
 #define SD_TIME_FILENAME "0:time.txt"
-#define SD_DATALOG_FILENAME "0:data.xml"
+#define SD_DATALOG_FILENAME "0:data.json"
 
 #define SDI_PIN PIN_PA09
 #define SDI_PIN_PORT PORTA
