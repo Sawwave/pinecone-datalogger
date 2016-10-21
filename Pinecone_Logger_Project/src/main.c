@@ -54,10 +54,10 @@ int main (void)
 	//WAKE UP DS1302, SD card,
 	componentInit();
 	
-	tryReadTimeFile(&fileObject));
-	
+	tryReadTimeFile();
+	createDataFileIfMissing();
 	while(1){
-		
+		ungetc();
 	}
 }
 
