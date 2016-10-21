@@ -1,43 +1,89 @@
 /**
- * \file
- *
- * \brief Empty user application template
- *
- */
+* \file
+*
+* \brief Empty user application template
+*
+*/
 
 /**
- * \mainpage User Application template doxygen documentation
- *
- * \par Empty user application template
- *
- * Bare minimum empty user application template
- *
- * \par Content
- *
- * -# Include the ASF header files (through asf.h)
- * -# Minimal main function that starts with a call to system_init()
- * -# "Insert application code here" comment
- *
- */
+* \mainpage User Application template doxygen documentation
+*
+* \par Empty user application template
+*
+* Bare minimum empty user application template
+*
+* \par Content
+*
+* -# Include the ASF header files (through asf.h)
+* -# Minimal main function that starts with a call to system_init()
+* -# "Insert application code here" comment
+*
+*/
 
 /*
- * Include header files for all drivers that have been imported from
- * Atmel Software Framework (ASF).
- */
+* Include header files for all drivers that have been imported from
+* Atmel Software Framework (ASF).
+*/
 /*
- * Support and FAQ: visit <a href="http://www.atmel.com/design-support/">Atmel Support</a>
- */
+* Support and FAQ: visit <a href="http://www.atmel.com/design-support/">Atmel Support</a>
+*/
 #include <asf.h>
+#include "DHT22/DHT22.h"
+#include "DS1302/DS1302.h"
+#include "MAX31856/MAX31856.h"
+#include "TimedSleep/TimedSleep.h"
+#include "SDI12/SDI12.h"
+#include "Dendro/Dendro.h"
+
+void componentInit(void);
+bool MAX31856_VOLATILE_REGISTERS_TEST(void);
+
+struct spi_module spiMasterModule;
+struct spi_slave_inst spiSlaveInstance;
+struct adc_module adcModule;
+
 
 int main (void)
 {
-	system_init();
-	struct port_config cfg;
-	port_get_config_defaults(&cfg);
-	cfg.direction = PORT_PIN_DIR_OUTPUT;
-	cfg.input_pull = PORT_PIN_PULL_NONE;
-	//cfg.powersave = true;
-	port_pin_set_config(PIN_PA11, &cfg);
 
-	/* Insert application code here, after the board has been initialized. */
+	FIL fileObject;
+	FATFS fileSystem;
+	
+	system_init();
+	
+	//WAKE UP DS1302, SD card,
+	componentInit();
+	
+	tryReadTimeFile(&fileObject));
+	
+	while(1){
+		
+	}
+}
+
+void componentInit(FATFS *fatFileSystem){
+	FRESULT mountingResult;
+	enum Max31856_Status amplifierStatus;
+	
+	Max31856ConfigureSPI(&spiMasterModule, &spiSlaveInstance);
+	SDI12_Setup();
+	//wake up DS1302
+	DS1302Init();
+	//wake up SD card
+	SdCardInit(fatFileSystem, &mountingResult);
+	//wake up MAX31856
+	amplifierStatus =  Max31856ConfigureRegisters(&spiMasterModule, &slaveInst, MAX31856_THERMOCOUPLE_TYPE_USED)
+	ConfigureDendroADC(&adcModule);
+}
+
+bool MAX31856_VOLATILE_REGISTERS_TEST(void){
+	//turn MAX31856 on
+	delay_s(1);
+	//write register
+	//turn MAX31856 off
+	delay_s(1);
+	//turn it on
+	//read register
+	//see if equal.
+	return false;
 }

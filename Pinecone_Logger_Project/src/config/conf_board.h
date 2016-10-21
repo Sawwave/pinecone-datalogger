@@ -48,6 +48,10 @@
 #ifndef CONF_BOARD_H
 #define CONF_BOARD_H
 
+#define SD_VOLUME_NUMBER 0
+#define SD_TIME_FILENAME "0:time.txt"
+#define SD_DATALOG_FILENAME "0:data.xml"
+
 #define SDI_PIN PIN_PA09
 #define SDI_PIN_PORT PORTA
 #define SDI_PIN_PINMASK 0x200 // 1<<9
