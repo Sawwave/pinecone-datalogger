@@ -1,9 +1,9 @@
 /*
- * SDI_12.c
- *
- * Created: 10/18/2016 4:25:57 PM
- *  Author: tim.anderson
- */ 
+* SDI_12.c
+*
+* Created: 10/18/2016 4:25:57 PM
+*  Author: tim.anderson
+*/
 #include <asf.h>
 #include <string.h>
 #include "SDI12/SDI12.h"
@@ -56,8 +56,8 @@ void SDI12_RequestSensorReading(struct SDI_transactionPacket *transactionPacket)
 	uint8_t tries = SDI12_MAX_NUMBER_TRANSACTION_ATTEMPTS;
 	const uint8_t messageLen = 3;
 	char message[3] = { charAddParity(transactionPacket->address), 'M', '!'};
-	const uint8_t responseLength = 8;
-	char response[8];
+	const uint8_t responseLength = 12;
+	char response[12];
 	memset(response, 0, sizeof(response));
 	
 	//try up to MAX NUMBER TRANSACTIONS to get a successful response.
@@ -68,24 +68,30 @@ void SDI12_RequestSensorReading(struct SDI_transactionPacket *transactionPacket)
 		if(transactionPacket->transactionStatus == SDI12_STATUS_OK){
 			//get time from response. only if it parsed successfully do we consider this a successful transaction
 			if( SDI12_GetTimeFromResponse(response, &(transactionPacket->waitTime)) ){
-				if(response[4] <= '9' && response[4] >= '0'){
-					transactionPacket->numberOfValuesToReturn = response[4] - '0';
-					return;
+				uint8_t numValuesIndex = 4;
+				//init values to return to 0
+				transactionPacket->numberOfValuesToReturn = 0;
+				//read from the response until we hit a non-number (going to be <CR>, but let's just make sure.)
+				while(response[numValuesIndex] <= '9' && response[numValuesIndex] >= '0')
+				{
+					transactionPacket->numberOfValuesToReturn *= 10;
+					transactionPacket->numberOfValuesToReturn += response[numValuesIndex];
+					numValuesIndex++;
 				}
-				else
-				transactionPacket->transactionStatus = SDI12_BAD_RESPONSE;
 			}
-			else{
-				transactionPacket->transactionStatus = SDI12_BAD_RESPONSE;
-			}
+			else
+			transactionPacket->transactionStatus = SDI12_BAD_RESPONSE;
+		}
+		else{
+			transactionPacket->transactionStatus = SDI12_BAD_RESPONSE;
 		}
 	}
 }
 
 /*SDI12_GetSensedValues
-	After the sensor has had values requested with SDI12_RequestSensorReading, use this function to read the values as floats
-	The floats will be loaded into the outValues float array. NOTE!!!! outValues array MUST have a number of indices equal to the
-	number of expected values from the transaction packet. Otherwise, Undefined operation or segfaults may occur.*/
+After the sensor has had values requested with SDI12_RequestSensorReading, use this function to read the values as floats
+The floats will be loaded into the outValues float array. NOTE!!!! outValues array MUST have a number of indices equal to the
+number of expected values from the transaction packet. Otherwise, Undefined operation or segfaults may occur.*/
 bool SDI12_GetSensedValues(struct SDI_transactionPacket *transactionPacket, float *outValues){
 
 	uint8_t numValuesExpected = transactionPacket->numberOfValuesToReturn;
@@ -316,6 +322,7 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction(const char *message, const uint8
 }
 
 uint8_t SDI12_GetNumReadingsFromSensorMetadata(char address){
+	//ready the metadata command
 	char message[4] = {address, 'I','M','!'};
 	const uint8_t messageLen = 4;
 }
