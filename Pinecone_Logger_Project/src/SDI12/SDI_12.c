@@ -27,7 +27,7 @@
 #endif
 
 char charAddParity(char address);
-uint8_t SDI12_ParseNumValuesFromResult(char outBuffer[], outBufferLen);
+uint8_t SDI12_ParseNumValuesFromResult(char outBuffer[], uint8_t outBufferLen);
 bool SDI12_TIME_FORMAT_UNIT_TEST(void);
 
 void SDI12_Setup(void){
@@ -320,7 +320,7 @@ uint8_t SDI12_GetNumReadingsFromSensorMetadata(char address){
 	const uint8_t messageLen = 4;
 	char outBuffer[12];
 	uint8_t outBufferLen = 12;
-	memset(outBuffer, 0, outbufferLen);
+	memset(outBuffer, 0, outBufferLen);
 
 	SDI12_PerformTransaction(message, messageLen, outBuffer, outBufferLen);
 	return SDI12_ParseNumValuesFromResult(outBuffer, outBufferLen);
@@ -330,7 +330,7 @@ uint8_t SDI12_GetNumReadingsFromSensorMetadata(char address){
 	reads the result from a aM or an aIM transaction,
 	and returns the number of values the sensor can return.
 	returns 0 in event of failure.*/
-uint8_t SDI12_ParseNumValuesFromResult(char outBuffer[], outBufferLen){
+uint8_t SDI12_ParseNumValuesFromResult(char outBuffer[], uint8_t outBufferLen){
 	uint8_t numValuesSensed = 0;
 	uint8_t valuesIndex = 4;
 	
@@ -340,4 +340,5 @@ uint8_t SDI12_ParseNumValuesFromResult(char outBuffer[], outBufferLen){
 		
 		valuesIndex++;
 	}
+	return numValuesSensed;
 }

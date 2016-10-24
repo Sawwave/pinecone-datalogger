@@ -79,3 +79,11 @@ bool createDataFileIfMissing(char sdiAddresses[], uint8_t numAddresses){
 	
 	return true;
 }
+
+
+bool readConfigFile(struct LoggerConfig *config){
+	FIL fileObj;
+	if(f_open(&fileObj, SD_CONFIG_FILENAME, FA_READ) == FR_OK){
+		
+	}
+}

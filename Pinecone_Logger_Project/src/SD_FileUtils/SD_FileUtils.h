@@ -18,6 +18,8 @@ bool tryReadTimeFile(void);
 
 bool createDataFileIfMissing(char sdiAddresses[], uint8_t numAddresses);
 
-bool logToDataFile(Ds1302DateTime *dateTime, float *thermocoupleReadings, );
+bool readConfigFile(void);
+
+bool logToDataFile(Ds1302DateTime *dateTime, float *thermocoupleReadings);
 
 #endif /* SD_FILEUTILS_H_ */

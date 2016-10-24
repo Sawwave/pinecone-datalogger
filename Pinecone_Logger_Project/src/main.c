@@ -36,12 +36,30 @@
 #include "Dendro/Dendro.h"
 #include "SD_FileUtils/SD_FileUtils.h"
 
+struct SDI12_SensorMetadata{
+	char address,
+	uint8_t numValues
+};
+
+struct LoggerConfig{
+	struct SDI12_SensorMetadata[SDI12_MAX_SUPPORTED_SENSORS];
+	uint8_t numSdSensors,
+	uint16_t loggingInterval,
+	bool logImmediatelyOn
+
+};
+
 void componentInit(FATFS *fileSystem);
 bool MAX31856_VOLATILE_REGISTERS_TEST(void);
+
+
+
 
 struct spi_module spiMasterModule;
 struct spi_slave_inst spiSlaveInstance;
 struct adc_module adcModule;
+
+
 
 
 int main (void)
@@ -55,7 +73,7 @@ int main (void)
 	componentInit(&fileSystem);
 	
 	tryReadTimeFile();
-	createDataFileIfMissing();
+	
 	while(1){
 		//open the the datalog file
 		FIL dataFile;
