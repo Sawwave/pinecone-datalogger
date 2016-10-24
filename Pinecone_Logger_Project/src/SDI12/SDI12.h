@@ -25,5 +25,6 @@ enum SDI12_ReturnCode SDI12_PerformTransaction(const char *message, const uint8_
 void SDI12_RequestSensorReading(struct SDI_transactionPacket *transactionPacket);
 bool SDI12_GetSensedValues(struct SDI_transactionPacket *transactionPacket, float *outValues);
 bool SDI12_GetTimeFromResponse(const char *response, uint16_t *outTime);
+uint8_t SDI12_GetNumReadingsFromSensorMetadata(char address);
 
 #endif /* SDI12_H_ */

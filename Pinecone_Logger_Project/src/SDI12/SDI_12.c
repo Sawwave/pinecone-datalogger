@@ -314,3 +314,8 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction(const char *message, const uint8
 		return SDI12_BAD_RESPONSE;
 	}
 }
+
+uint8_t SDI12_GetNumReadingsFromSensorMetadata(char address){
+	char message[4] = {address, 'I','M','!'};
+	const uint8_t messageLen = 4;
+}

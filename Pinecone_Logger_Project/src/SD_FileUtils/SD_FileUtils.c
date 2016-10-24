@@ -74,6 +74,7 @@ bool createDataFileIfMissing(char sdiAddresses[], uint8_t numAddresses){
 	}
 	//create the header for the data file
 	f_puts("Date, Time, TcPort1, TcPort2, TcPort3, TcPort4, Dht1Temp, Dht1Rh, Dht2Temp, Dht2Rh, ", &fileObj);
+	//query the SDI sensors
 	f_close(&fileObj);
 	
 	return true;
