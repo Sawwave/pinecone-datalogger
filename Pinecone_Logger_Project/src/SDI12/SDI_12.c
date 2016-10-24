@@ -13,6 +13,7 @@
 #define DEBUG_A
 
 #define MARKING_DELAY_CYCLES 14000			//12 ms marking delay
+#define PARITY_I			201 //'I' is 73, 73+128= 201
 
 #ifdef DEBUG_A
 #define SPACING_8330_DELAY_CYCLES 9520 //9393		//8330us spacing delay
@@ -26,6 +27,7 @@
 #endif
 
 char charAddParity(char address);
+uint8_t SDI12_ParseNumValuesFromResult(char outBuffer[], outBufferLen);
 bool SDI12_TIME_FORMAT_UNIT_TEST(void);
 
 void SDI12_Setup(void){
@@ -68,16 +70,7 @@ void SDI12_RequestSensorReading(struct SDI_transactionPacket *transactionPacket)
 		if(transactionPacket->transactionStatus == SDI12_STATUS_OK){
 			//get time from response. only if it parsed successfully do we consider this a successful transaction
 			if( SDI12_GetTimeFromResponse(response, &(transactionPacket->waitTime)) ){
-				uint8_t numValuesIndex = 4;
-				//init values to return to 0
-				transactionPacket->numberOfValuesToReturn = 0;
-				//read from the response until we hit a non-number (going to be <CR>, but let's just make sure.)
-				while(response[numValuesIndex] <= '9' && response[numValuesIndex] >= '0')
-				{
-					transactionPacket->numberOfValuesToReturn *= 10;
-					transactionPacket->numberOfValuesToReturn += response[numValuesIndex];
-					numValuesIndex++;
-				}
+				transactionPacket->numberOfValuesToReturn = SDI12_ParseNumValuesFromResult(response, responseLength);
 			}
 			else
 			transactionPacket->transactionStatus = SDI12_BAD_RESPONSE;
@@ -323,6 +316,28 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction(const char *message, const uint8
 
 uint8_t SDI12_GetNumReadingsFromSensorMetadata(char address){
 	//ready the metadata command
-	char message[4] = {address, 'I','M','!'};
+	char message[4] = { charAddParity(address), PARITY_I,  'M', '!'};
 	const uint8_t messageLen = 4;
+	char outBuffer[12];
+	uint8_t outBufferLen = 12;
+	memset(outBuffer, 0, outbufferLen);
+
+	SDI12_PerformTransaction(message, messageLen, outBuffer, outBufferLen);
+	return SDI12_ParseNumValuesFromResult(outBuffer, outBufferLen);
+}
+
+/*SDI12_ParseNumValuesFromResult
+	reads the result from a aM or an aIM transaction,
+	and returns the number of values the sensor can return.
+	returns 0 in event of failure.*/
+uint8_t SDI12_ParseNumValuesFromResult(char outBuffer[], outBufferLen){
+	uint8_t numValuesSensed = 0;
+	uint8_t valuesIndex = 4;
+	
+	while((outBuffer[valuesIndex] >= '0') && (outBuffer[valuesIndex] <='9') && (valuesIndex != outBufferLen)){
+		numValuesSensed *= 10;
+		numValuesSensed += outBuffer[valuesIndex];
+		
+		valuesIndex++;
+	}
 }
