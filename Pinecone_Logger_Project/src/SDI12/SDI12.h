@@ -20,6 +20,8 @@ struct SDI_transactionPacket{
 };
 
 
+//TODO: RETURN NAN WHEN SENSOR MISSING
+
 void SDI12_Setup(void);
 enum SDI12_ReturnCode SDI12_PerformTransaction(const char *message, const uint8_t messageLen, char *outBuffer, const uint8_t outBufferLen);
 void SDI12_RequestSensorReading(struct SDI_transactionPacket *transactionPacket);

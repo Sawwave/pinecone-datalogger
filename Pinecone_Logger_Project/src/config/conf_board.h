@@ -44,9 +44,23 @@
 * Support and FAQ: visit <a href="http://www.atmel.com/design-support/">Atmel Support</a>
 */
 #include "MAX31856/MAX31856.h"
-
+#include <asf.h>
 #ifndef CONF_BOARD_H
 #define CONF_BOARD_H
+
+
+
+#define SDI12_MAX_SUPPORTED_SENSORS 25
+
+
+struct LoggerConfig{
+	char SDI12_SensorAddresses[SDI12_MAX_SUPPORTED_SENSORS + 1];	//extra char on the end for ease of f_gets function.
+	uint8_t SDI12_SensorNumValues[SDI12_MAX_SUPPORTED_SENSORS];
+	uint8_t numSdiSensors;
+	uint16_t loggingInterval;
+	bool logImmediately;
+};
+
 
 #define SD_VOLUME_NUMBER 0
 #define SD_TIME_FILENAME "0:time.txt"
@@ -54,7 +68,6 @@
 #define SD_READING_IN_PROGRESS_FILENAME "0:a"
 #define SD_CONFIG_FILENAME "0:lgr.cfg"
 
-#define SDI12_MAX_SUPPORTED_SENSORS 25
 
 
 #define SDI_PIN PIN_PA09
