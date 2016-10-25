@@ -17,10 +17,12 @@ void SdCardInit(FATFS *fatFileSys, FRESULT *mountingResult);
 
 bool tryReadTimeFile(void);
 
-bool createDataFileIfMissing(char sdiAddresses[], uint8_t numAddresses);
+bool openDataFileOrCreateIfMissing(const struct LoggerConfig *loggerConf);
 
 bool readConfigFile(struct LoggerConfig *config);
 
 bool logToDataFile(Ds1302DateTime *dateTime, float *thermocoupleReadings);
+
+bool SD_UnitTest(void);
 
 #endif /* SD_FILEUTILS_H_ */

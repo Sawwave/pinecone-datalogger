@@ -9,6 +9,8 @@
 #include <asf.h>
 #include "ff.h"
 
+void fileWriteHeader(FIL *fileObj, const struct LoggerConfig *loggerConf);
+
 /*SdCardInit
 Initializes the sd mmc connection, and attempts to mount the fileSystem.
 system will be mounted into first arg, fatFilesys.
@@ -67,50 +69,54 @@ bool tryReadTimeFile(void){
 }
 
 
-bool createDataFileIfMissing(char sdiAddresses[], uint8_t numAddresses){
+bool openDataFileOrCreateIfMissing(const struct LoggerConfig *loggerConf){
 	FIL fileObj;
-	//if the file already exists, leave it be!
-	if(f_open(&fileObj, SD_DATALOG_FILENAME, FA_CREATE_NEW) == FR_EXIST){
-		return false;
+	FRESULT openExistingResult = f_open(&fileObj, SD_DATALOG_FILENAME, FA_OPEN_EXISTING);
+	
+	if(openExistingResult == FR_OK){
+		//seek to end so we write append
+		f_lseek(&fileObj, f_size(&fileObj));
+		return true;
 	}
-	
-	//query the SDI sensors
-	
-	//create the header for the data file
-	f_puts("Date,Time,TcPort1,TcPort2,TcPort3,TcPort4,Dht1Temp,Dht1Rh,Dht2Temp,Dht2Rh", &fileObj);
-
-	f_close(&fileObj);
-	
-	//query the SDI sensors, and add headers for each sensor, and each value per
-	char *sdiColumnHeader = ",SDI_A.00";
-	const uint8_t sdiHeaderAddressIndex = 5;
-	const uint8_t sdiHeaderValueIndex = 8;
-	
-	for(uint8_t sdiCounter = 0; sdiCounter < numAddresses; sdiCounter++){
-		//reset the value index in the header
-		sdiColumnHeader[sdiHeaderValueIndex] = '0';
-		sdiColumnHeader[sdiHeaderValueIndex - 1] = '0';
-		uint8_t valuesFromSensor = SDI12_GetNumReadingsFromSensorMetadata(sdiAddresses[sdiCounter]);
-		//slot the address character into the header.
-		sdiColumnHeader[sdiHeaderAddressIndex] = sdiAddresses[sdiCounter];
-		
-		//reopen the file
-		f_open(&fileObj, SD_DATALOG_FILENAME, FA_CREATE_NEW);
-
-		//set the value indexes, and write to the data file.
-		for(uint8_t valueCounter = 0;valueCounter < valuesFromSensor;valueCounter++){
-			//set the ones, then the tens.
-			sdiColumnHeader[sdiHeaderValueIndex] = '0' + (valueCounter % 10);
-			sdiColumnHeader[sdiHeaderValueIndex - 1] = '0' + (valueCounter / 10);
-			f_puts(sdiColumnHeader, &fileObj);
+	else if (openExistingResult == FR_NO_FILE){
+		//file didn't exist, so let's create one and add the header!
+		openExistingResult = f_open(&fileObj, SD_DATALOG_FILENAME, FA_READ | FA_WRITE);
+		if(openExistingResult == FR_OK){
+			fileWriteHeader(&fileObj, loggerConf);
+			return true;
 		}
-		
-		f_close(&fileObj);
 	}
 	
+	//there was some other kind of error.
+	//TODO: do something in this case, maybe?
+	return false;
+}
+
+void fileWriteHeader(FIL *fileObj, const struct LoggerConfig *loggerConf){
+	//create the header for the data file
+	f_puts("Date,Time,TcPort1,TcPort2,TcPort3,TcPort4,Dht1Temp,Dht1Rh,Dht2Temp,Dht2Rh", fileObj);
+
+	//query the SDI sensors, and add headers for each sensor, and each value per
+	char sdiColumnHeader[9] = {',','S','D','I','_','A','.','0','0'};	//,SDI12_A.00
+	const uint8_t sdiHeaderAddressIndex = 5;
+	const uint8_t sdiHeaderOnesValueIndex = 8;
 	
-	
-	return true;
+	for(uint8_t sdiCounter = 0; sdiCounter < loggerConf->numSdiSensors; sdiCounter++){
+		//reset the value index in the header
+		sdiColumnHeader[sdiHeaderOnesValueIndex] = '0';
+		sdiColumnHeader[sdiHeaderOnesValueIndex - 1] = '0';
+		//slot the address character into the header.
+		sdiColumnHeader[sdiHeaderAddressIndex] = loggerConf->SDI12_SensorAddresses[sdiCounter];
+		
+		//set the value indexes, and write to the data file.
+		for(uint8_t valueCounter = 0;valueCounter < loggerConf->SDI12_SensorNumValues[sdiCounter]; valueCounter++){
+			//set the ones, then the tens.
+			sdiColumnHeader[sdiHeaderOnesValueIndex] = '0' + (valueCounter % 10);
+			sdiColumnHeader[sdiHeaderOnesValueIndex - 1] = '0' + (valueCounter / 10);
+			f_puts(sdiColumnHeader, fileObj);
+		}
+	}
+	f_sync(fileObj);
 }
 
 /*readConfigFile
@@ -146,6 +152,12 @@ bool readConfigFile(struct LoggerConfig *config){
 		f_gets(flagBuffer, 2, &fileObj);
 		f_close(&fileObj);
 		
+		//count up the number of addresses.
+		uint8_t numSensors = 0;
+		while(config->SDI12_SensorAddresses[(config->numSdiSensors)] != 0){
+			config->numSdiSensors++;
+		}
+		
 		char *ptrToIntervalBuffer = &(intervalBuffer[0]);
 		config->loggingInterval = strtol(ptrToIntervalBuffer, &ptrToIntervalBuffer, 10);
 		if(flagBuffer[0] == 'd'){
@@ -154,11 +166,8 @@ bool readConfigFile(struct LoggerConfig *config){
 		else{
 			config->logImmediately = true;
 		}
-		
 	}
-	
-	
-	
-	
 	return true;
 }
+
+bool SD_UnitTest(void);

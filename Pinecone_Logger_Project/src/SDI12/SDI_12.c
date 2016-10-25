@@ -320,23 +320,33 @@ uint8_t SDI12_GetNumReadingsFromSensorMetadata(char address){
 	const uint8_t messageLen = 4;
 	char outBuffer[12];
 	uint8_t outBufferLen = 12;
-	memset(outBuffer, 0, outBufferLen);
+	
+	uint8_t tries = SDI12_MAX_NUMBER_TRANSACTION_ATTEMPTS;
+	while(tries--){
+		memset(outBuffer, 0, outBufferLen);
 
-	SDI12_PerformTransaction(message, messageLen, outBuffer, outBufferLen);
-	return SDI12_ParseNumValuesFromResult(outBuffer, outBufferLen);
+		SDI12_PerformTransaction(message, messageLen, outBuffer, outBufferLen);
+		uint8_t numValues = SDI12_ParseNumValuesFromResult(outBuffer, outBufferLen);
+		if(numValues != 0)
+		{
+			return SDI12_ParseNumValuesFromResult(outBuffer, outBufferLen);
+		}
+	}
+	//if none of the tries succeeded, just return 0 in failure
+	return 0;
 }
 
 /*SDI12_ParseNumValuesFromResult
-	reads the result from a aM or an aIM transaction,
-	and returns the number of values the sensor can return.
-	returns 0 in event of failure.*/
-uint8_t SDI12_ParseNumValuesFromResult(char outBuffer[], uint8_t outBufferLen){
+reads the result from a aM or an aIM transaction,
+and returns the number of values the sensor can return.
+returns 0 in event of failure.*/
+uint8_t SDI12_ParseNumValuesFromResult(char responseBuffer[], uint8_t responseBufferLen){
 	uint8_t numValuesSensed = 0;
 	uint8_t valuesIndex = 4;
 	
-	while((outBuffer[valuesIndex] >= '0') && (outBuffer[valuesIndex] <='9') && (valuesIndex != outBufferLen)){
+	while((responseBuffer[valuesIndex] >= '0') && (responseBuffer[valuesIndex] <='9') && (valuesIndex != responseBufferLen)){
 		numValuesSensed *= 10;
-		numValuesSensed += outBuffer[valuesIndex];
+		numValuesSensed += responseBuffer[valuesIndex];
 		
 		valuesIndex++;
 	}
