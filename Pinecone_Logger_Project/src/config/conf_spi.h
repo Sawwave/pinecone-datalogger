@@ -63,5 +63,7 @@
 #define MAX31856_CS_PIN					PIN_PA19
 
 
+
+
 #endif /* CONF_SPI_H_INCLUDED */
 

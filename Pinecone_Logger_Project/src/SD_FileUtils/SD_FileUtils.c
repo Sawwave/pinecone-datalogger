@@ -9,7 +9,13 @@
 #include <asf.h>
 #include "ff.h"
 
+#define SD_DEBUG_FILE "0:debug.txt"
+
 void fileWriteHeader(FIL *fileObj, const struct LoggerConfig *loggerConf);
+
+FRESULT SD_UnitTestRemoveFile(void);
+FRESULT SD_UnitTestCreateDebugFile(FIL *file);
+FRESULT SD_UnitTestReadFile(FIL *file);
 
 /*SdCardInit
 Initializes the sd mmc connection, and attempts to mount the fileSystem.
@@ -22,6 +28,16 @@ FR_INT_ERR if assertion failed for some unknown reason (MORE DOCUMENTATION PLEAS
 */
 void SdCardInit(FATFS *fatFileSys, FRESULT *mountingResult){
 	sd_mmc_init();
+	sd_mmc_err_t checkStatus;
+	do{
+		checkStatus = sd_mmc_check(0);
+	} while (checkStatus != SD_MMC_OK);
+	if(checkStatus != SD_MMC_OK){
+		int x = 1;
+		x *= 1000;
+		int *y = &x;
+		(*y)++;
+	}
 	
 	memset(fatFileSys, 0, sizeof(FATFS));
 	*mountingResult = f_mount(SD_VOLUME_NUMBER, fatFileSys);
@@ -58,7 +74,7 @@ bool tryReadTimeFile(void){
 	dateTime.year		= (uint8_t)strtol(bufferPointer, &bufferPointer, 10);
 	
 	
-	//if any of the date were 0,  consider the read to have been incorrect
+	//if any of the date were 0, consider the read to have been incorrect
 	if(!(dateTime.date && dateTime.month && dateTime.year)){
 		return false;
 	}
@@ -69,20 +85,19 @@ bool tryReadTimeFile(void){
 }
 
 
-bool openDataFileOrCreateIfMissing(const struct LoggerConfig *loggerConf){
-	FIL fileObj;
-	FRESULT openExistingResult = f_open(&fileObj, SD_DATALOG_FILENAME, FA_OPEN_EXISTING);
+bool openDataFileOrCreateIfMissing(FIL *fileObj, const struct LoggerConfig *loggerConf){
+	FRESULT openExistingResult = f_open(fileObj, SD_DATALOG_FILENAME, FA_OPEN_EXISTING);
 	
 	if(openExistingResult == FR_OK){
 		//seek to end so we write append
-		f_lseek(&fileObj, f_size(&fileObj));
+		f_lseek(fileObj, f_size(fileObj));
 		return true;
 	}
 	else if (openExistingResult == FR_NO_FILE){
 		//file didn't exist, so let's create one and add the header!
-		openExistingResult = f_open(&fileObj, SD_DATALOG_FILENAME, FA_READ | FA_WRITE);
+		openExistingResult = f_open(fileObj, SD_DATALOG_FILENAME, FA_READ | FA_WRITE);
 		if(openExistingResult == FR_OK){
-			fileWriteHeader(&fileObj, loggerConf);
+			fileWriteHeader(fileObj, loggerConf);
 			return true;
 		}
 	}
@@ -145,6 +160,8 @@ bool readConfigFile(struct LoggerConfig *config){
 	FIL fileObj;
 	char intervalBuffer[5];
 	char flagBuffer[2];
+	memset(intervalBuffer, 0, 5 * sizeof(char));
+	memset(flagBuffer, 0, 2 * sizeof(char));
 	
 	if(f_open(&fileObj, SD_CONFIG_FILENAME, FA_READ) == FR_OK){
 		f_gets(config->SDI12_SensorAddresses, SDI12_MAX_SUPPORTED_SENSORS + 1, &fileObj);
@@ -158,7 +175,7 @@ bool readConfigFile(struct LoggerConfig *config){
 			config->numSdiSensors++;
 		}
 		
-		char *ptrToIntervalBuffer = &(intervalBuffer[0]);
+		char *ptrToIntervalBuffer = &(flagBuffer[0]);
 		config->loggingInterval = strtol(ptrToIntervalBuffer, &ptrToIntervalBuffer, 10);
 		if(flagBuffer[0] == 'd'){
 			config->logImmediately = false;
@@ -170,4 +187,124 @@ bool readConfigFile(struct LoggerConfig *config){
 	return true;
 }
 
-bool SD_UnitTest(void);
+int8_t SD_UnitTest(FATFS *fatfs){
+	FIL file;
+	FRESULT result;
+	
+	do{
+		SdCardInit(fatfs, &result);
+	}while(result == FR_NOT_READY);
+	
+	if(result != FR_OK){
+		return result * -1;
+	}
+	FRESULT createResult = SD_UnitTestCreateDebugFile(&file);
+	
+	if(createResult != FR_OK){
+		return createResult * -1;
+	}
+	
+	FRESULT readResult = SD_UnitTestReadFile(&file);
+	if(readResult != FR_OK){
+		return readResult *-1;
+	}
+	
+	FRESULT deleteResult = SD_UnitTestRemoveFile();
+	if(deleteResult != FR_OK){
+		return deleteResult * -1;
+	}
+	
+	return 0;
+}
+
+FRESULT SD_UnitTestCreateDebugFile(FIL *file){
+	FRESULT res; 
+	do{
+		f_open(file, SD_DEBUG_FILE,FA_CREATE_ALWAYS);
+	}while(res != FR_NOT_READY);
+	if(res != FR_OK){
+		return res;
+	}
+	
+	res = f_puts("debug message\n w space start\n\n!@#%%^*(%^", file);
+	if(res != FR_OK){
+		return res;
+	}
+	res = f_close(file);
+	if(res != FR_OK){
+		return res;
+	}
+	
+	return res;
+}
+
+FRESULT SD_UnitTestReadFile(FIL *file){
+	FRESULT res = f_open(file, SD_DEBUG_FILE,FA_READ);
+	if(res != FR_OK){
+		return res;
+	}
+	char buffer[256];
+	f_gets(&buffer[0],256, file);
+	uint8_t len = 0;
+	while(buffer[len] != 0){
+		len++;
+	}
+	if(len != 13){
+		return FR_TOO_MANY_OPEN_FILES;
+	}
+	
+	f_gets(&buffer[0], 256, file);
+	len = 0;
+	while(buffer[len] != 0){
+		len++;
+	}
+	if(len != 14){
+		return FR_TOO_MANY_OPEN_FILES;
+	}
+	
+	f_gets(&buffer[0], 256, file);
+	len = 0;
+	while(buffer[len] != 0){
+		len++;
+	}
+	if(len != 0)
+	{
+		return FR_TOO_MANY_OPEN_FILES;
+	}
+	
+	f_gets(&buffer[0], 256, file);
+	len = 0;
+	while(buffer[len] != 0){
+		len++;
+	}
+	if(len != 9){
+		return FR_TOO_MANY_OPEN_FILES;
+	}
+	
+	res = f_close(file);
+	if(res != FR_OK){
+		return res;
+	}
+	
+	return res;
+}
+
+FRESULT SD_UnitTestRemoveFile(void){
+	FILINFO info;
+	FRESULT res = f_stat(SD_DEBUG_FILE, &info);
+	if(res == FR_NO_FILE){
+		return res;
+	}
+	
+	res = f_unlink(SD_DEBUG_FILE);
+	if(res == FR_OK){
+		return res;
+	}
+	
+	
+	res = f_stat(SD_DEBUG_FILE, &info);
+	if(res != FR_NO_FILE){
+		return res;
+	}
+	return res;
+}

@@ -41,9 +41,6 @@
 void componentInit(FATFS *fileSystem);
 bool MAX31856_VOLATILE_REGISTERS_TEST(void);
 
-
-
-
 struct spi_module spiMasterModule;
 struct spi_slave_inst spiSlaveInstance;
 struct adc_module adcModule;
@@ -51,29 +48,35 @@ struct adc_module adcModule;
 
 
 
+
+
+
 int main (void)
 {
 
+	
+	struct LoggerConfig loggerConfig;
+	
 	FATFS fileSystem;
+	FIL fileObj;
 	
 	system_init();
 	
-	//WAKE UP DS1302, SD card,
-	componentInit(&fileSystem);
+	SD_UnitTest(&fileSystem);
 	
-	tryReadTimeFile();
+	//WAKE UP DS1302, SD card,
+	//componentInit(&fileSystem);
+	
+	//tryReadTimeFile();
+	
+	//readConfigFile(&loggerConfig);
+	
+	//QUERY SDI SENSORS FOR METADATA
+	
+	//OPEN THE DATA FILE
 	
 	while(1){
-		//open the the datalog file
-		FIL dataFile;
-		f_open(&dataFile, SD_DATALOG_FILENAME, FA_OPEN_EXISTING);
 		
-		//move to the end of the file, minus 1 character so we'll overwrite the ending ]
-		DWORD fileSize = f_size(&dataFile);
-		if(fileSize != 0){
-			fileSize -= 1;
-		}
-		f_lseek(&dataFile, fileSize);
 	}
 }
 

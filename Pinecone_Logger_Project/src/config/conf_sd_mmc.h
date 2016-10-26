@@ -49,7 +49,6 @@
 
 /* Define to enable the SPI mode instead of Multimedia Card interface mode */
 #define SD_MMC_SPI_MODE
-
 /* Define to enable the SDIO support */
 //#define SDIO_SUPPORT_ENABLE
 
@@ -59,6 +58,7 @@
 /* Define to memory count */
 #define SD_MMC_SPI_MEM_CNT          1
 
+#define SD_MMC_ENABLE
 /* Select the SPI module SD/MMC is connected to */
 #ifdef EXT1_SPI_MODULE /* Default configuration for Xplained Pro kit */
 #  define SD_MMC_SPI                 EXT1_SPI_MODULE
@@ -71,19 +71,19 @@
 #  define SD_MMC_CS                  EXT1_PIN_15
 
 #  define SD_MMC_0_CD_GPIO           (EXT1_PIN_10)
-#  define SD_MMC_0_CD_DETECT_VALUE   0
+#  define SD_MMC_0_CD_DETECT_VALUE   1
 #else /* Dummy configuration */
-#  define SD_MMC_SPI                 0
-#  define SD_MMC_SPI_PINMUX_SETTING  0
-#  define SD_MMC_SPI_PINMUX_PAD0     0
-#  define SD_MMC_SPI_PINMUX_PAD1     0
-#  define SD_MMC_SPI_PINMUX_PAD2     0
-#  define SD_MMC_SPI_PINMUX_PAD3     0
+#  define SD_MMC_SPI                 SERCOM4
+#  define SD_MMC_SPI_PINMUX_SETTING  SPI_SIGNAL_MUX_SETTING_I
+#  define SD_MMC_SPI_PINMUX_PAD0     PINMUX_PA12D_SERCOM4_PAD0
+#  define SD_MMC_SPI_PINMUX_PAD1     PINMUX_PA13D_SERCOM4_PAD1
+#  define SD_MMC_SPI_PINMUX_PAD2     PINMUX_UNUSED
+#  define SD_MMC_SPI_PINMUX_PAD3     PINMUX_PA15D_SERCOM4_PAD3
 
-#  define SD_MMC_CS                  0
+#  define SD_MMC_CS                  PIN_PB30
 
-#  define SD_MMC_0_CD_GPIO           0
-#  define SD_MMC_0_CD_DETECT_VALUE   0
+#  define SD_MMC_0_CD_GPIO           PIN_PA03
+#  define SD_MMC_0_CD_DETECT_VALUE   HIGH
 #endif
 
 /* Define the SPI clock source */
