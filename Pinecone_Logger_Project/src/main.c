@@ -60,7 +60,7 @@ int main (void)
 	
 	system_init();
 	delay_init();
-	irq_initialize_vectors();
+	//irq_initialize_vectors();		//probably mandatory for SD card IO
 	
 	SD_UnitTest(&fileSystem);
 	

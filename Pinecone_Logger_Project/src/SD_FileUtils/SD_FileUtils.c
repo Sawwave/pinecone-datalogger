@@ -16,6 +16,7 @@ void fileWriteHeader(FIL *fileObj, const struct LoggerConfig *loggerConf);
 FRESULT SD_UnitTestRemoveFile(void);
 FRESULT SD_UnitTestCreateDebugFile(FIL *file);
 FRESULT SD_UnitTestReadFile(FIL *file);
+int SD_UnitTestLoadAndCheckDebugFile(void);
 
 /*SdCardInit
 Initializes the sd mmc connection, and attempts to mount the fileSystem.
@@ -212,17 +213,40 @@ int8_t SD_UnitTest(FATFS *fatfs){
 	return 0;
 }
 
+int SD_UnitTestLoadAndCheckDebugFile(void){
+	FIL file;
+	FRESULT res = SD_UnitTestCreateDebugFile(&file);
+	if(res != FR_OK)
+	{
+		return -1;
+	}
+	
+	struct LoggerConfig config;
+	bool success = readConfigFile(&config);
+	if(!success)
+	{
+		return -2;
+	}
+	
+	//TODO: assert and check config set correctly.
+	
+	
+}
+
 FRESULT SD_UnitTestCreateDebugFile(FIL *file){
-	FRESULT res; 
+	FRESULT res;
 	do{
-		f_open(file, SD_DEBUG_FILE, FA_CREATE_ALWAYS | FA_WRITE);
-	}while(res != FR_NOT_READY);
+		res = f_open(file, SD_DEBUG_FILE, FA_CREATE_ALWAYS | FA_WRITE);
+	}while(res == FR_NOT_READY);
 	if(res != FR_OK){
 		return res;
 	}
-	
-	res = f_puts("debug message\n w space start\n\n!@#%%^*(%^", file);
-	if(res != FR_OK){
+	const char *message = "debug message\n w space start\n\n!@#%%^*(%^";
+	size_t messageLen = strlen(message);
+	uint16_t charsWritten = 0;
+	charsWritten = f_puts("debug message\n w space start\n\n!@#%%^*(%^", file);
+	f_sync(file);
+	if(charsWritten < messageLen - 1){
 		return res;
 	}
 	res = f_close(file);
@@ -233,23 +257,16 @@ FRESULT SD_UnitTestCreateDebugFile(FIL *file){
 	return res;
 }
 
+
 FRESULT SD_UnitTestReadFile(FIL *file){
 	FRESULT res = f_open(file, SD_DEBUG_FILE,FA_READ);
 	if(res != FR_OK){
 		return res;
 	}
 	char buffer[256];
+	memset(buffer, 0, 256);
 	f_gets(&buffer[0],256, file);
 	uint8_t len = 0;
-	while(buffer[len] != 0){
-		len++;
-	}
-	if(len != 13){
-		return FR_TOO_MANY_OPEN_FILES;
-	}
-	
-	f_gets(&buffer[0], 256, file);
-	len = 0;
 	while(buffer[len] != 0){
 		len++;
 	}
@@ -257,22 +274,34 @@ FRESULT SD_UnitTestReadFile(FIL *file){
 		return FR_TOO_MANY_OPEN_FILES;
 	}
 	
+	memset(buffer, 0, 256);
 	f_gets(&buffer[0], 256, file);
 	len = 0;
 	while(buffer[len] != 0){
 		len++;
 	}
-	if(len != 0)
+	if(len != 15){
+		return FR_TOO_MANY_OPEN_FILES;
+	}
+	
+	memset(buffer, 0, 256);
+	f_gets(&buffer[0], 256, file);
+	len = 0;
+	while(buffer[len] != 0){
+		len++;
+	}
+	if(len != 1)
 	{
 		return FR_TOO_MANY_OPEN_FILES;
 	}
 	
+	memset(buffer, 0, 256);
 	f_gets(&buffer[0], 256, file);
 	len = 0;
 	while(buffer[len] != 0){
 		len++;
 	}
-	if(len != 9){
+	if(len != 10){
 		return FR_TOO_MANY_OPEN_FILES;
 	}
 	
