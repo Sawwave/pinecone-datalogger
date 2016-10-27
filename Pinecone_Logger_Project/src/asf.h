@@ -94,14 +94,19 @@
 #include <rtc_calendar.h>
 #include <rtc_tamper.h>
 
+// From module: SD/MMC Memory Control Access - Enable
+#include <sd_mmc_mem.h>
+
 // From module: SD/MMC stack on SPI interface
 #include <sd_mmc.h>
 
-// From module: SERCOM Polled API
+// From module: SERCOM Callback API
 #include <sercom.h>
+#include <sercom_interrupt.h>
 
-// From module: SERCOM SPI - Serial Peripheral Interface (Polled APIs)
+// From module: SERCOM SPI - Serial Peripheral Interface (Callback APIs)
 #include <spi.h>
+#include <spi_interrupt.h>
 
 // From module: SYSTEM - Clock Management for SAMD20
 #include <clock.h>

@@ -38,17 +38,17 @@
           <option id="sam0.drivers.extint" value="Add" config="callback" content-id="Atmel.ASF" />
           <option id="sam0.drivers.port" value="Add" config="" content-id="Atmel.ASF" />
           <option id="sam0.drivers.rtc" value="Add" config="calendar_polled" content-id="Atmel.ASF" />
-          <option id="sam0.drivers.sercom.spi" value="Add" config="polled" content-id="Atmel.ASF" />
+          <option id="sam0.drivers.sercom.spi" value="Add" config="callback" content-id="Atmel.ASF" />
           <option id="sam0.drivers.system" value="Add" config="" content-id="Atmel.ASF" />
+          <option id="sam0.drivers.tc" value="Add" config="callback" content-id="Atmel.ASF" />
           <option id="sam0.drivers.wdt" value="Add" config="callback" content-id="Atmel.ASF" />
           <option id="common.services.fs.fatfs" value="Add" config="" content-id="Atmel.ASF" />
-          <option id="sam0.drivers.tc" value="Add" config="callback" content-id="Atmel.ASF" />
           <option id="sam0.utils.linker_scripts" value="Add" config="" content-id="Atmel.ASF" />
         </options>
         <configurations>
           <configuration key="config.common.services.fs.fatfs.codepage" value="sbcs" default="sbcs" content-id="Atmel.ASF" />
           <configuration key="config.sam0.drivers.rtc" value="calendar_polled" default="count_callback" content-id="Atmel.ASF" />
-          <configuration key="config.common2.components.memory.sd_mmc.ctrl_access" value="disable" default="disable" content-id="Atmel.ASF" />
+          <configuration key="config.common2.components.memory.sd_mmc.ctrl_access" value="enable" default="disable" content-id="Atmel.ASF" />
         </configurations>
         <files>
           <file path="src/main.c" framework="" version="" source="common2/applications/user_application/main.c" changed="False" content-id="Atmel.ASF" />
@@ -259,12 +259,6 @@
           <file path="src/ASF/common/services/sleepmgr/sleepmgr.h" framework="" version="3.29.0" source="common\services\sleepmgr\sleepmgr.h" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/common/services/sleepmgr/samd/sleepmgr.h" framework="" version="3.29.0" source="common\services\sleepmgr\samd\sleepmgr.h" changed="False" content-id="Atmel.ASF" />
           <file path="src/Config/conf_sleepmgr.h" framework="" version="3.29.0" source="common\services\sleepmgr\samd\module_config\conf_sleepmgr.h" changed="False" content-id="Atmel.ASF" />
-          <file path="src/ASF/common2/components/memory/sd_mmc/sd_mmc.c" framework="" version="3.29.0" source="common2\components\memory\sd_mmc\sd_mmc.c" changed="False" content-id="Atmel.ASF" />
-          <file path="src/ASF/common2/components/memory/sd_mmc/sd_mmc_spi.c" framework="" version="3.29.0" source="common2\components\memory\sd_mmc\sd_mmc_spi.c" changed="False" content-id="Atmel.ASF" />
-          <file path="src/ASF/common2/components/memory/sd_mmc/sd_mmc.h" framework="" version="3.29.0" source="common2\components\memory\sd_mmc\sd_mmc.h" changed="False" content-id="Atmel.ASF" />
-          <file path="src/ASF/common2/components/memory/sd_mmc/sd_mmc_spi.h" framework="" version="3.29.0" source="common2\components\memory\sd_mmc\sd_mmc_spi.h" changed="False" content-id="Atmel.ASF" />
-          <file path="src/Config/conf_sd_mmc.h" framework="" version="3.29.0" source="common2\components\memory\sd_mmc\module_config_spi\conf_sd_mmc.h" changed="False" content-id="Atmel.ASF" />
-          <file path="src/ASF/common2/components/memory/sd_mmc/sd_mmc_protocol.h" framework="" version="3.29.0" source="common2\components\memory\sd_mmc\sd_mmc_protocol.h" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/common2/services/delay/sam0/cycle_counter.c" framework="" version="3.29.0" source="common2\services\delay\sam0\cycle_counter.c" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/common2/services/delay/sam0/cycle_counter.h" framework="" version="3.29.0" source="common2\services\delay\sam0\cycle_counter.h" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/common2/services/delay/delay.h" framework="" version="3.29.0" source="common2\services\delay\delay.h" changed="False" content-id="Atmel.ASF" />
@@ -302,6 +296,20 @@
           <file path="src/ASF/sam0/drivers/tc/tc_interrupt.h" framework="" version="3.29.0" source="sam0\drivers\tc\tc_interrupt.h" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/sam0/drivers/tc/tc.h" framework="" version="3.29.0" source="sam0\drivers\tc\tc.h" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/sam0/drivers/tc/tc_sam_d_r/tc.c" framework="" version="3.29.0" source="sam0\drivers\tc\tc_sam_d_r\tc.c" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/common2/components/memory/sd_mmc/sd_mmc_mem.c" framework="" version="3.29.0" source="common2\components\memory\sd_mmc\sd_mmc_mem.c" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/common2/components/memory/sd_mmc/sd_mmc_mem.h" framework="" version="3.29.0" source="common2\components\memory\sd_mmc\sd_mmc_mem.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/common2/components/memory/sd_mmc/sd_mmc.c" framework="" version="3.29.0" source="common2\components\memory\sd_mmc\sd_mmc.c" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/common2/components/memory/sd_mmc/sd_mmc_spi.c" framework="" version="3.29.0" source="common2\components\memory\sd_mmc\sd_mmc_spi.c" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/common2/components/memory/sd_mmc/sd_mmc.h" framework="" version="3.29.0" source="common2\components\memory\sd_mmc\sd_mmc.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/common2/components/memory/sd_mmc/sd_mmc_spi.h" framework="" version="3.29.0" source="common2\components\memory\sd_mmc\sd_mmc_spi.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/Config/conf_sd_mmc.h" framework="" version="3.29.0" source="common2\components\memory\sd_mmc\module_config_spi\conf_sd_mmc.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/common2/components/memory/sd_mmc/sd_mmc_protocol.h" framework="" version="3.29.0" source="common2\components\memory\sd_mmc\sd_mmc_protocol.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam0/drivers/sercom/sercom_interrupt.c" framework="" version="3.29.0" source="sam0\drivers\sercom\sercom_interrupt.c" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam0/drivers/sercom/sercom_interrupt.h" framework="" version="3.29.0" source="sam0\drivers\sercom\sercom_interrupt.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam0/drivers/sercom/spi/spi_interrupt.c" framework="" version="3.29.0" source="sam0\drivers\sercom\spi\spi_interrupt.c" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam0/drivers/sercom/spi/spi_interrupt.h" framework="" version="3.29.0" source="sam0\drivers\sercom\spi\spi_interrupt.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam0/drivers/sercom/spi/quick_start_master_callback/qs_spi_master_callback.h" framework="" version="3.29.0" source="sam0\drivers\sercom\spi\quick_start_master_callback\qs_spi_master_callback.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam0/drivers/sercom/spi/quick_start_slave_callback/qs_spi_slave_callback.h" framework="" version="3.29.0" source="sam0\drivers\sercom\spi\quick_start_slave_callback\qs_spi_slave_callback.h" changed="False" content-id="Atmel.ASF" />
         </files>
         <documentation help="http://asf.atmel.com/docs/3.29.0/common.applications.user_application.sam0_system.user_board.atsamd20j18/html/index.html" />
         <offline-documentation help="" />
@@ -342,10 +350,11 @@
       <Value>CYCLE_MODE</Value>
       <Value>ADC_CALLBACK_MODE=false</Value>
       <Value>EXTINT_CALLBACK_MODE=true</Value>
-      <Value>SPI_CALLBACK_MODE=false</Value>
       <Value>WDT_CALLBACK_MODE=true</Value>
       <Value>RTC_CALENDAR_ASYNC=false</Value>
       <Value>TC_ASYNC=true</Value>
+      <Value>SD_MMC_ENABLE</Value>
+      <Value>SPI_CALLBACK_MODE=true</Value>
     </ListValues>
   </armgcc.compiler.symbols.DefSymbols>
   <armgcc.compiler.directories.DefaultIncludePath>False</armgcc.compiler.directories.DefaultIncludePath>
@@ -414,7 +423,7 @@
   </armgcc.linker.libraries.LibrarySearchPaths>
   <armgcc.linker.optimization.GarbageCollectUnusedSections>True</armgcc.linker.optimization.GarbageCollectUnusedSections>
   <armgcc.linker.miscellaneous.LinkerFlags>-Wl,--entry=Reset_Handler -Wl,--cref -mthumb -T../src/ASF/sam0/utils/linker_scripts/samd20/gcc/samd20j18_flash.ld</armgcc.linker.miscellaneous.LinkerFlags>
-  <armgcc.preprocessingassembler.general.AssemblerFlags>-DARM_MATH_CM0PLUS=true -DBOARD=USER_BOARD -DCYCLE_MODE -DADC_CALLBACK_MODE=false -DEXTINT_CALLBACK_MODE=true -DSPI_CALLBACK_MODE=false -DWDT_CALLBACK_MODE=true -DRTC_CALENDAR_ASYNC=false -DTC_ASYNC=true</armgcc.preprocessingassembler.general.AssemblerFlags>
+  <armgcc.preprocessingassembler.general.AssemblerFlags>-DARM_MATH_CM0PLUS=true -DBOARD=USER_BOARD -DCYCLE_MODE -DADC_CALLBACK_MODE=false -DEXTINT_CALLBACK_MODE=true -DWDT_CALLBACK_MODE=true -DRTC_CALENDAR_ASYNC=false -DTC_ASYNC=true -DSD_MMC_ENABLE -DSPI_CALLBACK_MODE=true</armgcc.preprocessingassembler.general.AssemblerFlags>
   <armgcc.preprocessingassembler.general.DefaultIncludePath>False</armgcc.preprocessingassembler.general.DefaultIncludePath>
   <armgcc.preprocessingassembler.general.IncludePaths>
     <ListValues>
@@ -480,10 +489,11 @@
       <Value>CYCLE_MODE</Value>
       <Value>ADC_CALLBACK_MODE=false</Value>
       <Value>EXTINT_CALLBACK_MODE=true</Value>
-      <Value>SPI_CALLBACK_MODE=false</Value>
       <Value>WDT_CALLBACK_MODE=true</Value>
       <Value>RTC_CALENDAR_ASYNC=false</Value>
       <Value>TC_ASYNC=true</Value>
+      <Value>SD_MMC_ENABLE</Value>
+      <Value>SPI_CALLBACK_MODE=true</Value>
     </ListValues>
   </armgcc.compiler.symbols.DefSymbols>
   <armgcc.compiler.directories.DefaultIncludePath>False</armgcc.compiler.directories.DefaultIncludePath>
@@ -552,9 +562,10 @@
     </ListValues>
   </armgcc.linker.libraries.LibrarySearchPaths>
   <armgcc.linker.optimization.GarbageCollectUnusedSections>True</armgcc.linker.optimization.GarbageCollectUnusedSections>
+  <armgcc.linker.memorysettings.ExternalRAM />
   <armgcc.linker.miscellaneous.LinkerFlags>-Wl,--entry=Reset_Handler -Wl,--cref -mthumb -T../src/ASF/sam0/utils/linker_scripts/samd20/gcc/samd20j18_flash.ld</armgcc.linker.miscellaneous.LinkerFlags>
   <armgcc.assembler.debugging.DebugLevel>Default (-g)</armgcc.assembler.debugging.DebugLevel>
-  <armgcc.preprocessingassembler.general.AssemblerFlags>-DARM_MATH_CM0PLUS=true -DBOARD=USER_BOARD -DCYCLE_MODE -DADC_CALLBACK_MODE=false -DEXTINT_CALLBACK_MODE=true -DSPI_CALLBACK_MODE=false -DWDT_CALLBACK_MODE=true -DRTC_CALENDAR_ASYNC=false -DTC_ASYNC=true</armgcc.preprocessingassembler.general.AssemblerFlags>
+  <armgcc.preprocessingassembler.general.AssemblerFlags>-DARM_MATH_CM0PLUS=true -DBOARD=USER_BOARD -DCYCLE_MODE -DADC_CALLBACK_MODE=false -DEXTINT_CALLBACK_MODE=true -DWDT_CALLBACK_MODE=true -DRTC_CALENDAR_ASYNC=false -DTC_ASYNC=true -DSD_MMC_ENABLE -DSPI_CALLBACK_MODE=true</armgcc.preprocessingassembler.general.AssemblerFlags>
   <armgcc.preprocessingassembler.general.DefaultIncludePath>False</armgcc.preprocessingassembler.general.DefaultIncludePath>
   <armgcc.preprocessingassembler.general.IncludePaths>
     <ListValues>
@@ -640,7 +651,9 @@
     <Folder Include="src\ASF\sam0\drivers\sercom\spi\" />
     <Folder Include="src\ASF\sam0\drivers\sercom\spi\quick_start_dma\" />
     <Folder Include="src\ASF\sam0\drivers\sercom\spi\quick_start_master\" />
+    <Folder Include="src\ASF\sam0\drivers\sercom\spi\quick_start_master_callback\" />
     <Folder Include="src\ASF\sam0\drivers\sercom\spi\quick_start_slave\" />
+    <Folder Include="src\ASF\sam0\drivers\sercom\spi\quick_start_slave_callback\" />
     <Folder Include="src\ASF\sam0\drivers\system\" />
     <Folder Include="src\ASF\sam0\drivers\system\clock\" />
     <Folder Include="src\ASF\sam0\drivers\system\clock\clock_samd20\" />
@@ -701,6 +714,24 @@
     <Compile Include="src\ASF\common2\components\memory\sd_mmc\sd_mmc.c">
       <SubType>compile</SubType>
     </Compile>
+    <None Include="src\ASF\common2\components\memory\sd_mmc\sd_mmc.h">
+      <SubType>compile</SubType>
+    </None>
+    <Compile Include="src\ASF\common2\components\memory\sd_mmc\sd_mmc_mem.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <None Include="src\ASF\common2\components\memory\sd_mmc\sd_mmc_mem.h">
+      <SubType>compile</SubType>
+    </None>
+    <None Include="src\ASF\common2\components\memory\sd_mmc\sd_mmc_protocol.h">
+      <SubType>compile</SubType>
+    </None>
+    <Compile Include="src\ASF\common2\components\memory\sd_mmc\sd_mmc_spi.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <None Include="src\ASF\common2\components\memory\sd_mmc\sd_mmc_spi.h">
+      <SubType>compile</SubType>
+    </None>
     <Compile Include="src\ASF\sam0\drivers\adc\adc_sam_d_r\adc.c">
       <SubType>compile</SubType>
     </Compile>
@@ -708,6 +739,24 @@
       <SubType>compile</SubType>
     </Compile>
     <None Include="src\ASF\sam0\drivers\tc\tc.h">
+      <SubType>compile</SubType>
+    </None>
+    <Compile Include="src\ASF\sam0\drivers\sercom\sercom_interrupt.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <None Include="src\ASF\sam0\drivers\sercom\sercom_interrupt.h">
+      <SubType>compile</SubType>
+    </None>
+    <None Include="src\ASF\sam0\drivers\sercom\spi\quick_start_master_callback\qs_spi_master_callback.h">
+      <SubType>compile</SubType>
+    </None>
+    <None Include="src\ASF\sam0\drivers\sercom\spi\quick_start_slave_callback\qs_spi_slave_callback.h">
+      <SubType>compile</SubType>
+    </None>
+    <Compile Include="src\ASF\sam0\drivers\sercom\spi\spi_interrupt.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <None Include="src\ASF\sam0\drivers\sercom\spi\spi_interrupt.h">
       <SubType>compile</SubType>
     </None>
     <Compile Include="src\ASF\sam0\drivers\tc\tc_interrupt.c">
@@ -719,6 +768,9 @@
     <Compile Include="src\ASF\sam0\drivers\tc\tc_sam_d_r\tc.c">
       <SubType>compile</SubType>
     </Compile>
+    <None Include="src\config\conf_sd_mmc.h">
+      <SubType>compile</SubType>
+    </None>
     <Compile Include="src\DS1302\DS1302.c">
       <SubType>compile</SubType>
     </Compile>
@@ -848,21 +900,6 @@
     <None Include="src\ASF\common2\services\delay\sam0\cycle_counter.h">
       <SubType>compile</SubType>
     </None>
-    <None Include="src\ASF\common2\components\memory\sd_mmc\sd_mmc_protocol.h">
-      <SubType>compile</SubType>
-    </None>
-    <None Include="src\config\conf_sd_mmc.h">
-      <SubType>compile</SubType>
-    </None>
-    <None Include="src\ASF\common2\components\memory\sd_mmc\sd_mmc_spi.h">
-      <SubType>compile</SubType>
-    </None>
-    <None Include="src\ASF\common2\components\memory\sd_mmc\sd_mmc.h">
-      <SubType>compile</SubType>
-    </None>
-    <Compile Include="src\ASF\common2\components\memory\sd_mmc\sd_mmc_spi.c">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="src\ASF\common\services\sleepmgr\samd\sleepmgr.c">
       <SubType>compile</SubType>
     </Compile>

@@ -28,16 +28,11 @@ FR_INT_ERR if assertion failed for some unknown reason (MORE DOCUMENTATION PLEAS
 */
 void SdCardInit(FATFS *fatFileSys, FRESULT *mountingResult){
 	sd_mmc_init();
-	sd_mmc_err_t checkStatus;
+	Ctrl_status checkStatus;
 	do{
-		checkStatus = sd_mmc_check(0);
-	} while (checkStatus != SD_MMC_OK);
-	if(checkStatus != SD_MMC_OK){
-		int x = 1;
-		x *= 1000;
-		int *y = &x;
-		(*y)++;
-	}
+		checkStatus = sd_mmc_test_unit_ready(0);
+	} while (checkStatus != CTRL_GOOD);
+	
 	
 	memset(fatFileSys, 0, sizeof(FATFS));
 	*mountingResult = f_mount(SD_VOLUME_NUMBER, fatFileSys);
@@ -220,7 +215,7 @@ int8_t SD_UnitTest(FATFS *fatfs){
 FRESULT SD_UnitTestCreateDebugFile(FIL *file){
 	FRESULT res; 
 	do{
-		f_open(file, SD_DEBUG_FILE,FA_CREATE_ALWAYS);
+		f_open(file, SD_DEBUG_FILE, FA_CREATE_ALWAYS | FA_WRITE);
 	}while(res != FR_NOT_READY);
 	if(res != FR_OK){
 		return res;

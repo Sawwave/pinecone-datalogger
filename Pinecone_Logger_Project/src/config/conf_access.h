@@ -55,56 +55,21 @@
 #define _CONF_ACCESS_H_
 
 #include "compiler.h"
-#include "board.h"
+//#include "board.h"
 
 
 /*! \name Activation of Logical Unit Numbers
  */
 //! @{
-#ifdef VIRTUAL_MEMORY_ENABLE
-#define LUN_0                ENABLE   //!< Enable On-Chip Virtual Memory.
-#else
-#define LUN_0                DISABLE  //!< Disable On-Chip Virtual Memory.
-#endif
-
-#ifdef AT45DBX_ENABLE
-#define LUN_1                ENABLE   //!< Enable AT45DBX Data Flash.
-#else
-#define LUN_1                DISABLE  //!< Disable AT45DBX Data Flash.
-#endif
-
-//! New setting for SD/MMC stack in common folder
-#ifdef SD_MMC_ENABLE
-#define LUN_2                ENABLE   //!< Enable common SD/MMC stack
-#define LUN_3                ENABLE
-#else
-#define LUN_2                DISABLE  //!< Disable common SD/MMC stack
-#define LUN_3                DISABLE
-#endif
-
-//! Old setting for SD/MMC stack in AVR folder
-#ifdef SD_MMC_SPI_ENABLE
-#define LUN_4                ENABLE   //!< Enable SD/MMC Card over SPI or SPI.
-#else
-#define LUN_4                DISABLE  //!< Disable SD/MMC Card over SPI or SPI.
-#endif
-
-//! Old setting for SD/MMC stack in AVR folder
-#ifdef SD_MMC_MCI_ENABLE
-#define LUN_5                ENABLE   //!< Enable SD/MMC Card over MCI or MCI.
-#else
-#define LUN_5                DISABLE  //!< Disable SD/MMC Card over MCI or MCI.
-#endif
-
-#define LUN_6                DISABLE
-#define LUN_7                DISABLE
-
-#ifdef USB_MASS_STORAGE_ENABLE
-#define LUN_USB              ENABLE   //!< Enable Host Mass-Storage Memory.
-#else
-#define LUN_USB              DISABLE  //!< Disable Host Mass-Storage Memory.
-#endif
-
+	#define LUN_0                DISABLE   //!< On-Chip Virtual Memory.
+	#define LUN_1                DISABLE   //!< AT45DBX Data Flash.
+	#define LUN_2                ENABLE    //!< SD/MMC Card over Slot 0
+	#define LUN_3                DISABLE   //!< Spare
+	#define LUN_4                DISABLE   //!< Spare
+	#define LUN_5                DISABLE   //!< Spare
+	#define LUN_6                DISABLE   //!< Spare
+	#define LUN_7                DISABLE   //!< Spare
+	#define LUN_USB              DISABLE   //!< Host Mass-Storage Memory.
 //! @}
 
 /*! \name LUN 0 Definitions
@@ -245,26 +210,15 @@
 #define memory_start_write_action(nb_sectors)
 #define memory_stop_write_action()
 //! @}
-
 /*! \name Activation of Interface Features
  */
 //! @{
-#ifdef ACCESS_USB_ENABLED
-#define ACCESS_USB           true  //!< MEM <-> USB interface.
-#else
-#define ACCESS_USB           false //!< MEM <-> USB interface.
-#endif
-
-#ifdef ACCESS_MEM_TO_RAM_ENABLED
-#define ACCESS_MEM_TO_RAM    true  //!< MEM <-> RAM interface.
-#else
-#define ACCESS_MEM_TO_RAM    false //!< MEM <-> RAM interface.
-#endif
-
-#define ACCESS_STREAM        false //!< Streaming MEM <-> MEM interface.
-#define ACCESS_STREAM_RECORD false //!< Streaming MEM <-> MEM interface in record mode.
-#define ACCESS_MEM_TO_MEM    false //!< MEM <-> MEM interface.
-#define ACCESS_CODEC         false //!< Codec interface.
+#define ACCESS_USB           false   //!< MEM <-> USB interface.
+#define ACCESS_MEM_TO_RAM    true    //!< MEM <-> RAM interface.
+#define ACCESS_STREAM        false   //!< Streaming MEM <-> MEM interface.
+#define ACCESS_STREAM_RECORD false   //!< Streaming MEM <-> MEM interface in record mode.
+#define ACCESS_MEM_TO_MEM    false   //!< MEM <-> MEM interface.
+#define ACCESS_CODEC         false   //!< Codec interface.
 //! @}
 
 /*! \name Specific Options for Access Control

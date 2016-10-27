@@ -160,7 +160,6 @@ extern "C" {
 #define USER_BOARD                 99  //!< User-reserved board (if any).
 #define DUMMY_BOARD               100  //!< Dummy board to support board-independent applications (e.g. bootloader).
 //! @}
-
 /*! \name Extension Boards
  */
 //! @{

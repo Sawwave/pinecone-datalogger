@@ -4,9 +4,17 @@
 
 src\ASF\common2\components\memory\sd_mmc\sd_mmc.c
 
+src\ASF\common2\components\memory\sd_mmc\sd_mmc_mem.c
+
+src\ASF\common2\components\memory\sd_mmc\sd_mmc_spi.c
+
 src\ASF\sam0\drivers\adc\adc_sam_d_r\adc.c
 
 src\ASF\sam0\drivers\extint\extint_sam_d_r\extint.c
+
+src\ASF\sam0\drivers\sercom\sercom_interrupt.c
+
+src\ASF\sam0\drivers\sercom\spi\spi_interrupt.c
 
 src\ASF\sam0\drivers\tc\tc_interrupt.c
 
@@ -43,8 +51,6 @@ src\ASF\sam0\drivers\sercom\spi\spi.c
 src\ASF\sam0\drivers\extint\extint_callback.c
 
 src\ASF\common2\services\delay\sam0\cycle_counter.c
-
-src\ASF\common2\components\memory\sd_mmc\sd_mmc_spi.c
 
 src\ASF\common\services\sleepmgr\samd\sleepmgr.c
 

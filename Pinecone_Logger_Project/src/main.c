@@ -53,14 +53,14 @@ struct adc_module adcModule;
 
 int main (void)
 {
-
-	
 	struct LoggerConfig loggerConfig;
 	
 	FATFS fileSystem;
 	FIL fileObj;
 	
 	system_init();
+	delay_init();
+	irq_initialize_vectors();
 	
 	SD_UnitTest(&fileSystem);
 	
