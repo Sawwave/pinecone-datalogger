@@ -16,7 +16,7 @@ void fileWriteHeader(FIL *fileObj, const struct LoggerConfig *loggerConf);
 FRESULT SD_UnitTestRemoveFile(void);
 FRESULT SD_UnitTestCreateDebugFile(FIL *file);
 FRESULT SD_UnitTestReadFile(FIL *file);
-int SD_UnitTestLoadAndCheckDebugFile(void);
+int SD_UnitTestLoadAndCheckDebugFile(const char *addresses, uint8_t numAddresses, const char *interval, bool defer);
 
 /*SdCardInit
 Initializes the sd mmc connection, and attempts to mount the fileSystem.
@@ -155,23 +155,28 @@ i/d specifies if the sensor takes the reading immediately on waking up, or defer
 bool readConfigFile(struct LoggerConfig *config){
 	FIL fileObj;
 	char intervalBuffer[5];
-	char flagBuffer[2];
+	char flagBuffer[4];
 	memset(intervalBuffer, 0, 5 * sizeof(char));
-	memset(flagBuffer, 0, 2 * sizeof(char));
+	memset(flagBuffer, 0, 10 * sizeof(char));
+	memset(config->SDI12_SensorAddresses, 0, sizeof(char) * (SDI12_MAX_SUPPORTED_SENSORS + 1));
 	
 	if(f_open(&fileObj, SD_CONFIG_FILENAME, FA_READ) == FR_OK){
 		f_gets(config->SDI12_SensorAddresses, SDI12_MAX_SUPPORTED_SENSORS + 1, &fileObj);
-		f_gets(intervalBuffer, 5, &fileObj);
-		f_gets(flagBuffer, 2, &fileObj);
+		f_gets(intervalBuffer, 6, &fileObj);
+		f_gets(flagBuffer, 4, &fileObj);
 		f_close(&fileObj);
 		
-		//count up the number of addresses.
-		uint8_t numSensors = 0;
-		while(config->SDI12_SensorAddresses[(config->numSdiSensors)] != 0){
+		//count up the number of addresses. Consider a null terminator, CR, or LF to be terminating.
+		config->numSdiSensors = 0;
+		while(config->SDI12_SensorAddresses[(config->numSdiSensors)] != 0 && 
+		config->SDI12_SensorAddresses[(config->numSdiSensors)] != 10 &&
+		config->SDI12_SensorAddresses[(config->numSdiSensors)] != 13){
+			//query the sensor for the num values it has
+			config->SDI12_SensorNumValues[config->numSdiSensors] = SDI12_GetNumReadingsFromSensorMetadata(config->SDI12_SensorAddresses[config->numSdiSensors]);
 			config->numSdiSensors++;
 		}
 		
-		char *ptrToIntervalBuffer = &(flagBuffer[0]);
+		char *ptrToIntervalBuffer = &(intervalBuffer[0]);
 		config->loggingInterval = strtol(ptrToIntervalBuffer, &ptrToIntervalBuffer, 10);
 		if(flagBuffer[0] == 'd'){
 			config->logImmediately = false;
@@ -194,44 +199,98 @@ int8_t SD_UnitTest(FATFS *fatfs){
 	if(result != FR_OK){
 		return result * -1;
 	}
-	FRESULT createResult = SD_UnitTestCreateDebugFile(&file);
-	
-	if(createResult != FR_OK){
-		return createResult * -1;
+	int returnCode;
+	returnCode = SD_UnitTestLoadAndCheckDebugFile("asdfASDF",8, "0000", true);
+	if(returnCode < 0){
+		return -100;
 	}
-	
-	FRESULT readResult = SD_UnitTestReadFile(&file);
-	if(readResult != FR_OK){
-		return readResult *-1;
+	returnCode = SD_UnitTestLoadAndCheckDebugFile("asdfASDF",8, "1000", false);
+	if(returnCode < 0){
+		return -101;
 	}
-	
-	FRESULT deleteResult = SD_UnitTestRemoveFile();
-	if(deleteResult != FR_OK){
-		return deleteResult * -1;
+	returnCode = SD_UnitTestLoadAndCheckDebugFile("asdfASDF",8, "0990", false);
+	if(returnCode < 0){
+		return -102;
 	}
-	
+	returnCode = SD_UnitTestLoadAndCheckDebugFile("asdfASDF",8, "5523", false);
+	if(returnCode < 0){
+		return -103;
+	}
+	returnCode = SD_UnitTestLoadAndCheckDebugFile("asdfASDF",8, "0000", true);
+	if(returnCode < 0){
+		return -104;
+	}
+	returnCode = SD_UnitTestLoadAndCheckDebugFile("a",1, "0000", false);
+	if(returnCode < 0){
+		return -105;
+	}
+	return 0;
+	returnCode = SD_UnitTestLoadAndCheckDebugFile("0",1, "0000", false);
+	if(returnCode < 0){
+		return -106;
+	}
+	return 0;
+	returnCode = SD_UnitTestLoadAndCheckDebugFile("96",2, "0000", false);
+	if(returnCode < 0){
+		return -107;
+	}
+	return 0;
+	returnCode = SD_UnitTestLoadAndCheckDebugFile("1NbB",4, "0900", false);
+	if(returnCode < 0){
+		return -108;
+	}
 	return 0;
 }
 
-int SD_UnitTestLoadAndCheckDebugFile(void){
+int SD_UnitTestLoadAndCheckDebugFile(const char *addresses, uint8_t numAddresses, const char *interval, bool defer){
 	FIL file;
-	FRESULT res = SD_UnitTestCreateDebugFile(&file);
-	if(res != FR_OK)
-	{
+	FRESULT result;
+	result = f_open(&file,SD_CONFIG_FILENAME, FA_CREATE_ALWAYS | FA_WRITE);
+	if(result != FR_OK){
 		return -1;
 	}
 	
+	f_puts(addresses, &file);
+	f_putc('\n', &file);
+	f_puts(interval, &file);
+	f_putc('\n', &file);
+	if(defer){
+		f_puts("d", &file);
+	}
+	else{
+		f_puts("i", &file);
+	}
+	f_putc('\n',&file);
+	f_close(&file);
+
 	struct LoggerConfig config;
 	bool success = readConfigFile(&config);
 	if(!success)
 	{
-		return -2;
+		return -4;
 	}
 	
-	//TODO: assert and check config set correctly.
-	
-	
+	if(config.numSdiSensors != numAddresses){
+		return -5;
+	}
+	for(int x = 0; x < numAddresses;x++){
+		if(config.SDI12_SensorAddresses[x] != addresses[x]){
+			return -6;
+		}
+		if(config.SDI12_SensorNumValues[x] != 0){
+			return -7;
+		}
+	}
+	int intParse = atoi(interval);
+	if(config.loggingInterval != intParse){
+		return -8;
+	}
+	if(config.logImmediately == defer){
+		return -9;
+	}
+	return 1;
 }
+
 
 FRESULT SD_UnitTestCreateDebugFile(FIL *file){
 	FRESULT res;

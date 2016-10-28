@@ -8,7 +8,7 @@
 #include <string.h>
 #include "SDI12/SDI12.h"
 
-#define SDI12_MAX_NUMBER_TRANSACTION_ATTEMPTS 5
+#define SDI12_MAX_NUMBER_TRANSACTION_ATTEMPTS 3
 
 #define DEBUG_A
 
@@ -262,8 +262,8 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction(const char *message, const uint8
 	cfg.input_pull = PORT_PIN_PULL_NONE;
 	port_pin_set_config(SDI_PIN, &cfg);
 	
-	//wait for the timeout or for the data line to go LOW. A timeout value of 40000 gives us roughly >20ms until timeout
-	uint16_t timeout = 40000;
+	//wait for the timeout or for the data line to go LOW. A timeout value of 8000 gives us roughly >20ms until timeout
+	uint16_t timeout = 8000;
 	do{
 		portable_delay_cycles(5);
 	} while( (timeout--) && ((SDI_PIN_PORT.IN.reg & SDI_PIN_PINMASK) != 0) );
