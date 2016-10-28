@@ -12,12 +12,17 @@
 #define SD_DEBUG_FILE "0:debug.txt"
 
 void fileWriteHeader(FIL *fileObj, const struct LoggerConfig *loggerConf);
+bool tryReadTimeFile(void);
+void SdCardInit(FATFS *fatFileSys, FRESULT *mountingResult);
+bool openDataFileOrCreateIfMissing(FIL *fileObj, const struct LoggerConfig *loggerConf);
+bool readConfigFile(struct LoggerConfig *config);
 
 FRESULT SD_UnitTestRemoveFile(void);
 FRESULT SD_UnitTestCreateDebugFile(FIL *file);
 FRESULT SD_UnitTestReadFile(FIL *file);
 int SD_UnitTestLoadAndCheckDebugFile(const char *addresses, uint8_t numAddresses, const char *interval, bool defer);
 void SD_UnitTestHeaderCreate(struct LoggerConfig *config, const char *headerFileName);
+void SD_UnitTestReadTimeFile(const struct Ds1302DateTime *dateTime);
 
 /*SdCardInit
 Initializes the sd mmc connection, and attempts to mount the fileSystem.
@@ -168,7 +173,7 @@ bool readConfigFile(struct LoggerConfig *config){
 		
 		//count up the number of addresses. Consider a null terminator, CR, or LF to be terminating.
 		config->numSdiSensors = 0;
-		while(config->SDI12_SensorAddresses[(config->numSdiSensors)] != 0 && 
+		while(config->SDI12_SensorAddresses[(config->numSdiSensors)] != 0 &&
 		config->SDI12_SensorAddresses[(config->numSdiSensors)] != 10 &&
 		config->SDI12_SensorAddresses[(config->numSdiSensors)] != 13){
 			//query the sensor for the num values it has
@@ -215,6 +220,22 @@ int8_t SD_UnitTest(FATFS *fatfs){
 	config.numSdiSensors = 0;
 	SD_UnitTestHeaderCreate(&config, "h2.txt");
 	return 0;
+}
+
+
+
+void SD_UnitTestReadTimeFile(const char *dateTimeStr){
+	//create a dateTime file from the given dateTime
+	FIL file;
+	char buffer[32];
+	f_open(&file, SD_TIME_FILENAME,FA_CREATE_ALWAYS | FA_WRITE);
+	f_puts(&file, dateTimeStr);
+	f_close(&file);
+	
+	//TODO: change tryReadTimeFile to return the datetime struct, then set from there. Better separation of utility, and easier testing.
+	return tryReadTimeFile();
+	
+	
 }
 
 void SD_UnitTestHeaderCreate(struct LoggerConfig *config, const char *headerFileName){
