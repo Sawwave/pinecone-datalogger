@@ -17,6 +17,7 @@ FRESULT SD_UnitTestRemoveFile(void);
 FRESULT SD_UnitTestCreateDebugFile(FIL *file);
 FRESULT SD_UnitTestReadFile(FIL *file);
 int SD_UnitTestLoadAndCheckDebugFile(const char *addresses, uint8_t numAddresses, const char *interval, bool defer);
+void SD_UnitTestHeaderCreate(struct LoggerConfig *config, const char *headerFileName);
 
 /*SdCardInit
 Initializes the sd mmc connection, and attempts to mount the fileSystem.
@@ -107,8 +108,7 @@ void fileWriteHeader(FIL *fileObj, const struct LoggerConfig *loggerConf){
 	//create the header for the data file
 	f_puts("Date,Time,TcPort1,TcPort2,TcPort3,TcPort4,Dht1Temp,Dht1Rh,Dht2Temp,Dht2Rh", fileObj);
 
-	//query the SDI sensors, and add headers for each sensor, and each value per
-	char sdiColumnHeader[9] = {',','S','D','I','_','A','.','0','0'};	//,SDI12_A.00
+	char sdiColumnHeader[10] = {',','S','D','I','_','A','.','0','0',0};	//,SDI12_A.00
 	const uint8_t sdiHeaderAddressIndex = 5;
 	const uint8_t sdiHeaderOnesValueIndex = 8;
 	
@@ -199,47 +199,31 @@ int8_t SD_UnitTest(FATFS *fatfs){
 	if(result != FR_OK){
 		return result * -1;
 	}
-	int returnCode;
-	returnCode = SD_UnitTestLoadAndCheckDebugFile("asdfASDF",8, "0000", true);
-	if(returnCode < 0){
-		return -100;
-	}
-	returnCode = SD_UnitTestLoadAndCheckDebugFile("asdfASDF",8, "1000", false);
-	if(returnCode < 0){
-		return -101;
-	}
-	returnCode = SD_UnitTestLoadAndCheckDebugFile("asdfASDF",8, "0990", false);
-	if(returnCode < 0){
-		return -102;
-	}
-	returnCode = SD_UnitTestLoadAndCheckDebugFile("asdfASDF",8, "5523", false);
-	if(returnCode < 0){
-		return -103;
-	}
-	returnCode = SD_UnitTestLoadAndCheckDebugFile("asdfASDF",8, "0000", true);
-	if(returnCode < 0){
-		return -104;
-	}
-	returnCode = SD_UnitTestLoadAndCheckDebugFile("a",1, "0000", false);
-	if(returnCode < 0){
-		return -105;
-	}
+	struct LoggerConfig config;
+	config.loggingInterval = 0;
+	config.logImmediately = false;
+	config.numSdiSensors = 3;
+	config.SDI12_SensorAddresses[0] = 'a';
+	config.SDI12_SensorAddresses[1] = 'b';
+	config.SDI12_SensorAddresses[2] = 'c';
+	config.SDI12_SensorAddresses[3] = 'X';
+	config.SDI12_SensorNumValues[0] = 2;
+	config.SDI12_SensorNumValues[1] = 3;
+	config.SDI12_SensorNumValues[2] = 4;
+	config.SDI12_SensorNumValues[3] = 200;
+	SD_UnitTestHeaderCreate(&config, "h1.txt");
+	config.numSdiSensors = 0;
+	SD_UnitTestHeaderCreate(&config, "h2.txt");
 	return 0;
-	returnCode = SD_UnitTestLoadAndCheckDebugFile("0",1, "0000", false);
-	if(returnCode < 0){
-		return -106;
-	}
-	return 0;
-	returnCode = SD_UnitTestLoadAndCheckDebugFile("96",2, "0000", false);
-	if(returnCode < 0){
-		return -107;
-	}
-	return 0;
-	returnCode = SD_UnitTestLoadAndCheckDebugFile("1NbB",4, "0900", false);
-	if(returnCode < 0){
-		return -108;
-	}
-	return 0;
+}
+
+void SD_UnitTestHeaderCreate(struct LoggerConfig *config, const char *headerFileName){
+	f_unlink(SD_DATALOG_FILENAME);
+	FILE file;
+	f_open(&file,headerFileName, FA_CREATE_ALWAYS | FA_WRITE);
+	
+	fileWriteHeader(&file, config);
+	f_close(&file);
 }
 
 int SD_UnitTestLoadAndCheckDebugFile(const char *addresses, uint8_t numAddresses, const char *interval, bool defer){
