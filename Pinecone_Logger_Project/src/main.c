@@ -60,16 +60,25 @@ int main (void)
 	
 	system_init();
 	delay_init();
-	//irq_initialize_vectors();		//probably mandatory for SD card IO
 	
-	SD_UnitTest(&fileSystem);
+	//start with all power mosfets off
+	MOSFET_PORT.DIRSET = ALL_MOSFET_PINMASK;
+	MOSFET_PORT.OUTCLR = ALL_MOSFET_PINMASK;
 	
-	//WAKE UP DS1302, SD card,
-	//componentInit(&fileSystem);
+	//wake up the SD card
+	MOSFET_PORT.DIRSET = SD_CARD_MOSFET_PINMASK;
 	
-	//tryReadTimeFile();
+	componentInit(&fileSystem);
+	struct Ds1302DateTime dateTime;
+	tryReadTimeFile(&dateTime);
+	Ds1302SetDateTime(&dateTime);
 	
-	//readConfigFile(&loggerConfig);
+	readConfigFile(&loggerConfig);
+	
+	openDataFileOrCreateIfMissing(&fileObj, &loggerConfig);
+	
+	//SD_UnitTest(&fileSystem);
+	
 	
 	//QUERY SDI SENSORS FOR METADATA
 	
@@ -77,6 +86,8 @@ int main (void)
 	
 	while(1){
 		
+		MOSFET_PORT.OUTSET = DENDRO_TC_AMP_MOSFET_PINMASK;
+		Max31856ConfigureRegisters(&spiMasterModule, &spiSlaveInstance, MAX31856_THERMOCOUPLE_TYPE_USED);
 	}
 }
 
@@ -90,8 +101,6 @@ void componentInit(FATFS *fatFileSystem){
 	DS1302Init();
 	//wake up SD card
 	SdCardInit(fatFileSystem, &mountingResult);
-	//wake up MAX31856
-	amplifierStatus =  Max31856ConfigureRegisters(&spiMasterModule, &spiSlaveInstance, MAX31856_THERMOCOUPLE_TYPE_USED);
 	ConfigureDendroADC(&adcModule);
 }
 

@@ -48,8 +48,6 @@
 #ifndef CONF_BOARD_H
 #define CONF_BOARD_H
 
-
-
 #define SDI12_MAX_SUPPORTED_SENSORS 25
 
 
@@ -59,6 +57,7 @@ struct LoggerConfig{
 	uint8_t numSdiSensors;
 	uint16_t loggingInterval;
 	bool logImmediately;
+	bool checkFileIntegrity;
 };
 
 
@@ -67,8 +66,6 @@ struct LoggerConfig{
 #define SD_DATALOG_FILENAME "0:data.csv"
 #define SD_READING_IN_PROGRESS_FILENAME "0:a"
 #define SD_CONFIG_FILENAME "0:lgr.cfg"
-
-
 
 #define SDI_PIN PIN_PA09
 #define SDI_PIN_PORT PORTA
@@ -79,9 +76,9 @@ struct LoggerConfig{
 
 #define MAX31856_THERMOCOUPLE_TYPE_USED MAX31856_THERMOCOUPLE_TYPE_T
 
-#define DS1302_DATA_PIN		PIN_PA03
-#define DS1302_CLOCK_PIN	PIN_PA04
-#define DS1302_ENABLE_PIN	PIN_PA05
+#define DS1302_DATA_PIN		PIN_PA10
+#define DS1302_CLOCK_PIN	PIN_PA11
+#define DS1302_ENABLE_PIN	PIN_PA12
 
 #define MAX31856_SPI_SERCOM_MODULE	SERCOM0
 #define MAX31856_SPI_PINMUX_SETTING SPI_SIGNAL_MUX_SETTING_E
@@ -90,5 +87,14 @@ struct LoggerConfig{
 #define MAX31856_SPI_PAD2			PINMUX_PA06D_SERCOM0_PAD2
 #define MAX31856_SPI_PAD3			PINMUX_PA07D_SERCOM0_PAD3
 #define MAX31856_CS_PIN				PIN_PA06
+
+
+//Mosfet PINS
+#define MOSFET_PORT					PORTA
+#define SDI_DHT22_POWER_MOSFET_PINMASK	0x1	//PIN_PA00
+#define HEATER_MOSFET_PINAMSK			0x2 //PIN_PA01
+#define DENDRO_TC_AMP_MOSFET_PINMASK		0x4 //PIN_PA02
+#define SD_CARD_MOSFET_PINMASK			0x8 //PIN_PA03
+#define ALL_MOSFET_PINMASK				0xF // 1 or 2 or 4 or 8
 
 #endif // CONF_BOARD_H

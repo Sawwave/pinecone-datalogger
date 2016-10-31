@@ -12,6 +12,7 @@
 #define SD_DEBUG_FILE "0:debug.txt"
 
 void fileWriteHeader(FIL *fileObj, const struct LoggerConfig *loggerConf);
+void checkAndFixLastFileLineIntegrity(FIL *file, uint16_t expectedValues);
 FRESULT SD_UnitTestRemoveFile(void);
 FRESULT SD_UnitTestCreateDebugFile(FIL *file);
 FRESULT SD_UnitTestReadFile(FIL *file);
@@ -78,8 +79,18 @@ bool openDataFileOrCreateIfMissing(FIL *fileObj, const struct LoggerConfig *logg
 	FRESULT openExistingResult = f_open(fileObj, SD_DATALOG_FILENAME, FA_OPEN_EXISTING);
 	
 	if(openExistingResult == FR_OK){
-		//seek to end so we write append
-		f_lseek(fileObj, f_size(fileObj));
+		if(loggerConf->checkFileIntegrity){
+			uint16_t expectedValues = 10; //start with 10 values, we'll add more for the SDI12s
+			uint8_t sdiIndex = loggerConf->numSdiSensors;
+			while(sdiIndex){
+				expectedValues += loggerConf->SDI12_SensorNumValues[--sdiIndex];
+			}
+			checkAndFixLastFileLineIntegrity(fileObj, uint16_t expectedValues);
+		}
+		else{
+			//seek to end so we write append
+			f_lseek(fileObj, f_size(fileObj));
+		}
 		return true;
 	}
 	else if (openExistingResult == FR_NO_FILE){
@@ -175,6 +186,12 @@ bool readConfigFile(struct LoggerConfig *config){
 		}
 		else{
 			config->logImmediately = true;
+		}
+		if(flagBuffer[1] == 'c'){
+			config->checkFileIntegrity = true;
+		}
+		else{
+			config->checkFileIntegrity = false;
 		}
 	}
 	return true;
@@ -391,3 +408,26 @@ FRESULT SD_UnitTestRemoveFile(void){
 	}
 	return res;
 }
+
+void checkAndFixLastFileLineIntegrity(FIL *file, uint16_t expectedValues){
+	char buffer[256];
+	size_t lastNewlineLoc = 0;
+	uint16_t numCommasFound = 0;
+	do{
+		numCommasFound = 0;
+		f_gets(buffer,256,file);
+		for(uint16_t bufferIndex = 0; bufferIndex < 256; bufferIndex++){
+			if(buffer[bufferIndex] == 0){
+				break;
+			}
+			numCommasFound += buffer[bufferIndex] == ',';
+			
+		}
+		
+	}while(!f_eof(file));
+	
+	if(numCommasFound != expectedValues){
+		while(expectedValues != ++numCommasFound){
+			f_puts("NaN,");
+		}
+	}
