@@ -28,7 +28,7 @@ void DS1302Init(void);
 
 //Ds1302SetDatetime()
 //	Sets the dateTime of a Ds1302, using the given pin configurations, and a datetime as array
-void Ds1302SetDateTime(const Ds1302DateTime dateTime);
+void Ds1302SetDateTime(const Ds1302DateTime *dateTime);
 
 //outBuffer required to be at least 17 bytes
 //datetime output will look like mm/dd/yyyy hh:mm
