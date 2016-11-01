@@ -84,7 +84,7 @@ int main (void)
 	
 	readConfigFile(&loggerConfig);
 	
-	openDataFileOrCreateIfMissing(&fileObj, &loggerConfig);
+	SD_CheckIntegrityOrCreateIfMissing(&loggerConfig);
 	
 	/*remove power to the SD/MMC card, we'll re enable it when it's time to write the reading.*/
 	MOSFET_PORT.OUTCLR.reg = SD_CARD_MOSFET_PINMASK;

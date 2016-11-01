@@ -13,14 +13,14 @@
 #define ADC_SAMPLE_LENGTH 32
 
 
-void ConfigureDendroADC(struct adc_module *adcModule)
+void ConfigureDendroADC(struct adc_module *adcModule, uint32_t dendAnalogPin)
 {
 	struct adc_config adcConfig;
 	adc_get_config_defaults(&adcConfig);
 	//use 3.3v as reference.
 	adcConfig.reference =		ADC_REFERENCE_AREFA;
 	adcConfig.sample_length =	ADC_CTRLB_RESSEL_16BIT;
-	adcConfig.positive_input =	DEND_ANALOG_PIN;
+	adcConfig.positive_input =	dendAnalogPin;
 	adcConfig.sample_length =	ADC_SAMPLE_LENGTH;
 	
 	adc_init(adcModule, ADC, &adcConfig);

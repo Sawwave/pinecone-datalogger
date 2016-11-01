@@ -16,7 +16,7 @@ void SdCardInit(FATFS *fatFileSys, FRESULT *mountingResult);
 
 bool tryReadTimeFile(struct Ds1302DateTime *dateTime);
 
-bool openDataFileOrCreateIfMissing(FIL *fileObj, const struct LoggerConfig *loggerConf);
+bool SD_CheckIntegrityOrCreateIfMissing(const struct LoggerConfig *loggerConf);
 
 bool readConfigFile(struct LoggerConfig *config);
 

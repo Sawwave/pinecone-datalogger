@@ -11,8 +11,8 @@
 
 #define SD_DEBUG_FILE "0:debug.txt"
 
-void fileWriteHeader(FIL *fileObj, const struct LoggerConfig *loggerConf);
-bool checkAndFixLastFileLineIntegrity(FIL *file, uint16_t expectedValues);
+void SD_FileCreateWithHeader(const struct LoggerConfig *loggerConf);
+bool checkAndFixLastFileLineIntegrity(uint16_t expectedValues);
 FRESULT SD_UnitTestRemoveFile(void);
 FRESULT SD_UnitTestCreateDebugFile(FIL *file);
 FRESULT SD_UnitTestReadFile(FIL *file);
@@ -52,15 +52,14 @@ returns false if file didn't exist, or there was an error.
 */
 bool tryReadTimeFile(struct Ds1302DateTime *dateTime){
 	FIL fileObj;
+	char buf[22];
+	char *bufferPointer = &(buf[0]);
 	//see if we can talk to the SD card
 	FRESULT status = f_open(&fileObj, SD_TIME_FILENAME, FA_READ);
 	if(status != FR_OK){
 		return false;
 	}
 	//reads until \n in found, or until buff is filled
-	char buf[22];
-	char *bufferPointer = &(buf[0]);
-
 	f_gets(buf, 22, &fileObj);
 	f_close(&fileObj);
 	if(f_error(&fileObj)){
@@ -77,42 +76,35 @@ bool tryReadTimeFile(struct Ds1302DateTime *dateTime){
 	return !(dateTime->date && dateTime->month && dateTime->year);
 }
 
-bool openDataFileOrCreateIfMissing(FIL *fileObj, const struct LoggerConfig *loggerConf){
-	FRESULT openExistingResult = f_open(fileObj, SD_DATALOG_FILENAME, FA_OPEN_EXISTING | FA_READ | FA_WRITE);
+bool SD_CheckIntegrityOrCreateIfMissing(const struct LoggerConfig *loggerConf)
+{
+	FILINFO fileInfo;
+	FRESULT statsResult = f_stat(SD_DATALOG_FILENAME, &fileInfo);
 	
-	if(openExistingResult == FR_OK){
-		if(loggerConf->checkFileIntegrity){
-			uint16_t expectedValues = 10; //start with 10 values, we'll add more for the SDI12s
-			uint8_t sdiIndex = loggerConf->numSdiSensors;
-			while(sdiIndex){
-				expectedValues += loggerConf->SDI12_SensorNumValues[--sdiIndex];
-			}
-			//this reads to the end of the file, no f_lseek needed
-			checkAndFixLastFileLineIntegrity(fileObj, expectedValues);
+	if((statsResult == FR_OK) && (loggerConf->checkFileIntegrity)){
+		uint16_t expectedValues = 10; //start with 10 values, we'll add more for the SDI12s
+		uint8_t sdiIndex = loggerConf->numSdiSensors;
+		while(sdiIndex){
+			expectedValues += loggerConf->SDI12_SensorNumValues[--sdiIndex];
 		}
-		else{
-			//seek to end so we write append
-			f_lseek(fileObj, f_size(fileObj));
-		}
+		checkAndFixLastFileLineIntegrity(expectedValues);
 		return true;
 	}
-	else if (openExistingResult == FR_NO_FILE){
-		//file didn't exist, so let's create one and add the header!
-		openExistingResult = f_open(fileObj, SD_DATALOG_FILENAME, FA_READ | FA_WRITE);
-		if(openExistingResult == FR_OK){
-			fileWriteHeader(fileObj, loggerConf);
-			return true;
-		}
+	else if (statsResult == FR_NO_FILE){
+		SD_FileCreateWithHeader(loggerConf);
+		return true;
 	}
 	
-	//there was some other kind of error.
-	//TODO: do something in this case, maybe?
-	return false;
+	//if we've got here, return false if the stats was something other than FR_OK or FR_NO_FILe (would've exited above)
+	return statsResult != FR_OK;
 }
 
-void fileWriteHeader(FIL *fileObj, const struct LoggerConfig *loggerConf){
+void SD_FileCreateWithHeader(const struct LoggerConfig *loggerConf)
+{
+	FIL file;
+	f_open(&file, SD_DATALOG_FILENAME, FA_OPEN_ALWAYS | FA_WRITE);
 	//create the header for the data file
-	f_puts("Date,Time,TcPort1,TcPort2,TcPort3,TcPort4,Dht1Temp,Dht1Rh,Dht2Temp,Dht2Rh", fileObj);
+	f_puts("Date,Time,TcPort1,TcPort2,TcPort3,TcPort4,Dht1Temp,Dht1Rh,Dht2Temp,Dht2Rh", &file);
 
 	char sdiColumnHeader[10] = {',','S','D','I','_','A','.','0','0',0};	//,SDI12_A.00
 	const uint8_t sdiHeaderAddressIndex = 5;
@@ -130,10 +122,10 @@ void fileWriteHeader(FIL *fileObj, const struct LoggerConfig *loggerConf){
 			//set the ones, then the tens.
 			sdiColumnHeader[sdiHeaderOnesValueIndex] = '0' + (valueCounter % 10);
 			sdiColumnHeader[sdiHeaderOnesValueIndex - 1] = '0' + (valueCounter / 10);
-			f_puts(sdiColumnHeader, fileObj);
+			f_puts(sdiColumnHeader, &file);
 		}
 	}
-	f_sync(fileObj);
+	f_close(&file);
 }
 
 /*readConfigFile
@@ -200,13 +192,16 @@ bool readConfigFile(struct LoggerConfig *config){
 	return true;
 }
 
-
-bool checkAndFixLastFileLineIntegrity(FIL *file, uint16_t expectedValues){
+bool checkAndFixLastFileLineIntegrity(uint16_t expectedValues)
+{
+	//open the data file, and start checking.
+	FIL file;
+	f_open(&file, SD_DATALOG_FILENAME, FA_OPEN_ALWAYS | FA_READ | FA_WRITE);
 	char buffer[256];
 	
 	uint16_t numCommasFound = 0;
 	do{
-		f_gets(buffer, 256, file);
+		f_gets(buffer, 256, &file);
 		for(uint16_t bufferIndex = 0; bufferIndex < 256; bufferIndex++){
 			
 			if(buffer[bufferIndex] == '\n'){
@@ -217,11 +212,11 @@ bool checkAndFixLastFileLineIntegrity(FIL *file, uint16_t expectedValues){
 			else if(buffer[bufferIndex] == 0){
 				//if we got a 0, AND it's the end of the file without a newline, the datafile is probably invalid.
 				//try to fix it.
-				if(f_eof(file)){
+				if(f_eof(&file)){
 					//add enough NaNs, and end the line.
-					while(expectedValues > ++numCommasFound)	f_puts(",NaN", file);
-					f_putc('\n', file);
-					f_sync(file);
+					while(expectedValues > ++numCommasFound)	f_puts(",NaN", &file);
+					f_putc('\n', &file);
+					f_close(&file);
 					return false;
 				}
 				//if it's not the end of the file, but we encountered a 0, that means that we ran out of buffer.
@@ -235,8 +230,9 @@ bool checkAndFixLastFileLineIntegrity(FIL *file, uint16_t expectedValues){
 				numCommasFound++;
 			}
 		}
-	}while(!f_eof(file));
+	}while(!f_eof(&file));
 	
+	f_close(&file);
 	return true;
 }
 
@@ -292,7 +288,7 @@ void SD_UnitTestHeaderCreate(struct LoggerConfig *config, const char *headerFile
 	FIL file;
 	f_open(&file,headerFileName, FA_CREATE_ALWAYS | FA_WRITE);
 	
-	fileWriteHeader(&file, config);
+	SD_FileCreateWithHeader(config);
 	f_close(&file);
 }
 
@@ -451,7 +447,7 @@ bool SD_UnitDataFileIntegrityCheck(void){
 	f_puts(dataFileMessage, &file);
 	f_close(&file);
 	f_open(&file, SD_DATALOG_FILENAME, FA_READ | FA_WRITE);
-	bool success = checkAndFixLastFileLineIntegrity(&file,10);
+	bool success = checkAndFixLastFileLineIntegrity(10);
 	f_puts("checked",&file);
 	f_close(&file);
 	return success;
