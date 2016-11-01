@@ -38,12 +38,13 @@
 
 
 
-void componentInit(FATFS *fileSystem);
+void componentInit(void);
 bool MAX31856_VOLATILE_REGISTERS_TEST(void);
 
 struct spi_module spiMasterModule;
 struct spi_slave_inst spiSlaveInstance;
-struct adc_module adcModule;
+struct adc_module adcModule1;
+struct adc_module adcModule2;
 
 struct tc_module tcInstance;
 
@@ -56,9 +57,7 @@ struct tc_module tcInstance;
 int main (void)
 {
 	struct LoggerConfig loggerConfig;
-	
-	FATFS fileSystem;
-	FIL fileObj;
+	FRESULT mountingResult;
 	
 	system_init();
 	delay_init();
@@ -71,23 +70,24 @@ int main (void)
 	MOSFET_PORT.DIRSET.reg = ALL_MOSFET_PINMASK;
 	MOSFET_PORT.OUTCLR.reg = ALL_MOSFET_PINMASK;
 	
+	struct Ds1302DateTime dateTime;
+	
 	//wake up the SD card
 	MOSFET_PORT.OUTSET.reg = SD_CARD_MOSFET_PINMASK;
-
-	componentInit(&fileSystem);
 	
-	struct Ds1302DateTime dateTime;
-	//if the timefile exists, update the Ds1302.
-	if(tryReadTimeFile(&dateTime)){
-		Ds1302SetDateTime(&dateTime);
-	}
-	
+	SdCardInit(&mountingResult);
+	bool timeFileFound = tryReadTimeFile(&dateTime);
 	readConfigFile(&loggerConfig);
-	
 	SD_CheckIntegrityOrCreateIfMissing(&loggerConfig);
 	
 	/*remove power to the SD/MMC card, we'll re enable it when it's time to write the reading.*/
 	MOSFET_PORT.OUTCLR.reg = SD_CARD_MOSFET_PINMASK;
+	
+	if(timeFileFound){
+		Ds1302SetDateTime(&dateTime);
+	}
+	
+	componentInit();
 	
 	/*If the configuration is set to defer logging for one sleep cycle, accomplish that sleep here.*/
 	if(!loggerConfig.logImmediately){
@@ -103,18 +103,14 @@ int main (void)
 	}
 }
 
-void componentInit(FATFS *fatFileSystem){
-	FRESULT mountingResult;
-	enum Max31856_Status amplifierStatus;
-	
+void componentInit(void)
+{
 	initSleepTimerCounter(&tcInstance);
 	Max31856ConfigureSPI(&spiMasterModule, &spiSlaveInstance);
 	SDI12_Setup();
-	//wake up DS1302
 	DS1302Init();
-	//wake up SD card
-	SdCardInit(fatFileSystem, &mountingResult);
-	ConfigureDendroADC(&adcModule);
+	ConfigureDendroADC(&adcModule1, DEND_ANALOG_PIN_1);
+	ConfigureDendroADC(&adcModule2, DEND_ANALOG_PIN_2);
 }
 
 bool MAX31856_VOLATILE_REGISTERS_TEST(void){

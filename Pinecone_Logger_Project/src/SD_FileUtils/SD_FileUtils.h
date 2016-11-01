@@ -12,7 +12,7 @@
 #include "DS1302/DS1302.h"
 #include "SDI12/SDI12.h"
 
-void SdCardInit(FATFS *fatFileSys, FRESULT *mountingResult);
+void SdCardInit(FRESULT *mountingResult);
 
 bool tryReadTimeFile(struct Ds1302DateTime *dateTime);
 
@@ -22,6 +22,6 @@ bool readConfigFile(struct LoggerConfig *config);
 
 bool logToDataFile(Ds1302DateTime *dateTime, float *thermocoupleReadings);
 
-int8_t SD_UnitTest(FATFS *fatfs);
+int8_t SD_UnitTest(void);
 
 #endif /* SD_FILEUTILS_H_ */

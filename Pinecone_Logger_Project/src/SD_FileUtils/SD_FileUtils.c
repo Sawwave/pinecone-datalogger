@@ -30,7 +30,9 @@ FR_OK on success
 FR_INVALID_DRIVE if volumeNumber is greater than number of volumes. If in doubt, use 0 here.
 FR_INT_ERR if assertion failed for some unknown reason (MORE DOCUMENTATION PLEASE, ASF!)
 */
-void SdCardInit(FATFS *fatFileSys, FRESULT *mountingResult){
+void SdCardInit(FRESULT *mountingResult)
+{
+	FATFS fatFileSys;
 	sd_mmc_init();
 	Ctrl_status checkStatus;
 	do{
@@ -38,8 +40,8 @@ void SdCardInit(FATFS *fatFileSys, FRESULT *mountingResult){
 	} while (checkStatus != CTRL_GOOD);
 	
 	
-	memset(fatFileSys, 0, sizeof(FATFS));
-	*mountingResult = f_mount(SD_VOLUME_NUMBER, fatFileSys);
+	memset(&fatFileSys, 0, sizeof(FATFS));
+	*mountingResult = f_mount(SD_VOLUME_NUMBER, &fatFileSys);
 }
 
 /* tryReadTimeFile
@@ -237,10 +239,11 @@ bool checkAndFixLastFileLineIntegrity(uint16_t expectedValues)
 }
 
 
-int8_t SD_UnitTest(FATFS *fatfs){
+int8_t SD_UnitTest(void)
+{
 	
 	FRESULT res;
-	SdCardInit(fatfs, &res);
+	SdCardInit(&res);
 	
 	return SD_UnitDataFileIntegrityCheck();
 	return 0;
