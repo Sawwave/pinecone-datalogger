@@ -47,6 +47,7 @@ void SdCardInit(FATFS *fatFileSys, FRESULT *mountingResult){
 File should be in format hh,mm,ss,dd,mm,yyyy\n\n
 comma is suggested, but any non-numeric, non +- non \n, character should work as a seperater.
 
+returns false if file didn't exist, or there was an error.
 
 */
 bool tryReadTimeFile(struct Ds1302DateTime *dateTime){
@@ -77,7 +78,7 @@ bool tryReadTimeFile(struct Ds1302DateTime *dateTime){
 }
 
 bool openDataFileOrCreateIfMissing(FIL *fileObj, const struct LoggerConfig *loggerConf){
-	FRESULT openExistingResult = f_open(fileObj, SD_DATALOG_FILENAME, FA_OPEN_EXISTING);
+	FRESULT openExistingResult = f_open(fileObj, SD_DATALOG_FILENAME, FA_OPEN_EXISTING | FA_READ | FA_WRITE);
 	
 	if(openExistingResult == FR_OK){
 		if(loggerConf->checkFileIntegrity){
@@ -86,6 +87,7 @@ bool openDataFileOrCreateIfMissing(FIL *fileObj, const struct LoggerConfig *logg
 			while(sdiIndex){
 				expectedValues += loggerConf->SDI12_SensorNumValues[--sdiIndex];
 			}
+			//this reads to the end of the file, no f_lseek needed
 			checkAndFixLastFileLineIntegrity(fileObj, expectedValues);
 		}
 		else{
@@ -203,16 +205,7 @@ int8_t SD_UnitTest(FATFS *fatfs){
 	FRESULT res;
 	SdCardInit(fatfs, &res);
 	
-	struct Ds1302DateTime dateTime;
-	dateTime.date = 31;
-	dateTime.month = 10;
-	dateTime.year = 16;
-	dateTime.hours = 15;
-	dateTime.minutes = 05;
-	dateTime.seconds = 00;
-	if (!(SD_UnitTestReadTimeFile("15,05,16,15,05,00", &dateTime))){
-		return -1;
-	}
+	return SD_UnitDataFileIntegrityCheck();
 	return 0;
 }
 
@@ -412,31 +405,45 @@ FRESULT SD_UnitTestRemoveFile(void){
 
 bool checkAndFixLastFileLineIntegrity(FIL *file, uint16_t expectedValues){
 	char buffer[256];
-	size_t lastNewlineLoc = 0;
+	
 	uint16_t numCommasFound = 0;
 	do{
-		numCommasFound = 0;
-		f_gets(buffer,256,file);
+		f_gets(buffer, 256, file);
 		for(uint16_t bufferIndex = 0; bufferIndex < 256; bufferIndex++){
-			if(buffer[bufferIndex] == 0){
+			
+			if(buffer[bufferIndex] == '\n'){
+				numCommasFound = 0;
 				break;
 			}
-			numCommasFound += buffer[bufferIndex] == ',';
 			
+			else if(buffer[bufferIndex] == 0){
+				//if we got a 0, AND it's the end of the file without a newline, the datafile is probably invalid.
+				//try to fix it.
+				if(f_eof(file)){
+					//add enough NaNs, and end the line.
+					while(expectedValues > ++numCommasFound)	f_puts(",NaN", file);
+					f_putc('\n', file);
+					f_sync(file);
+					return false;
+				}
+				//if it's not the end of the file, but we encountered a 0, that means that we ran out of buffer.
+				//we're not going to clear numCommasFound, but loop again to grab another buffer.
+				else {
+					break;
+				}
+			}
+			
+			else if(buffer[bufferIndex] == ','){
+				numCommasFound++;
+			}
 		}
-		
 	}while(!f_eof(file));
 	
-	if(numCommasFound != expectedValues){
-		while(expectedValues != ++numCommasFound){
-			f_puts("NaN,", file);
-		}
-	}
+	return true;
 }
 
 bool SD_UnitDataFileIntegrityCheck(void){
-	struct LoggerConfig config;
-	char *dataFileMessage = "Date,Time,TcPort1,TcPort2,TcPort3,TcPort4,Dht1Temp,Dht1Rh,Dht2Temp,Dht2Rh\n1,2,3,4,5,6,7,8,9,10";
+	const char *dataFileMessage = "Date,Time,TcPort1,TcPort2,TcPort3,TcPort4,Dht1Temp,Dht1Rh,Dht2Temp,Dht2Rh\n1,2,3,4,5,6,7,8,9,10";
 	FIL file;
 	f_open(&file, SD_DATALOG_FILENAME, FA_WRITE| FA_CREATE_ALWAYS);
 	f_puts(dataFileMessage, &file);

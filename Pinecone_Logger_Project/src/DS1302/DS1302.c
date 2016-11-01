@@ -42,7 +42,7 @@ void DS1302Init(void){
 	
 }
 
-void Ds1302SetDateTime(const Ds1302DateTime dateTime){
+void Ds1302SetDateTime(const Ds1302DateTime *dateTime){
 	//set the data pin for output
 	struct port_config config;
 	port_get_config_defaults(&config);
@@ -65,13 +65,13 @@ void Ds1302SetDateTime(const Ds1302DateTime dateTime){
 	delay_us(4);
 	
 	Ds1302WriteByte(DS1302_CLOCK_BURST_WRITE_REGISTER);
-	Ds1302WriteByte(Ds1302ByteEncode(dateTime.seconds));
-	Ds1302WriteByte(Ds1302ByteEncode(dateTime.minutes));
-	Ds1302WriteByte(Ds1302ByteEncode(dateTime.hours | (1 << 7)));	//makes sure to set clock to 24 hr mode
-	Ds1302WriteByte(Ds1302ByteEncode(dateTime.date));
-	Ds1302WriteByte(Ds1302ByteEncode(dateTime.month));
-	Ds1302WriteByte(Ds1302ByteEncode(dateTime.dayOfWeek));
-	Ds1302WriteByte(Ds1302ByteEncode(dateTime.year));
+	Ds1302WriteByte(Ds1302ByteEncode(dateTime->seconds));
+	Ds1302WriteByte(Ds1302ByteEncode(dateTime->minutes));
+	Ds1302WriteByte(Ds1302ByteEncode(dateTime->hours | (1 << 7)));	//makes sure to set clock to 24 hr mode
+	Ds1302WriteByte(Ds1302ByteEncode(dateTime->date));
+	Ds1302WriteByte(Ds1302ByteEncode(dateTime->month));
+	Ds1302WriteByte(Ds1302ByteEncode(dateTime->dayOfWeek));
+	Ds1302WriteByte(Ds1302ByteEncode(dateTime->year));
 	//re-enable write protect
 	Ds1302WriteByte(DS1302_ENABLE_WRITE_PROTECT_VALUE);
 	

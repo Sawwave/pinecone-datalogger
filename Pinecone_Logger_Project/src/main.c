@@ -45,6 +45,8 @@ struct spi_module spiMasterModule;
 struct spi_slave_inst spiSlaveInstance;
 struct adc_module adcModule;
 
+struct tc_module tcInstance;
+
 
 
 
@@ -61,29 +63,38 @@ int main (void)
 	system_init();
 	delay_init();
 	
+	#ifdef PINECONE_LOGGER_DEBUG_UNIT_TESTS
+	//SD_UnitTest(&fileSystem);
+	#endif
+	
 	//start with all power mosfets off
 	MOSFET_PORT.DIRSET.reg = ALL_MOSFET_PINMASK;
 	MOSFET_PORT.OUTCLR.reg = ALL_MOSFET_PINMASK;
 	
 	//wake up the SD card
 	MOSFET_PORT.DIRSET.reg = SD_CARD_MOSFET_PINMASK;
-	
+
 	componentInit(&fileSystem);
+	
 	struct Ds1302DateTime dateTime;
-	tryReadTimeFile(&dateTime);
-	Ds1302SetDateTime(&dateTime);
+	//if the timefile exists, update the Ds1302.
+	if(tryReadTimeFile(&dateTime)){
+		Ds1302SetDateTime(&dateTime);
+	}
 	
 	readConfigFile(&loggerConfig);
 	
 	openDataFileOrCreateIfMissing(&fileObj, &loggerConfig);
 	
-	//SD_UnitTest(&fileSystem);
-	
-	
-	//QUERY SDI SENSORS FOR METADATA
-	
-	//OPEN THE DATA FILE
-	
+	/*If the configuration is set to defer logging for one sleep cycle, accomplish that sleep here.*/
+	if(!loggerConfig.logImmediately){
+		//pull power from everything
+		MOSFET_PORT.OUTCLR.reg = ALL_MOSFET_PINMASK;
+		timedSleep_seconds(&tcInstance, loggerConfig.loggingInterval);
+		
+	}
+
+	/*All initialization has been done, so enter the loop!*/
 	while(1){
 		
 		MOSFET_PORT.OUTSET.reg = DENDRO_TC_AMP_MOSFET_PINMASK;
@@ -95,6 +106,7 @@ void componentInit(FATFS *fatFileSystem){
 	FRESULT mountingResult;
 	enum Max31856_Status amplifierStatus;
 	
+	initSleepTimerCounter(&tcInstance);
 	Max31856ConfigureSPI(&spiMasterModule, &spiSlaveInstance);
 	SDI12_Setup();
 	//wake up DS1302
