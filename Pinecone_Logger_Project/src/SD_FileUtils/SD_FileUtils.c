@@ -200,6 +200,47 @@ bool readConfigFile(struct LoggerConfig *config){
 	return true;
 }
 
+
+bool checkAndFixLastFileLineIntegrity(FIL *file, uint16_t expectedValues){
+	char buffer[256];
+	
+	uint16_t numCommasFound = 0;
+	do{
+		f_gets(buffer, 256, file);
+		for(uint16_t bufferIndex = 0; bufferIndex < 256; bufferIndex++){
+			
+			if(buffer[bufferIndex] == '\n'){
+				numCommasFound = 0;
+				break;
+			}
+			
+			else if(buffer[bufferIndex] == 0){
+				//if we got a 0, AND it's the end of the file without a newline, the datafile is probably invalid.
+				//try to fix it.
+				if(f_eof(file)){
+					//add enough NaNs, and end the line.
+					while(expectedValues > ++numCommasFound)	f_puts(",NaN", file);
+					f_putc('\n', file);
+					f_sync(file);
+					return false;
+				}
+				//if it's not the end of the file, but we encountered a 0, that means that we ran out of buffer.
+				//we're not going to clear numCommasFound, but loop again to grab another buffer.
+				else {
+					break;
+				}
+			}
+			
+			else if(buffer[bufferIndex] == ','){
+				numCommasFound++;
+			}
+		}
+	}while(!f_eof(file));
+	
+	return true;
+}
+
+
 int8_t SD_UnitTest(FATFS *fatfs){
 	
 	FRESULT res;
@@ -401,45 +442,6 @@ FRESULT SD_UnitTestRemoveFile(void){
 		return res;
 	}
 	return res;
-}
-
-bool checkAndFixLastFileLineIntegrity(FIL *file, uint16_t expectedValues){
-	char buffer[256];
-	
-	uint16_t numCommasFound = 0;
-	do{
-		f_gets(buffer, 256, file);
-		for(uint16_t bufferIndex = 0; bufferIndex < 256; bufferIndex++){
-			
-			if(buffer[bufferIndex] == '\n'){
-				numCommasFound = 0;
-				break;
-			}
-			
-			else if(buffer[bufferIndex] == 0){
-				//if we got a 0, AND it's the end of the file without a newline, the datafile is probably invalid.
-				//try to fix it.
-				if(f_eof(file)){
-					//add enough NaNs, and end the line.
-					while(expectedValues > ++numCommasFound)	f_puts(",NaN", file);
-					f_putc('\n', file);
-					f_sync(file);
-					return false;
-				}
-				//if it's not the end of the file, but we encountered a 0, that means that we ran out of buffer.
-				//we're not going to clear numCommasFound, but loop again to grab another buffer.
-				else {
-					break;
-				}
-			}
-			
-			else if(buffer[bufferIndex] == ','){
-				numCommasFound++;
-			}
-		}
-	}while(!f_eof(file));
-	
-	return true;
 }
 
 bool SD_UnitDataFileIntegrityCheck(void){
