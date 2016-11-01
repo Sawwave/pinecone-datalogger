@@ -62,11 +62,11 @@ int main (void)
 	delay_init();
 	
 	//start with all power mosfets off
-	MOSFET_PORT.DIRSET = ALL_MOSFET_PINMASK;
-	MOSFET_PORT.OUTCLR = ALL_MOSFET_PINMASK;
+	MOSFET_PORT.DIRSET.reg = ALL_MOSFET_PINMASK;
+	MOSFET_PORT.OUTCLR.reg = ALL_MOSFET_PINMASK;
 	
 	//wake up the SD card
-	MOSFET_PORT.DIRSET = SD_CARD_MOSFET_PINMASK;
+	MOSFET_PORT.DIRSET.reg = SD_CARD_MOSFET_PINMASK;
 	
 	componentInit(&fileSystem);
 	struct Ds1302DateTime dateTime;
@@ -86,7 +86,7 @@ int main (void)
 	
 	while(1){
 		
-		MOSFET_PORT.OUTSET = DENDRO_TC_AMP_MOSFET_PINMASK;
+		MOSFET_PORT.OUTSET.reg = DENDRO_TC_AMP_MOSFET_PINMASK;
 		Max31856ConfigureRegisters(&spiMasterModule, &spiSlaveInstance, MAX31856_THERMOCOUPLE_TYPE_USED);
 	}
 }

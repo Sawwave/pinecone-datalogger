@@ -12,13 +12,14 @@
 #define SD_DEBUG_FILE "0:debug.txt"
 
 void fileWriteHeader(FIL *fileObj, const struct LoggerConfig *loggerConf);
-void checkAndFixLastFileLineIntegrity(FIL *file, uint16_t expectedValues);
+bool checkAndFixLastFileLineIntegrity(FIL *file, uint16_t expectedValues);
 FRESULT SD_UnitTestRemoveFile(void);
 FRESULT SD_UnitTestCreateDebugFile(FIL *file);
 FRESULT SD_UnitTestReadFile(FIL *file);
 int SD_UnitTestLoadAndCheckDebugFile(const char *addresses, uint8_t numAddresses, const char *interval, bool defer);
 void SD_UnitTestHeaderCreate(struct LoggerConfig *config, const char *headerFileName);
 bool SD_UnitTestReadTimeFile(const char *dateTimeStr, const struct Ds1302DateTime *comparisonDateTime);
+bool SD_UnitDataFileIntegrityCheck(void);
 
 /*SdCardInit
 Initializes the sd mmc connection, and attempts to mount the fileSystem.
@@ -85,7 +86,7 @@ bool openDataFileOrCreateIfMissing(FIL *fileObj, const struct LoggerConfig *logg
 			while(sdiIndex){
 				expectedValues += loggerConf->SDI12_SensorNumValues[--sdiIndex];
 			}
-			checkAndFixLastFileLineIntegrity(fileObj, uint16_t expectedValues);
+			checkAndFixLastFileLineIntegrity(fileObj, expectedValues);
 		}
 		else{
 			//seek to end so we write append
@@ -409,7 +410,7 @@ FRESULT SD_UnitTestRemoveFile(void){
 	return res;
 }
 
-void checkAndFixLastFileLineIntegrity(FIL *file, uint16_t expectedValues){
+bool checkAndFixLastFileLineIntegrity(FIL *file, uint16_t expectedValues){
 	char buffer[256];
 	size_t lastNewlineLoc = 0;
 	uint16_t numCommasFound = 0;
@@ -428,6 +429,22 @@ void checkAndFixLastFileLineIntegrity(FIL *file, uint16_t expectedValues){
 	
 	if(numCommasFound != expectedValues){
 		while(expectedValues != ++numCommasFound){
-			f_puts("NaN,");
+			f_puts("NaN,", file);
 		}
 	}
+}
+
+bool SD_UnitDataFileIntegrityCheck(void){
+	struct LoggerConfig config;
+	char *dataFileMessage = "Date,Time,TcPort1,TcPort2,TcPort3,TcPort4,Dht1Temp,Dht1Rh,Dht2Temp,Dht2Rh\n1,2,3,4,5,6,7,8,9,10";
+	FIL file;
+	f_open(&file, SD_DATALOG_FILENAME, FA_WRITE| FA_CREATE_ALWAYS);
+	f_puts(dataFileMessage, &file);
+	f_close(&file);
+	f_open(&file, SD_DATALOG_FILENAME, FA_READ | FA_WRITE);
+	bool success = checkAndFixLastFileLineIntegrity(&file,10);
+	f_puts("checked",&file);
+	f_close(&file);
+	return success;
+	
+}
