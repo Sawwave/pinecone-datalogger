@@ -72,7 +72,7 @@ int main (void)
 	MOSFET_PORT.OUTCLR.reg = ALL_MOSFET_PINMASK;
 	
 	//wake up the SD card
-	MOSFET_PORT.DIRSET.reg = SD_CARD_MOSFET_PINMASK;
+	MOSFET_PORT.OUTSET.reg = SD_CARD_MOSFET_PINMASK;
 
 	componentInit(&fileSystem);
 	
@@ -86,12 +86,13 @@ int main (void)
 	
 	openDataFileOrCreateIfMissing(&fileObj, &loggerConfig);
 	
+	
+	/*remove power to the SD/MMC card, we'll re enable it when it's time to write the reading.*/
+	MOSFET_PORT.OUTCLR.reg = SD_CARD_MOSFET_PINMASK;
+	
 	/*If the configuration is set to defer logging for one sleep cycle, accomplish that sleep here.*/
 	if(!loggerConfig.logImmediately){
-		//pull power from everything
-		MOSFET_PORT.OUTCLR.reg = ALL_MOSFET_PINMASK;
 		timedSleep_seconds(&tcInstance, loggerConfig.loggingInterval);
-		
 	}
 
 	/*All initialization has been done, so enter the loop!*/
@@ -99,6 +100,7 @@ int main (void)
 		
 		MOSFET_PORT.OUTSET.reg = DENDRO_TC_AMP_MOSFET_PINMASK;
 		Max31856ConfigureRegisters(&spiMasterModule, &spiSlaveInstance, MAX31856_THERMOCOUPLE_TYPE_USED);
+		
 	}
 }
 
