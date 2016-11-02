@@ -25,22 +25,6 @@
 #define DHT_SIGNAL_DATA_HIGH_1_LENGTH		45
 
 
-
-
-/*DHT22Setup
-	Code to send a HIGH signal to the dht, as an on, but idle, message.
-	When the logger wants to communicate with the sensor, it will pull the data pin LOW 
-	via the function GetDht22Reading*/
-void Dht22Setup(PortGroup dht22Port){
-	
-	PortGroup *dhtPort = port_get_group_from_gpio_pin(dhtPin);
-	const uint32_t dhtPinmask = (1UL << (dhtPin % 32));
-	dhtPort->DIRSET.reg = dhtPinmask;
-	dhtPort->OUTSET.reg = dhtPinmask;
-}
-
-
-
 /*GetDht22Reading
 Sends and receives confirmation signals with the DHT-22 sensor
 
@@ -59,10 +43,9 @@ third byte: integral temp data
 fourth byte: decimal temp data
 fifth: 8 bit checksum
 checksum should equal the addition of the first 4 bytes */
-enum Dht22Status GetDht22Reading(double *temp, double *relativeHumidity, uint8_t dhtPin)
+enum Dht22Status GetDht22Reading(double *temp, double *relativeHumidity, const uint32_t dhtPinmask)
 {
-	PortGroup *dhtPort = port_get_group_from_gpio_pin(dhtPin);
-	const uint32_t dhtPinmask = (1UL << (dhtPin % 32));
+	//NOTE! this is probably unnecessary, just ignore for now.
 	//put the pinmask in the correct bits, enable IN, write the mux, and write the pincfg
 	const uint32_t wrConfigInValue = (dhtPinmask << PORT_WRCONFIG_PINMASK_Pos) | PORT_WRCONFIG_INEN | PORT_WRCONFIG_WRPMUX | PORT_WRCONFIG_WRPINCFG;
 	const uint32_t wrConfigPowerSave = (dhtPinmask << PORT_WRCONFIG_PINMASK_Pos) | PORT_WRCONFIG_WRPMUX | PORT_WRCONFIG_WRPINCFG;
@@ -73,16 +56,16 @@ enum Dht22Status GetDht22Reading(double *temp, double *relativeHumidity, uint8_t
 	memset(rxBuffer, 0, 5);
 	
 	//set pin for output
-	dhtPort->DIRSET.reg = dhtPinmask;
+	PORTA.DIRSET.reg = dhtPinmask;
 
 	//start by holding the data pin low for at least 800us
-	dhtPort->OUTCLR.reg = dhtPinmask;
+	PORTA.OUTCLR.reg = dhtPinmask;
 	portable_delay_cycles(HOST_SIGNAL_INIT_LOW_CYCLES);
-	dhtPort->OUTSET.reg = dhtPinmask;
+	PORTA.OUTSET.reg = dhtPinmask;
 	portable_delay_cycles(HOST_SIGNAL_INIT_HIGH_CYCLES);
 	//set pin to input
-	dhtPort->DIRCLR.reg = dhtPinmask;
-	dhtPort->WRCONFIG.reg = wrConfigInValue;
+	PORTA.DIRCLR.reg = dhtPinmask;
+	PORTA.WRCONFIG.reg = wrConfigInValue;
 	//switch to input to receive confirmation
 	//config.direction = PORT_PIN_DIR_INPUT;
 	//config.input_pull = PORT_PIN_PULL_NONE;
@@ -98,11 +81,11 @@ enum Dht22Status GetDht22Reading(double *temp, double *relativeHumidity, uint8_t
 			timeTaken +=2;
 			if(timeTaken > DHT_SIGNAL_TIMEOUT){
 				//we timed out, so stop listening to the data pin.
-				dhtPort->WRCONFIG.reg = wrConfigPowerSave;
-				dhtPort->OUTSET.reg = dhtPinmask;
+				PORTA.WRCONFIG.reg = wrConfigPowerSave;
+				PORTA.OUTSET.reg = dhtPinmask;
 				return DHT_STATUS_TIMEOUT;
 			}
-		}while(!!(dhtPort->IN.reg & dhtPinmask) == (bitCounter & 1));
+		}while(!!(PORTA.IN.reg & dhtPinmask) == (bitCounter & 1));
 
 		if((bitCounter & 1) && (bitCounter > 0)){
 			rxBuffer[rxByte] |= (timeTaken > DHT_SIGNAL_DATA_HIGH_1_LENGTH? 1 : 0) << --rxBit;
@@ -113,8 +96,8 @@ enum Dht22Status GetDht22Reading(double *temp, double *relativeHumidity, uint8_t
 		}
 	}
 	//stop listening to the data pin
-	dhtPort->WRCONFIG.reg = wrConfigPowerSave;
-	dhtPort->OUTSET.reg = dhtPinmask;
+	PORTA.WRCONFIG.reg = wrConfigPowerSave;
+	PORTA.OUTSET.reg = dhtPinmask;
 	
 	//now that we have our buffer filled, check the parity byte
 	uint8_t parity = rxBuffer[0] + rxBuffer[1] + rxBuffer[2] + rxBuffer[3];

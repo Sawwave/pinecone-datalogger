@@ -65,8 +65,7 @@ int main (void)
 	
 	//start with all power mosfets off
 	PORTA.DIRSET.reg = ALL_MOSFET_PINMASK | TC_MUX_SELECT_ALL_PINMASK | DHT22_1_PINMASK | DHT22_2_PINMASK;
-	PORTA.OUTCLR.reg = ALL_MOSFET_PINMASK | TC_MUX_SELECT_ALL_PINMASK;
-	PORTA.
+	PORTA.OUTCLR.reg = ALL_MOSFET_PINMASK | TC_MUX_SELECT_ALL_PINMASK | DHT22_1_PINMASK | DHT22_2_PINMASK;
 	
 	struct Ds1302DateTime dateTime;
 	
@@ -126,7 +125,6 @@ void componentInit(void)
 	Max31856ConfigureSPI(&spiMasterModule, &spiSlaveInstance);
 	SDI12_Setup();
 	DS1302Init();
-	Dht22Setup(DHT22_PIN)
 	ConfigureDendroADC(&adcModule1, DEND_ANALOG_PIN_1);
 	ConfigureDendroADC(&adcModule2, DEND_ANALOG_PIN_2);
 }

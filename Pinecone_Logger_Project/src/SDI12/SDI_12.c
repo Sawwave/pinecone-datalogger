@@ -232,28 +232,28 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction(const char *message, const uint8
 	system_interrupt_enter_critical_section();
 	
 	//set for 13 millis, ish
-	SDI_PIN_PORT.OUTSET.reg = SDI_PIN_PINMASK;
+	PORTA.OUTSET.reg = SDI_PIN_PINMASK;
 	portable_delay_cycles(MARKING_DELAY_CYCLES);
 	
 	//clear for 8330 micros
-	SDI_PIN_PORT.OUTCLR.reg = SDI_PIN_PINMASK;
+	PORTA.OUTCLR.reg = SDI_PIN_PINMASK;
 	portable_delay_cycles(SPACING_8330_DELAY_CYCLES);
 	for(uint8_t byteNumber = 0; byteNumber < messageLen; byteNumber++){
 		//start bit (always high)
-		SDI_PIN_PORT.OUTSET.reg = SDI_PIN_PINMASK;
+		PORTA.OUTSET.reg = SDI_PIN_PINMASK;
 		portable_delay_cycles(BIT_TIMING_DELAY_CYCLES);
 		for(uint8_t bitmask = 1; bitmask != 0; bitmask <<= 1){
 			if((message[byteNumber] & bitmask) != 0){
 				//0 on this bit, so send HIGH
-				SDI_PIN_PORT.OUTCLR.reg = SDI_PIN_PINMASK;
+				PORTA.OUTCLR.reg = SDI_PIN_PINMASK;
 			}
 			else{
-				SDI_PIN_PORT.OUTSET.reg = SDI_PIN_PINMASK;
+				PORTA.OUTSET.reg = SDI_PIN_PINMASK;
 			}
 			portable_delay_cycles(BIT_TIMING_DELAY_CYCLES);
 		}
 		//end bit (always low)
-		SDI_PIN_PORT.OUTCLR.reg = SDI_PIN_PINMASK;
+		PORTA.OUTCLR.reg = SDI_PIN_PINMASK;
 		portable_delay_cycles(BIT_TIMING_DELAY_CYCLES);
 	}
 	
@@ -266,7 +266,7 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction(const char *message, const uint8
 	uint16_t timeout = 8000;
 	do{
 		portable_delay_cycles(5);
-	} while( (timeout--) && ((SDI_PIN_PORT.IN.reg & SDI_PIN_PINMASK) != 0) );
+	} while( (timeout--) && ((PORTA.IN.reg & SDI_PIN_PINMASK) != 0) );
 	if(timeout == 0){
 		return SDI12_TRANSACTION_TIMEOUT;
 	}
@@ -278,7 +278,7 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction(const char *message, const uint8
 		
 		portable_delay_cycles(BIT_TIMING_DELAY_CYCLES);
 		for(uint8_t bitmask = 1; bitmask != 0x80; bitmask <<= 1){
-			if((SDI_PIN_PORT.IN.reg & SDI_PIN_PINMASK) == 0){
+			if((PORTA.IN.reg & SDI_PIN_PINMASK) == 0){
 				outBuffer[byteNumber] |= bitmask;
 			}
 			portable_delay_cycles(BIT_TIMING_DELAY_CYCLES);
@@ -289,9 +289,9 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction(const char *message, const uint8
 		//loop-delay through the end bit (LOW) to realign with the byte frame
 		do{
 			portable_delay_cycles(5);
-		}while( ( (SDI_PIN_PORT.IN.reg & SDI_PIN_PINMASK) == 0) && (timeout--) != 0);
+		}while( ( (PORTA.IN.reg & SDI_PIN_PINMASK) == 0) && (timeout--) != 0);
 		byteNumber++;
-	} while(((SDI_PIN_PORT.IN.reg & SDI_PIN_PINMASK) != 0)		//we got the start bit!
+	} while(((PORTA.IN.reg & SDI_PIN_PINMASK) != 0)		//we got the start bit!
 	&& (byteNumber < (outBufferLen - 1))						//the buffer overflowed (overflew?)
 	&& (outBuffer[byteNumber-1] != 10));						// the last byte was Line Feed
 
