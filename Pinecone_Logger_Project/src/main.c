@@ -39,7 +39,7 @@
 
 
 
-void ReadThermocouples(double *tcValuesOut)
+void ReadThermocouples(double *tcValuesOut);
 void componentInit(void);
 bool MAX31856_VOLATILE_REGISTERS_TEST(void);
 
@@ -64,13 +64,14 @@ int main (void)
 	#endif
 	
 	//start with all power mosfets off
-	MOSFET_PORT.DIRSET.reg = ALL_MOSFET_PINMASK | TC_MUX_SELECT_ALL_PINMASK;
-	MOSFET_PORT.OUTCLR.reg = ALL_MOSFET_PINMASK | TC_MUX_SELECT_ALL_PINMASK;
+	PORTA.DIRSET.reg = ALL_MOSFET_PINMASK | TC_MUX_SELECT_ALL_PINMASK | DHT22_1_PINMASK | DHT22_2_PINMASK;
+	PORTA.OUTCLR.reg = ALL_MOSFET_PINMASK | TC_MUX_SELECT_ALL_PINMASK;
+	PORTA.
 	
 	struct Ds1302DateTime dateTime;
 	
 	//wake up the SD card
-	MOSFET_PORT.OUTSET.reg = SD_CARD_MOSFET_PINMASK;
+	PORTA.OUTSET.reg = SD_CARD_MOSFET_PINMASK;
 	
 	SdCardInit(&mountingResult);
 	bool timeFileFound = tryReadTimeFile(&dateTime);
@@ -78,7 +79,7 @@ int main (void)
 	SD_CheckIntegrityOrCreateIfMissing(&loggerConfig);
 	
 	/*remove power to the SD/MMC card, we'll re enable it when it's time to write the reading.*/
-	MOSFET_PORT.OUTCLR.reg = SD_CARD_MOSFET_PINMASK;
+	PORTA.OUTCLR.reg = SD_CARD_MOSFET_PINMASK;
 	
 	if(timeFileFound){
 		Ds1302SetDateTime(&dateTime);
@@ -92,24 +93,26 @@ int main (void)
 	}
 
 	/*All initialization has been done, so enter the loop!*/
-	while(1){
-		
-		MOSFET_PORT.OUTSET.reg = DENDRO_TC_AMP_MOSFET_PINMASK;
-		//read dendro values
+	while(1){		
 		double dendroValues[2];
-		//8 thermocouple values, 4 for before the heater, 4 for afterwards
 		double tcTempBeforeHeater[4];
 		double tcTempAfterHeater[4];
+		PORTA.OUTSET.reg = DENDRO_TC_AMP_MOSFET_PINMASK;
 		dendroValues[0] = ReadDendro(&adcModule1);
 		dendroValues[1] = ReadDendro(&adcModule2);
 				
 		ReadThermocouples(tcTempBeforeHeater);
-		//turn off select pins AND the dendro/tc mosfet
-		TC_MUX_SELECT_PORT.OUTCLR.reg = DENDRO_TC_AMP_MOSFET_PINMASK | TC_MUX_SELECT_ALL_PINMASK;
-		
-		//turn on heater, and sleep for its duration
-		MOSFET_PORT.OUTSET.reg = HEATER_MOSFET_PINAMSK;
+				
+		//turn on heater, and turn off dendro/tc. Then, sleep for the heater duration.
+		PORTA.OUTTGL.reg = HEATER_MOSFET_PINMASK | DENDRO_TC_AMP_MOSFET_PINMASK;
 		timedSleep_seconds(&tcInstance,HEATER_TIMED_SLEEP_SECONDS);
+		//turn heater off, and dendro/tc back on.
+		PORTA.OUTTGL.reg = HEATER_MOSFET_PINMASK | DENDRO_TC_AMP_MOSFET_PINMASK;
+		
+		ReadThermocouples(tcTempAfterHeater);
+		
+		//turn of dendr/tc, and turn on SDI-12 bus and DHT22s
+		PORTA.OUTTGL.reg = DENDRO_TC_AMP_MOSFET_PINMASK | SDI_DHT22_POWER_MOSFET_PINMASK;
 		
 		
 		
@@ -123,6 +126,7 @@ void componentInit(void)
 	Max31856ConfigureSPI(&spiMasterModule, &spiSlaveInstance);
 	SDI12_Setup();
 	DS1302Init();
+	Dht22Setup(DHT22_PIN)
 	ConfigureDendroADC(&adcModule1, DEND_ANALOG_PIN_1);
 	ConfigureDendroADC(&adcModule2, DEND_ANALOG_PIN_2);
 }
@@ -141,18 +145,18 @@ bool MAX31856_VOLATILE_REGISTERS_TEST(void){
 
 void ReadThermocouples(double *tcValuesOut){
 	//start by configuring the registers to the required values.
-	Max31856ConfigureRegisters(struct spi_module *spiMasterModule, struct spi_slave_inst *slaveInst, uint32_t thermocoupleType);
-	TC_MUX_SELECT_PORT.OUTCLR.reg = TC_MUX_SELECT_ALL_PINMASK;
-	uint32_t pinmask = 0;
+	Max31856ConfigureRegisters(&spiMasterModule, &spiSlaveInstance, MAX31856_THERMOCOUPLE_TYPE_USED);
+	PORTA.OUTCLR.reg = TC_MUX_SELECT_ALL_PINMASK;
+	
 	for(uint8_t index = 0; index < 4; index++){
 		//request the reading.
-		requestStatus = Max31856RequestReading(&spiMasterModule, &spiSlaveInstance);
+		enum Max31856_Status requestStatus = Max31856RequestReading(&spiMasterModule, &spiSlaveInstance);
 		//delay until it is ready, about 200ms maximum
 		portable_delay_cycles(200*1000);
-		tempStatus = Max31856GetTemp(&spiMasterModule, &spiSlaveInstance, &(tcValuesOut[index]));
+		enum Max31856_Status tempStatus = Max31856GetTemp(&spiMasterModule, &spiSlaveInstance, &(tcValuesOut[index]));
 		if(requestStatus != MAX31856_OKAY || tempStatus != MAX31856_OKAY){
 			tcValuesOut[index] = NAN;
 		}
-		TC_MUX_SELECT_PORT.OUTTGL.reg = ((index & 1) != 0)? TC_MUX_SELECT_ALL_PINMASK : TC_MUX_SELECT_A_PINMASK;
+		PORTA.OUTTGL.reg = ((index & 1) != 0)? TC_MUX_SELECT_ALL_PINMASK : TC_MUX_SELECT_A_PINMASK;
 	}
 }

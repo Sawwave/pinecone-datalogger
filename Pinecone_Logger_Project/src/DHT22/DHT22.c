@@ -31,7 +31,7 @@
 	Code to send a HIGH signal to the dht, as an on, but idle, message.
 	When the logger wants to communicate with the sensor, it will pull the data pin LOW 
 	via the function GetDht22Reading*/
-void Dht22Setup(const uint8_t dhtPin){
+void Dht22Setup(PortGroup dht22Port){
 	
 	PortGroup *dhtPort = port_get_group_from_gpio_pin(dhtPin);
 	const uint32_t dhtPinmask = (1UL << (dhtPin % 32));
