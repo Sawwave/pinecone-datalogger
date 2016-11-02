@@ -80,6 +80,12 @@ int main (void)
 	/*remove power to the SD/MMC card, we'll re enable it when it's time to write the reading.*/
 	PORTA.OUTCLR.reg = SD_CARD_MOSFET_PINMASK;
 	
+	uint16_t totalSdiValues = 0;
+	for(uint8_t sdiIndex = 0; sdiIndex < loggerConfig.numSdiSensors;sdiIndex++){
+		totalSdiValues += loggerConfig.SDI12_SensorNumValues[sdiIndex];
+	}
+
+	
 	if(timeFileFound){
 		Ds1302SetDateTime(&dateTime);
 	}
@@ -92,16 +98,19 @@ int main (void)
 	}
 
 	/*All initialization has been done, so enter the loop!*/
-	while(1){		
+	while(1){
 		double dendroValues[2];
 		double tcTempBeforeHeater[4];
 		double tcTempAfterHeater[4];
+		double dht1Temp, dht2Temp, dht1Rh, dht2Rh;
+		float sdiValues[totalSdiValues];
+		
 		PORTA.OUTSET.reg = DENDRO_TC_AMP_MOSFET_PINMASK;
 		dendroValues[0] = ReadDendro(&adcModule1);
 		dendroValues[1] = ReadDendro(&adcModule2);
-				
+		
 		ReadThermocouples(tcTempBeforeHeater);
-				
+		
 		//turn on heater, and turn off dendro/tc. Then, sleep for the heater duration.
 		PORTA.OUTTGL.reg = HEATER_MOSFET_PINMASK | DENDRO_TC_AMP_MOSFET_PINMASK;
 		timedSleep_seconds(&tcInstance,HEATER_TIMED_SLEEP_SECONDS);
@@ -110,10 +119,46 @@ int main (void)
 		
 		ReadThermocouples(tcTempAfterHeater);
 		
-		//turn of dendr/tc, and turn on SDI-12 bus and DHT22s
-		PORTA.OUTTGL.reg = DENDRO_TC_AMP_MOSFET_PINMASK | SDI_DHT22_POWER_MOSFET_PINMASK;
+		//turn of dendr/tc, and turn on SDI-12 bus and DHT22s. mark the DHT22 data pins as HIGH to start, too.
+		PORTA.OUTTGL.reg = DENDRO_TC_AMP_MOSFET_PINMASK | SDI_DHT22_POWER_MOSFET_PINMASK | DHT22_ALL_PINMASK;
+		enum Dht22Status dhtStatus = GetDht22Reading(&dht1Temp, &dht1Rh, DHT22_1_PINMASK);
+		if(dhtStatus != DHT_STATUS_OKAY){
+			dht1Temp = NAN;
+			dht1Rh = NAN;
+		}
+		dhtStatus = GetDht22Reading(&dht2Temp, &dht2Rh, DHT22_2_PINMASK);
+		if(dhtStatus != DHT_STATUS_OKAY){
+			dht2Temp = NAN;
+			dht2Rh = NAN;
+		}
 		
+		uint16_t sdiValueStartIndex = 0;
+		//query and read all values from all the sdi12 sensors
+		for(uint8_t sdiSensorIndex = 0; sdiSensorIndex < loggerConfig.numSdiSensors; sdiSensorIndex++){
+			struct SDI_transactionPacket transactionPacket;
+			transactionPacket.address = loggerConfig.SDI12_SensorAddresses[sdiSensorIndex];
+			SDI12_RequestSensorReading(&transactionPacket);
+			//if the sensor asked us to wait for some time before reading, let's go into sleep mode for it.
+			if(transactionPacket.waitTime > 0){
+				timedSleep_seconds(&tcInstance, transactionPacket.waitTime);
+			}
+			bool success = SDI12_GetSensedValues(&transactionPacket, &(sdiValues[sdiValueStartIndex]));
+			//TODO: if success was false, put NANs in the values.
+			//TODO: change sdi to use doubles instead of floats.
+			//move the index of sdiValues so the next transaction will write to the correct place in the array.
+			sdiValueStartIndex +=loggerConfig.SDI12_SensorNumValues[sdiSensorIndex]; 
+			
+		}
+		//turn off the power to the SDI12 bus, the DHT22s, and stop sending HIGH on the DHT22 data lines.
+		PORTA.OUTTGL.reg = SDI_DHT22_POWER_MOSFET_PINMASK | DHT22_ALL_PINMASK ;
 		
+		//TODO: get the datetime
+		
+		//TODO: turn on SD card
+		
+		//TODO: log to sd card
+		
+		//TODO: sleep for interval
 		
 		
 	}
