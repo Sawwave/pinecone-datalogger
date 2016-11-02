@@ -12,7 +12,7 @@
 #include <math.h>
 
 #define ADC_SAMPLE_LENGTH 32
-
+#define ADC_MAX_VALUE 0x1000
 
 void ConfigureDendroADC(struct adc_module *adcModule, const uint32_t dendAnalogPin)
 {
@@ -28,14 +28,16 @@ void ConfigureDendroADC(struct adc_module *adcModule, const uint32_t dendAnalogP
 }
 
 /*ReadDendro
-	uses the adc module defined to read a specific analog pin, and uses the value and dend travel distance to compute dendrometer value.
-	use adc_enable and disable before and after reading form the dendros.*/
+uses the adc module defined to read a specific analog pin, and uses the value and dend travel distance to compute dendrometer value.
+use adc_enable and disable before and after reading form the dendros.*/
 double ReadDendro(struct adc_module *adcModule)
 {
+	adc_enable(adcModule);
 	uint16_t adcReadingValue;
 	//read until the result is finished
 	while(adc_read(adcModule, &adcReadingValue) == STATUS_BUSY)
 	{	;	}
-	double ratioTraveled = ((double)adcReadingValue / (double)0x1000);	
+	adc_disable(adcModule);
+	double ratioTraveled = ((double)adcReadingValue / (double)ADC_MAX_VALUE);
 	return ratioTraveled * DENDROMETER_TRAVEL_DISTANCE_MICROMETERS;
 }

@@ -67,6 +67,8 @@ struct LoggerConfig{
 #define SD_READING_IN_PROGRESS_FILENAME "0:a"
 #define SD_CONFIG_FILENAME "0:lgr.cfg"
 
+#define HEATER_TIMED_SLEEP_SECONDS 60
+
 #define SDI_PIN PIN_PA09
 #define SDI_PIN_PORT						PORTA
 #define SDI_PIN_PINMASK						1<<9
@@ -111,5 +113,6 @@ struct LoggerConfig{
 #define TC_MUX_SELECT_PORT					PORTA
 #define TC_MUX_SELECT_A_PINMASK				1 << 20 //PIN_PA20
 #define TC_MUX_SELECT_B_PINMASK				1 << 21 //PIN_PA21
+#define TC_MUX_SELECT_ALL_PINMASK			TC_MUX_SELECT_A_PINMASK | TC_MUX_SELECT_B_PINMASK
 
 #endif // CONF_BOARD_H

@@ -20,8 +20,6 @@ bool SD_CheckIntegrityOrCreateIfMissing(const struct LoggerConfig *loggerConf);
 
 bool readConfigFile(struct LoggerConfig *config);
 
-bool logToDataFile(Ds1302DateTime *dateTime, float *thermocoupleReadings);
-
 int8_t SD_UnitTest(void);
 
 #endif /* SD_FILEUTILS_H_ */

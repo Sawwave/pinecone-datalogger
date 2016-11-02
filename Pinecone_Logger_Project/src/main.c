@@ -28,6 +28,7 @@
 * Support and FAQ: visit <a href="http://www.atmel.com/design-support/">Atmel Support</a>
 */
 #include <asf.h>
+#include <math.h>
 #include "DHT22/DHT22.h"
 #include "DS1302/DS1302.h"
 #include "MAX31856/MAX31856.h"
@@ -38,6 +39,7 @@
 
 
 
+void ReadThermocouples(double *tcValuesOut)
 void componentInit(void);
 bool MAX31856_VOLATILE_REGISTERS_TEST(void);
 
@@ -62,8 +64,8 @@ int main (void)
 	#endif
 	
 	//start with all power mosfets off
-	MOSFET_PORT.DIRSET.reg = ALL_MOSFET_PINMASK;
-	MOSFET_PORT.OUTCLR.reg = ALL_MOSFET_PINMASK;
+	MOSFET_PORT.DIRSET.reg = ALL_MOSFET_PINMASK | TC_MUX_SELECT_ALL_PINMASK;
+	MOSFET_PORT.OUTCLR.reg = ALL_MOSFET_PINMASK | TC_MUX_SELECT_ALL_PINMASK;
 	
 	struct Ds1302DateTime dateTime;
 	
@@ -93,7 +95,24 @@ int main (void)
 	while(1){
 		
 		MOSFET_PORT.OUTSET.reg = DENDRO_TC_AMP_MOSFET_PINMASK;
-		Max31856ConfigureRegisters(&spiMasterModule, &spiSlaveInstance, MAX31856_THERMOCOUPLE_TYPE_USED);
+		//read dendro values
+		double dendroValues[2];
+		//8 thermocouple values, 4 for before the heater, 4 for afterwards
+		double tcTempBeforeHeater[4];
+		double tcTempAfterHeater[4];
+		dendroValues[0] = ReadDendro(&adcModule1);
+		dendroValues[1] = ReadDendro(&adcModule2);
+				
+		ReadThermocouples(tcTempBeforeHeater);
+		//turn off select pins AND the dendro/tc mosfet
+		TC_MUX_SELECT_PORT.OUTCLR.reg = DENDRO_TC_AMP_MOSFET_PINMASK | TC_MUX_SELECT_ALL_PINMASK;
+		
+		//turn on heater, and sleep for its duration
+		MOSFET_PORT.OUTSET.reg = HEATER_MOSFET_PINAMSK;
+		timedSleep_seconds(&tcInstance,HEATER_TIMED_SLEEP_SECONDS);
+		
+		
+		
 		
 	}
 }
@@ -118,4 +137,22 @@ bool MAX31856_VOLATILE_REGISTERS_TEST(void){
 	//read register
 	//see if equal.
 	return false;
+}
+
+void ReadThermocouples(double *tcValuesOut){
+	//start by configuring the registers to the required values.
+	Max31856ConfigureRegisters(struct spi_module *spiMasterModule, struct spi_slave_inst *slaveInst, uint32_t thermocoupleType);
+	TC_MUX_SELECT_PORT.OUTCLR.reg = TC_MUX_SELECT_ALL_PINMASK;
+	uint32_t pinmask = 0;
+	for(uint8_t index = 0; index < 4; index++){
+		//request the reading.
+		requestStatus = Max31856RequestReading(&spiMasterModule, &spiSlaveInstance);
+		//delay until it is ready, about 200ms maximum
+		portable_delay_cycles(200*1000);
+		tempStatus = Max31856GetTemp(&spiMasterModule, &spiSlaveInstance, &(tcValuesOut[index]));
+		if(requestStatus != MAX31856_OKAY || tempStatus != MAX31856_OKAY){
+			tcValuesOut[index] = NAN;
+		}
+		TC_MUX_SELECT_PORT.OUTTGL.reg = ((index & 1) != 0)? TC_MUX_SELECT_ALL_PINMASK : TC_MUX_SELECT_A_PINMASK;
+	}
 }
