@@ -27,14 +27,15 @@ void ConfigureDendroADC(struct adc_module *adcModule, uint32_t dendAnalogPin)
 	adc_init(adcModule, ADC, &adcConfig);
 }
 
+/*ReadDendro
+	uses the adc module defined to read a specific analog pin, and uses the value and dend travel distance to compute dendrometer value.
+	use adc_enable and disable before and after reading form the dendros.*/
 double ReadDendro(struct adc_module *adcModule)
 {
 	uint16_t adcReadingValue;
 	//read until the result is finished
 	while(adc_read(adcModule, &adcReadingValue) == STATUS_BUSY)
 	{	;	}
-	double ratioTraveled = ((double)adcReadingValue / (double)0x1000);
-	double currentPosition = ratioTraveled * DENDROMETER_TRAVEL_DISTANCE_MICROMETERS;
-	
-	return currentPosition;
+	double ratioTraveled = ((double)adcReadingValue / (double)0x1000);	
+	return ratioTraveled * DENDROMETER_TRAVEL_DISTANCE_MICROMETERS;;
 }

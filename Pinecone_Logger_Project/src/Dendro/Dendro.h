@@ -10,7 +10,7 @@
 
 #include<stdint.h>
 
-void ConfigureDendroADC(struct adc_module *adcModule, uint32_t dendAnalogPin);
-double ReadDendro(struct adc_module *adcModule);
+void ConfigureDendroADC(struct adc_module *adcModule, const uint32_t dendAnalogPin);
+double ReadDendro(const struct adc_module *adcModule);
 
 #endif /* DENDRO_H_ */
