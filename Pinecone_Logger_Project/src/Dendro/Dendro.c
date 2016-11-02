@@ -34,6 +34,7 @@ double ReadDendro(struct adc_module *adcModule)
 {
 	adc_enable(adcModule);
 	uint16_t adcReadingValue;
+	adc_start_conversion(adcModule);
 	//read until the result is finished
 	while(adc_read(adcModule, &adcReadingValue) == STATUS_BUSY)
 	{	;	}
