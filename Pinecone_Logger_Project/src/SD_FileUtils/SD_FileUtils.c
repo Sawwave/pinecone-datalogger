@@ -12,7 +12,7 @@
 #define SD_DEBUG_FILE "0:debug.txt"
 
 void SD_FileCreateWithHeader(const struct LoggerConfig *loggerConf);
-bool checkAndFixLastFileLineIntegrity(uint16_t expectedValues);
+bool checkAndFixLastFileLineIntegrity(const uint16_t expectedValues);
 FRESULT SD_UnitTestRemoveFile(void);
 FRESULT SD_UnitTestCreateDebugFile(FIL *file);
 FRESULT SD_UnitTestReadFile(FIL *file);
@@ -194,7 +194,7 @@ bool readConfigFile(struct LoggerConfig *config){
 	return true;
 }
 
-bool checkAndFixLastFileLineIntegrity(uint16_t expectedValues)
+bool checkAndFixLastFileLineIntegrity(const uint16_t expectedValues)
 {
 	//open the data file, and start checking.
 	FIL file;

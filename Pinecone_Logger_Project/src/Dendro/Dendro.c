@@ -14,7 +14,7 @@
 #define ADC_SAMPLE_LENGTH 32
 
 
-void ConfigureDendroADC(struct adc_module *adcModule, uint32_t dendAnalogPin)
+void ConfigureDendroADC(struct adc_module *adcModule, const uint32_t dendAnalogPin)
 {
 	struct adc_config adcConfig;
 	adc_get_config_defaults(&adcConfig);
@@ -37,5 +37,5 @@ double ReadDendro(struct adc_module *adcModule)
 	while(adc_read(adcModule, &adcReadingValue) == STATUS_BUSY)
 	{	;	}
 	double ratioTraveled = ((double)adcReadingValue / (double)0x1000);	
-	return ratioTraveled * DENDROMETER_TRAVEL_DISTANCE_MICROMETERS;;
+	return ratioTraveled * DENDROMETER_TRAVEL_DISTANCE_MICROMETERS;
 }
