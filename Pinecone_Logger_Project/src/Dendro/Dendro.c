@@ -9,6 +9,7 @@
 #include "Dendro/Dendro.h"
 #include <adc.h>
 #include <adc_feature.h>
+#include <math.h>
 
 #define ADC_SAMPLE_LENGTH 32
 
@@ -28,14 +29,12 @@ void ConfigureDendroADC(struct adc_module *adcModule, uint32_t dendAnalogPin)
 
 double ReadDendro(struct adc_module *adcModule)
 {
-	adc_enable(adcModule);
 	uint16_t adcReadingValue;
 	//read until the result is finished
 	while(adc_read(adcModule, &adcReadingValue) == STATUS_BUSY)
 	{	;	}
-	double ratioTraveled = ((double)adcReadingValue / 0x1000);
+	double ratioTraveled = ((double)adcReadingValue / (double)0x1000);
 	double currentPosition = ratioTraveled * DENDROMETER_TRAVEL_DISTANCE_MICROMETERS;
 	
-	adc_disable(adcModule);
 	return currentPosition;
 }

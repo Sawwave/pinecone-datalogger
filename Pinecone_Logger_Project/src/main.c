@@ -43,16 +43,9 @@ bool MAX31856_VOLATILE_REGISTERS_TEST(void);
 
 struct spi_module spiMasterModule;
 struct spi_slave_inst spiSlaveInstance;
-struct adc_module adcModule1;
-struct adc_module adcModule2;
+struct adc_module adcModule;
 
 struct tc_module tcInstance;
-
-
-
-
-
-
 
 int main (void)
 {
@@ -109,8 +102,8 @@ void componentInit(void)
 	Max31856ConfigureSPI(&spiMasterModule, &spiSlaveInstance);
 	SDI12_Setup();
 	DS1302Init();
-	ConfigureDendroADC(&adcModule1, DEND_ANALOG_PIN_1);
-	ConfigureDendroADC(&adcModule2, DEND_ANALOG_PIN_2);
+	ConfigureDendroADC(&adcModule, DEND_ANALOG_PIN_1);
+	ConfigureDendroADC(&adcModule, DEND_ANALOG_PIN_2);
 }
 
 bool MAX31856_VOLATILE_REGISTERS_TEST(void){
