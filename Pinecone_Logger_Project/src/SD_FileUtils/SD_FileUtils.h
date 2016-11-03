@@ -16,9 +16,11 @@ void SdCardInit(FRESULT *mountingResult);
 
 bool tryReadTimeFile(struct Ds1302DateTime *dateTime);
 
-bool SD_CheckIntegrityOrCreateIfMissing(const struct LoggerConfig *loggerConf);
+bool SD_CreateWithHeaderIfMissing(const struct LoggerConfig *loggerConfig);
 
 bool readConfigFile(struct LoggerConfig *config);
+
+bool SD_CheckIntegrity(const struct LoggerConfig *loggerConfig);
 
 int8_t SD_UnitTest(void);
 

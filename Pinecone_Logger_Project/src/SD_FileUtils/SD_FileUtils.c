@@ -78,27 +78,30 @@ bool tryReadTimeFile(struct Ds1302DateTime *dateTime){
 	return !(dateTime->date && dateTime->month && dateTime->year);
 }
 
-bool SD_CheckIntegrityOrCreateIfMissing(const struct LoggerConfig *loggerConf)
+/*
+
+return true if header was created or file already existed.*/
+bool SD_CreateWithHeaderIfMissing(const struct LoggerConfig *loggerConfig)
 {
 	FILINFO fileInfo;
 	FRESULT statsResult = f_stat(SD_DATALOG_FILENAME, &fileInfo);
-	
-	if((statsResult == FR_OK) && (loggerConf->checkFileIntegrity)){
-		uint16_t expectedValues = 10; //start with 10 values, we'll add more for the SDI12s
-		uint8_t sdiIndex = loggerConf->numSdiSensors;
-		while(sdiIndex){
-			expectedValues += loggerConf->SDI12_SensorNumValues[--sdiIndex];
-		}
-		checkAndFixLastFileLineIntegrity(expectedValues);
-		return true;
-	}
-	else if (statsResult == FR_NO_FILE){
-		SD_FileCreateWithHeader(loggerConf);
+	if (statsResult == FR_NO_FILE){
+		SD_FileCreateWithHeader(loggerConfig);
 		return true;
 	}
 	
 	//if we've got here, return false if the stats was something other than FR_OK or FR_NO_FILe (would've exited above)
-	return statsResult != FR_OK;
+	return statsResult == FR_OK;
+}
+
+bool SD_CheckIntegrity(const struct LoggerConfig *loggerConfig){
+	//count up the number of SDI values we're expecting
+	uint16_t expectedValues = 10; //start with 10 values, we'll add more for the SDI12s
+	uint8_t sdiIndex = loggerConfig->numSdiSensors;
+	while(sdiIndex){
+		expectedValues += loggerConfig->SDI12_SensorNumValues[--sdiIndex];
+	}
+	checkAndFixLastFileLineIntegrity(expectedValues);
 }
 
 void SD_FileCreateWithHeader(const struct LoggerConfig *loggerConf)

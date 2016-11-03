@@ -60,7 +60,7 @@ int main (void)
 	delay_init();
 	
 	#ifdef PINECONE_LOGGER_DEBUG_UNIT_TESTS
-	//SD_UnitTest(&fileSystem);
+	SD_UnitTest(&fileSystem);
 	#endif
 	
 	//start with all power mosfets off
@@ -73,9 +73,20 @@ int main (void)
 	PORTA.OUTSET.reg = SD_CARD_MOSFET_PINMASK;
 	
 	SdCardInit(&mountingResult);
+	DS1302Init();
 	bool timeFileFound = tryReadTimeFile(&dateTime);
 	readConfigFile(&loggerConfig);
-	SD_CheckIntegrityOrCreateIfMissing(&loggerConfig);
+	SD_CreateWithHeaderIfMissing(&loggerConfig);
+	
+	uint8_t Ds1302StoredRegister = Ds1302GetBatteryBackedRegister(DS1302_GENERAL_PURPOSE_DATA_REGISTER_0);
+	if(Ds1302StoredRegister & 0x1){
+		//clear out the value in the Ds1302 register
+		Ds1302SetBatteryBackedRegister(DS1302_GENERAL_PURPOSE_DATA_REGISTER_0, 0);
+		//check for file integrity if configured to do so.
+		if(loggerConfig.checkFileIntegrity){
+			SD_CheckIntegrity(&loggerConfig);
+		}
+	}
 	
 	/*remove power to the SD/MMC card, we'll re enable it when it's time to write the reading.*/
 	PORTA.OUTCLR.reg = SD_CARD_MOSFET_PINMASK;
@@ -91,7 +102,6 @@ int main (void)
 	}
 	
 	componentInit();
-	
 	/*If the configuration is set to defer logging for one sleep cycle, accomplish that sleep here.*/
 	if(!loggerConfig.logImmediately){
 		timedSleep_seconds(&tcInstance, loggerConfig.loggingInterval);
@@ -144,12 +154,12 @@ int main (void)
 			}
 			bool success = SDI12_GetSensedValues(&transactionPacket, &(sdiValues[sdiValueStartIndex]));
 			if(!success){
-							//TODO: if success was false, put NANs in the values.
+				//TODO: if success was false, put NANs in the values.
 			}
 
 			//TODO: change sdi to use doubles instead of floats.
 			//move the index of sdiValues so the next transaction will write to the correct place in the array.
-			sdiValueStartIndex += loggerConfig.SDI12_SensorNumValues[sdiSensorIndex]; 
+			sdiValueStartIndex += loggerConfig.SDI12_SensorNumValues[sdiSensorIndex];
 			
 		}
 		//turn off the power to the SDI12 bus, the DHT22s, and stop sending HIGH on the DHT22 data lines.
@@ -174,7 +184,6 @@ void componentInit(void)
 	initSleepTimerCounter(&tcInstance);
 	Max31856ConfigureSPI(&spiMasterModule, &spiSlaveInstance);
 	SDI12_Setup();
-	DS1302Init();
 	ConfigureDendroADC(&adcModule1, DEND_ANALOG_PIN_1);
 	ConfigureDendroADC(&adcModule2, DEND_ANALOG_PIN_2);
 }
