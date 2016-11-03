@@ -14,10 +14,9 @@
 #define DS1302_CLOCK_BURST_WRITE_REGISTER 0xBE
 #define DS1302_CLOCK_BURST_READ_REGISTER 0xBF
 #define DS1302_CONTROL_WRITE_REGISTER 0x8E
-#define DS1302_GENERAL_PURPOSE_DATA_REGISTER 0xC1
 #define DS1302_DISABLE_WRITE_PROTECT_VALUE 0
 #define DS1302_ENABLE_WRITE_PROTECT_VALUE 1 << 7
-#define OUT_BUFFER_SECOND_INDEX 17
+#define OUT_BUFFER_SECOND_INDEX 17 
 #define OUT_BUFFER_MINUTE_INDEX 14
 #define OUT_BUFFER_HOUR_INDEX 11
 #define OUT_BUFFER_DATE_INDEX 3
@@ -37,7 +36,7 @@ void DS1302Init(void){
 void Ds1302SetDateTime(const Ds1302DateTime *dateTime){
 
 	//enable the clock
-	PORTA.OUTSET.reg = DS1302_ENABLE_PIN;
+	PORTA.OUTSET.reg = DS1302_ENABLE_PIN_INDEX;
 	
 	//disable writeProtect
 	Ds1302WriteByte(DS1302_CONTROL_WRITE_REGISTER);
@@ -77,7 +76,6 @@ void Ds1302GetDateTime(char *outBuffer){
 	outBuffer[16] = ':';
 	uint8_t rxBuffer[10];
 	
-	
 	PORTA.OUTSET.reg = DS1302_ENABLE_PINMASK;
 	Ds1302WriteByte(DS1302_CLOCK_BURST_READ_REGISTER);
 	
@@ -100,7 +98,7 @@ void Ds1302GetDateTime(char *outBuffer){
 	#else
 	PORTA.WRCONFIG.reg = PORT_WRCONFIG_WRPINCFG | (DS1302_DATA_PINMASK >> 16) | PORT_WRCONFIG_HWSEL;
 	#endif
-	PORTA.DIRCLR.reg = DS1302_DATA_PINMASK; 
+	PORTA.DIRCLR.reg = DS1302_DATA_PINMASK;
 	
 	//disable the ds1302
 	PORTA.OUTCLR.reg = DS1302_ENABLE_PINMASK | DS1302_DATA_PINMASK | DS1302_CLOCK_PINMASK;
@@ -122,8 +120,49 @@ void Ds1302GetDateTime(char *outBuffer){
 	
 	outBuffer[OUT_BUFFER_SECOND_INDEX] = (rxBuffer[0] >> 4) + '0';
 	outBuffer[OUT_BUFFER_SECOND_INDEX + 1] = (rxBuffer[0] & 0x0F) + '0';
-	
+}
 
+//note! registerIndex must be less than 31
+uint8_t Ds1302GetBatteryBackedRegister(const uint8_t registerAddress){
+	//enable the ds1302
+	PORTA.OUTSET.reg = DS1302_ENABLE_PIN_INDEX;
+	
+	Ds1302WriteByte(registerAddress| 1);	// OR 1 makes it a read
+	
+	//set the Data pin for input, and enable input in the wrconfig
+	PORTA.DIRCLR.reg = DS1302_DATA_PINMASK;
+	#if DS1302_DATA_PINMASK < (1 << 16)
+	PORTA.WRCONFIG.reg = PORT_WRCONFIG_WRPINCFG | PORT_WRCONFIG_INEN | DS1302_DATA_PINMASK;
+	#else
+	PORTA.WRCONFIG.reg = PORT_WRCONFIG_WRPINCFG | PORT_WRCONFIG_INEN | (DS1302_DATA_PINMASK >> 16) | PORT_WRCONFIG_HWSEL;
+	#endif
+	
+	//get the byte
+	uint8_t storedByte = Ds1302ReadByte();
+	
+	//set the Data pin for input, and enable input in the wrconfig
+	PORTA.DIRCLR.reg = DS1302_DATA_PINMASK;
+	#if DS1302_DATA_PINMASK < (1 << 16)
+	PORTA.WRCONFIG.reg = PORT_WRCONFIG_WRPINCFG | PORT_WRCONFIG_INEN | DS1302_DATA_PINMASK;
+	#else
+	PORTA.WRCONFIG.reg = PORT_WRCONFIG_WRPINCFG | PORT_WRCONFIG_INEN | (DS1302_DATA_PINMASK >> 16) | PORT_WRCONFIG_HWSEL;
+	#endif
+	
+	//set all pins to low.
+	PORTA.OUTCLR.reg = DS1302_ENABLE_PINMASK | DS1302_DATA_PINMASK | DS1302_CLOCK_PINMASK;
+	
+	return storedByte;
+}
+
+void Ds1302SetBatteryBackedRegister(const uint8_t registerAddress, const uint8_t value){
+	//enable the ds1302
+	PORTA.OUTSET.reg = DS1302_ENABLE_PIN_INDEX;
+	
+	Ds1302WriteByte(registerAddress);
+	Ds1302WriteByte(value);
+	
+	//set all pins to low.
+	PORTA.OUTCLR.reg = DS1302_ENABLE_PINMASK | DS1302_DATA_PINMASK | DS1302_CLOCK_PINMASK;
 }
 
 uint8_t Ds1302ReadByte(void){
@@ -131,12 +170,12 @@ uint8_t Ds1302ReadByte(void){
 	uint8_t bitCounter;
 	for(bitCounter = 0; bitCounter < 8; bitCounter++)
 	{
-		int pinLevel = (PORTA.IN.reg >> DS1302_DATA_PIN) & 1;
+		int pinLevel = (PORTA.IN.reg >> DS1302_DATA_PIN_INDEX) & 1;
 		outByte |= pinLevel << bitCounter;
 		portable_delay_cycles(8);
 		PORTA.OUTTGL.reg = DS1302_CLOCK_PINMASK;
 		portable_delay_cycles(8);
-		PORTA.OUTTGL.reg = DS1302_CLOCK_PINMASK; 
+		PORTA.OUTTGL.reg = DS1302_CLOCK_PINMASK;
 	}
 	return outByte;
 }

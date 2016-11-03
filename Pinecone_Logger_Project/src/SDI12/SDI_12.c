@@ -31,13 +31,7 @@ uint8_t SDI12_ParseNumValuesFromResult(char outBuffer[], uint8_t outBufferLen);
 bool SDI12_TIME_FORMAT_UNIT_TEST(void);
 
 void SDI12_Setup(void){
-	struct port_config conf;
-	port_get_config_defaults(&conf);
-	conf.direction = PORT_PIN_DIR_OUTPUT;
-	conf.powersave = true;
-	port_pin_set_config(SDI_PIN, &conf);
-	
-	port_pin_set_output_level(SDI_PIN, LOW);
+	PORTA.DIRSET.reg = SDI_PIN_PINMASK;
 }
 char charAddParity(char address){
 	address &= 0x7F;
@@ -222,11 +216,6 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction(const char *message, const uint8
 	//clear out the output buffer
 	memset(outBuffer, 0, sizeof(char)*outBufferLen);
 	
-	//set the pin for output
-	struct port_config cfg;
-	port_get_config_defaults(&cfg);
-	cfg.direction = PORT_PIN_DIR_OUTPUT;
-	port_pin_set_config(SDI_PIN, &cfg);
 
 	//disable all interrupts, since they can mess up the bit timings.
 	system_interrupt_enter_critical_section();
@@ -252,15 +241,19 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction(const char *message, const uint8
 			}
 			portable_delay_cycles(BIT_TIMING_DELAY_CYCLES);
 		}
+		
 		//end bit (always low)
 		PORTA.OUTCLR.reg = SDI_PIN_PINMASK;
 		portable_delay_cycles(BIT_TIMING_DELAY_CYCLES);
 	}
 	
-	//Now, configure the pin as input, and wait for a response (the pin will go high)
-	cfg.direction = PORT_PIN_DIR_INPUT;
-	cfg.input_pull = PORT_PIN_PULL_NONE;
-	port_pin_set_config(SDI_PIN, &cfg);
+	//set SDI pin to input by changing DIR and setting INEN in WRCONFIG
+	PORTA.DIRCLR.reg = SDI_PIN_PINMASK;
+	#if SDI_PIN_PINMASK < (1 << 16)
+	PORTA.WRCONFIG.reg = PORT_WRCONFIG_WRPINCFG | PORT_WRCONFIG_INEN | SDI_PIN_PINMASK;
+	#else
+	PORTA.WRCONFIG.reg = PORT_WRCONFIG_WRPINCFG | PORT_WRCONFIG_INEN | (SDI_PIN_PINMASK >> 16) | PORT_WRCONFIG_HWSEL;
+	#endif
 	
 	//wait for the timeout or for the data line to go LOW. A timeout value of 8000 gives us roughly >20ms until timeout
 	uint16_t timeout = 8000;
@@ -268,6 +261,14 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction(const char *message, const uint8
 		portable_delay_cycles(5);
 	} while( (timeout--) && ((PORTA.IN.reg & SDI_PIN_PINMASK) != 0) );
 	if(timeout == 0){
+		//turn pin back into OUTPUT, and disable INEN
+		PORTA.DIRSET.reg = SDI_PIN_PINMASK;
+		PORTA.OUTCLR.reg = SDI_PIN_PINMASK;
+		#if SDI_PIN_PINMASK < (1 << 16)
+		PORTA.WRCONFIG.reg = PORT_WRCONFIG_WRPINCFG |  SDI_PIN_PINMASK;
+		#else
+		PORTA.WRCONFIG.reg = PORT_WRCONFIG_WRPINCFG | (SDI_PIN_PINMASK >> 16) | PORT_WRCONFIG_HWSEL;
+		#endif
 		return SDI12_TRANSACTION_TIMEOUT;
 	}
 	
@@ -298,9 +299,15 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction(const char *message, const uint8
 	//we're done receiving the message, so we can leave the interrupt critical section.
 	//while we're at it, we can set the pin back to output, and put it in powersave mode
 	system_interrupt_leave_critical_section();
-	cfg.direction = PORT_PIN_DIR_OUTPUT;
-	cfg.powersave = true;
-	port_pin_set_config(SDI_PIN, &cfg);
+	
+	//turn pin back into OUTPUT, and disable INEN
+	PORTA.DIRSET.reg = SDI_PIN_PINMASK;
+	PORTA.OUTCLR.reg = SDI_PIN_PINMASK;
+	#if SDI_PIN_PINMASK < (1 << 16)
+	PORTA.WRCONFIG.reg = PORT_WRCONFIG_WRPINCFG |  SDI_PIN_PINMASK;
+	#else
+	PORTA.WRCONFIG.reg = PORT_WRCONFIG_WRPINCFG | (SDI_PIN_PINMASK >> 16) | PORT_WRCONFIG_HWSEL;
+	#endif
 	
 	//null terminate the rxMessage.
 	outBuffer[byteNumber]= 0;
