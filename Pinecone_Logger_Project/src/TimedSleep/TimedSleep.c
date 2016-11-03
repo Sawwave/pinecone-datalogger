@@ -13,8 +13,6 @@
 #include "power.h"
 
 #define TIMED_SLEEP_TC_HARDWARE TC2
-
-static void startSleepMode(void);
 static void sleepEndFunction(struct tc_module *const module);
 
 /*initSleepTimerCounter
@@ -51,11 +49,6 @@ void timedSleep_seconds(struct tc_module *tc_instance, const uint32_t seconds){
 	tc_set_compare_value(tc_instance, TC_COMPARE_CAPTURE_CHANNEL_0, seconds);
 	tc_enable(tc_instance);
 	//enable and go to sleep mode!
-
-	startSleepMode();
-}
-
-void startSleepMode(void){
 	system_set_sleepmode(SYSTEM_SLEEPMODE_STANDBY);
 	system_sleep();
 }
