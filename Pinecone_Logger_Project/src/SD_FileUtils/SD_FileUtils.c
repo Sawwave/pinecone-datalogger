@@ -96,7 +96,7 @@ bool SD_CreateWithHeaderIfMissing(const struct LoggerConfig *loggerConfig)
 
 bool SD_CheckIntegrity(const struct LoggerConfig *loggerConfig){
 	//count up the number of SDI values we're expecting
-	uint16_t expectedValues = 10; //start with 10 values, we'll add more for the SDI12s
+	uint16_t expectedValues = 16; //start with 14 values, we'll add more for the SDI12s
 	uint8_t sdiIndex = loggerConfig->numSdiSensors;
 	while(sdiIndex){
 		expectedValues += loggerConfig->SDI12_SensorNumValues[--sdiIndex];
@@ -109,7 +109,7 @@ void SD_FileCreateWithHeader(const struct LoggerConfig *loggerConf)
 	FIL file;
 	f_open(&file, SD_DATALOG_FILENAME, FA_OPEN_ALWAYS | FA_WRITE);
 	//create the header for the data file
-	f_puts("Date,Time,TcPort1,TcPort2,TcPort3,TcPort4,Dht1Temp,Dht1Rh,Dht2Temp,Dht2Rh", &file);
+	f_puts("Date,Time,TcBefore1,TcBefore2,TcBefore3,TcBefore4,TcAfter1,TcAfter2,TcAfter3,TcAfter4,Dht1Temp,Dht1Rh,Dht2Temp,Dht2Rh,Dend1,Dend2", &file);
 
 	char sdiColumnHeader[10] = {',','S','D','I','_','A','.','0','0',0};	//,SDI12_A.00
 	const uint8_t sdiHeaderAddressIndex = 5;

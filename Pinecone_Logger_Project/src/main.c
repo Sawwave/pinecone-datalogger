@@ -106,15 +106,20 @@ int main (void)
 	if(!loggerConfig.logImmediately){
 		timedSleep_seconds(&tcInstance, loggerConfig.loggingInterval);
 	}
+	
+
 
 	/*All initialization has been done, so enter the loop!*/
 	while(1){
+		//this needs to be defined here
+		float sdiValues[totalSdiValues];
 		double dendroValues[2];
 		double tcTempBeforeHeater[4];
 		double tcTempAfterHeater[4];
 		double dht1Temp, dht2Temp, dht1Rh, dht2Rh;
-		float sdiValues[totalSdiValues];
+		char floatingPointConversionBuffer[16];
 		char dateTimeBuffer[18];
+		dateTimeBuffer[17] = 0;	//make sure the dateTimeBuffer is null terminated
 		
 		PORTA.OUTSET.reg = DENDRO_TC_AMP_MOSFET_PINMASK;
 		dendroValues[0] = ReadDendro(&adcModule1);
@@ -171,11 +176,54 @@ int main (void)
 		
 		PORTA.OUTSET.reg = SD_CARD_MOSFET_PINMASK;
 		
-		//TODO: log to sd card
+		//write a 1 into the DS1302 General Purpose Register
+		Ds1302SetBatteryBackedRegister(DS1302_GENERAL_PURPOSE_DATA_REGISTER_0, 0x1);
+		//log all values to dataFile
+		FIL file;
+
+		f_open(&file,SD_DATALOG_FILENAME, FA_OPEN_ALWAYS);
+		f_puts(dateTimeBuffer, &file);
+		
+		//log the 4 tcs before the heater
+		for(uint8_t counter = 0; counter < 4; counter++){
+			snprintf(floatingPointConversionBuffer,16,",%.8f",tcTempBeforeHeater[counter]);
+			f_puts(floatingPointConversionBuffer, &file);
+		}
+		//log the 4 tcs after the heater
+		for(uint8_t counter = 0; counter < 4; counter++){
+			snprintf(floatingPointConversionBuffer,16,",%.8f",tcTempAfterHeater[counter]);
+			f_puts(floatingPointConversionBuffer, &file);
+		}
+		snprintf(floatingPointConversionBuffer,16,",%.1f",dht1Temp);
+		f_puts(floatingPointConversionBuffer, &file);
+		
+		snprintf(floatingPointConversionBuffer,16,",%.1f",dht1Rh);
+		f_puts(floatingPointConversionBuffer, &file);
+		
+		snprintf(floatingPointConversionBuffer,16,",%.1f",dht2Temp);
+		f_puts(floatingPointConversionBuffer, &file);
+		
+		snprintf(floatingPointConversionBuffer,16,",%.1f",dht2Rh);
+		f_puts(floatingPointConversionBuffer, &file);
+		
+		snprintf(floatingPointConversionBuffer,16,",%f",dendroValues[0]);
+		f_puts(floatingPointConversionBuffer, &file);
+		
+		snprintf(floatingPointConversionBuffer,16,",%f", &dendroValues[1]);
+		f_puts(floatingPointConversionBuffer, &file);
+		
+		for(uint8_t sdiCounter = 0; sdiCounter < totalSdiValues; sdiCounter++){
+			snprintf(floatingPointConversionBuffer,16, ",%f", sdiValues[sdiCounter]);
+			f_puts(floatingPointConversionBuffer, &file);
+		}
+		f_close(&file);
 		
 		PORTA.OUTCLR.reg = SD_CARD_MOSFET_PINMASK;
 		
-		timedSleep_seconds(&tcInstance, loggerConfig.loggingInterval);		
+		//write a 0 into the DS1302 General Purpose Register
+		Ds1302SetBatteryBackedRegister(DS1302_GENERAL_PURPOSE_DATA_REGISTER_0, 0);
+		
+		timedSleep_seconds(&tcInstance, loggerConfig.loggingInterval);
 	}
 }
 
