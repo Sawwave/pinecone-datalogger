@@ -47,9 +47,15 @@ struct spi_module spiMasterModule;
 struct spi_slave_inst spiSlaveInstance;
 struct adc_module adcModule1;
 struct adc_module adcModule2;
-
-
 struct tc_module tcInstance;
+
+//number of loggable values, outside of datetime and sdi-12 values
+#define NUM_LOG_VALUES 14
+double LogValues[NUM_LOG_VALUES];
+#define LOG_VALUES_TC_BEFORE_INDEX			0
+#define LOG_VALUES_TC_AFTER_INDEX			4
+#define LOG_VALUES_DHT__INDEX				8
+#define LOG_VALUES_DEND__INDEX				12
 
 int main (void)
 {
@@ -111,21 +117,17 @@ int main (void)
 
 	/*All initialization has been done, so enter the loop!*/
 	while(1){
-		//this needs to be defined here
 		float sdiValues[totalSdiValues];
-		double dendroValues[2];
-		double tcTempBeforeHeater[4];
-		double tcTempAfterHeater[4];
-		double dht1Temp, dht2Temp, dht1Rh, dht2Rh;
 		char floatingPointConversionBuffer[16];
 		char dateTimeBuffer[18];
-		dateTimeBuffer[17] = 0;	//make sure the dateTimeBuffer is null terminated
+		dateTimeBuffer[17] = 0;	//make sure the datetime buffer is null terminated
 		
 		PORTA.OUTSET.reg = DENDRO_TC_AMP_MOSFET_PINMASK;
-		dendroValues[0] = ReadDendro(&adcModule1);
-		dendroValues[1] = ReadDendro(&adcModule2);
 		
-		ReadThermocouples(tcTempBeforeHeater);
+		LogValues[LOG_VALUES_DEND__INDEX]			= ReadDendro(&adcModule1);
+		LogValues[LOG_VALUES_DEND__INDEX + 1]	= ReadDendro(&adcModule2);
+		
+		ReadThermocouples(&(LogValues[LOG_VALUES_TC_BEFORE_INDEX]));
 		
 		//turn on heater, and turn off dendro/tc. Then, sleep for the heater duration.
 		PORTA.OUTTGL.reg = HEATER_MOSFET_PINMASK | DENDRO_TC_AMP_MOSFET_PINMASK;
@@ -133,22 +135,14 @@ int main (void)
 		//turn heater off, and dendro/tc back on.
 		PORTA.OUTTGL.reg = HEATER_MOSFET_PINMASK | DENDRO_TC_AMP_MOSFET_PINMASK;
 		
-		ReadThermocouples(tcTempAfterHeater);
+		ReadThermocouples(&(LogValues[LOG_VALUES_TC_AFTER_INDEX]));
 		
 		//turn of dendr/tc, and turn on SDI-12 bus and DHT22s. mark the DHT22 data pins as HIGH to start, too.
 		PORTA.OUTTGL.reg = DENDRO_TC_AMP_MOSFET_PINMASK | SDI_DHT22_POWER_MOSFET_PINMASK | DHT22_ALL_PINMASK;
 		timedSleep_seconds(&tcInstance, 2);
-		enum Dht22Status dhtStatus = GetDht22Reading(&dht1Temp, &dht1Rh, DHT22_1_PINMASK);
-		if(dhtStatus != DHT_STATUS_OKAY){
-			dht1Temp = NAN;
-			dht1Rh = NAN;
-		}
-		dhtStatus = GetDht22Reading(&dht2Temp, &dht2Rh, DHT22_2_PINMASK);
-		if(dhtStatus != DHT_STATUS_OKAY){
-			dht2Temp = NAN;
-			dht2Rh = NAN;
-		}
-		
+		GetDht22Reading(&(LogValues[LOG_VALUES_DHT__INDEX]), &(LogValues[LOG_VALUES_DHT__INDEX + 1]), DHT22_1_PINMASK);
+		GetDht22Reading(&(LogValues[LOG_VALUES_DHT__INDEX + 2] ), &(LogValues[LOG_VALUES_DHT__INDEX + 3]), DHT22_2_PINMASK);
+
 		uint16_t sdiValueStartIndex = 0;
 		//query and read all values from all the sdi12 sensors
 		for(uint8_t sdiSensorIndex = 0; sdiSensorIndex < loggerConfig.numSdiSensors; sdiSensorIndex++){
@@ -184,33 +178,10 @@ int main (void)
 		f_open(&file,SD_DATALOG_FILENAME, FA_OPEN_ALWAYS);
 		f_puts(dateTimeBuffer, &file);
 		
-		//log the 4 tcs before the heater
-		for(uint8_t counter = 0; counter < 4; counter++){
-			snprintf(floatingPointConversionBuffer,16,",%.8f",tcTempBeforeHeater[counter]);
+		for(uint8_t logValueIndex = 0; logValueIndex < NUM_LOG_VALUES; logValueIndex++){
+			snprintf(floatingPointConversionBuffer,16,",%f", LogValues[logValueIndex]);
 			f_puts(floatingPointConversionBuffer, &file);
 		}
-		//log the 4 tcs after the heater
-		for(uint8_t counter = 0; counter < 4; counter++){
-			snprintf(floatingPointConversionBuffer,16,",%.8f",tcTempAfterHeater[counter]);
-			f_puts(floatingPointConversionBuffer, &file);
-		}
-		snprintf(floatingPointConversionBuffer,16,",%.1f",dht1Temp);
-		f_puts(floatingPointConversionBuffer, &file);
-		
-		snprintf(floatingPointConversionBuffer,16,",%.1f",dht1Rh);
-		f_puts(floatingPointConversionBuffer, &file);
-		
-		snprintf(floatingPointConversionBuffer,16,",%.1f",dht2Temp);
-		f_puts(floatingPointConversionBuffer, &file);
-		
-		snprintf(floatingPointConversionBuffer,16,",%.1f",dht2Rh);
-		f_puts(floatingPointConversionBuffer, &file);
-		
-		snprintf(floatingPointConversionBuffer,16,",%f",dendroValues[0]);
-		f_puts(floatingPointConversionBuffer, &file);
-		
-		snprintf(floatingPointConversionBuffer,16,",%f", &dendroValues[1]);
-		f_puts(floatingPointConversionBuffer, &file);
 		
 		for(uint8_t sdiCounter = 0; sdiCounter < totalSdiValues; sdiCounter++){
 			snprintf(floatingPointConversionBuffer,16, ",%f", sdiValues[sdiCounter]);

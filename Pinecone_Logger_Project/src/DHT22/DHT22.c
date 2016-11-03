@@ -15,6 +15,7 @@
 
 
 #include "Dht22/Dht22.h"
+#include <math.h>
 #include <asf.h>
 #include <stdbool.h>
 
@@ -83,6 +84,9 @@ enum Dht22Status GetDht22Reading(double *temp, double *relativeHumidity, const u
 				//we timed out, so stop listening to the data pin.
 				PORTA.WRCONFIG.reg = wrConfigPowerSave;
 				PORTA.OUTSET.reg = dhtPinmask;
+				
+				*temp = NAN;
+				*relativeHumidity = NAN;
 				return DHT_STATUS_TIMEOUT;
 			}
 		}while(!!(PORTA.IN.reg & dhtPinmask) == (bitCounter & 1));
@@ -102,6 +106,9 @@ enum Dht22Status GetDht22Reading(double *temp, double *relativeHumidity, const u
 	//now that we have our buffer filled, check the parity byte
 	uint8_t parity = rxBuffer[0] + rxBuffer[1] + rxBuffer[2] + rxBuffer[3];
 	if(parity != rxBuffer[4]){
+		*temp = NAN;
+		*relativeHumidity = NAN;
+		
 		return DHT_STATUS_CHECKSUM_ERROR;
 	}
 	
