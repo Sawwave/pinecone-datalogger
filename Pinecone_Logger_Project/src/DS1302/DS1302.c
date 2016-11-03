@@ -71,7 +71,7 @@ void Ds1302GetDateTime(char *outBuffer){
 	outBuffer[5] = '/';
 	outBuffer[6] = '2';
 	outBuffer[7] = '0';
-	outBuffer[10] = ' ';
+	outBuffer[10] = ',';
 	outBuffer[13] = ':';
 	outBuffer[16] = ':';
 	uint8_t rxBuffer[10];

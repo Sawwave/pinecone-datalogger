@@ -114,6 +114,7 @@ int main (void)
 		double tcTempAfterHeater[4];
 		double dht1Temp, dht2Temp, dht1Rh, dht2Rh;
 		float sdiValues[totalSdiValues];
+		char dateTimeBuffer[18];
 		
 		PORTA.OUTSET.reg = DENDRO_TC_AMP_MOSFET_PINMASK;
 		dendroValues[0] = ReadDendro(&adcModule1);
@@ -131,6 +132,7 @@ int main (void)
 		
 		//turn of dendr/tc, and turn on SDI-12 bus and DHT22s. mark the DHT22 data pins as HIGH to start, too.
 		PORTA.OUTTGL.reg = DENDRO_TC_AMP_MOSFET_PINMASK | SDI_DHT22_POWER_MOSFET_PINMASK | DHT22_ALL_PINMASK;
+		timedSleep_seconds(&tcInstance, 2);
 		enum Dht22Status dhtStatus = GetDht22Reading(&dht1Temp, &dht1Rh, DHT22_1_PINMASK);
 		if(dhtStatus != DHT_STATUS_OKAY){
 			dht1Temp = NAN;
@@ -165,7 +167,7 @@ int main (void)
 		//turn off the power to the SDI12 bus, the DHT22s, and stop sending HIGH on the DHT22 data lines.
 		PORTA.OUTCLR.reg = SDI_DHT22_POWER_MOSFET_PINMASK | DHT22_ALL_PINMASK;
 		
-		//TODO: get the datetime
+		Ds1302GetDateTime(dateTimeBuffer);
 		
 		PORTA.OUTSET.reg = SD_CARD_MOSFET_PINMASK;
 		
@@ -173,9 +175,7 @@ int main (void)
 		
 		PORTA.OUTCLR.reg = SD_CARD_MOSFET_PINMASK;
 		
-		//TODO: sleep for interval
-		
-		
+		timedSleep_seconds(&tcInstance, loggerConfig.loggingInterval);		
 	}
 }
 
