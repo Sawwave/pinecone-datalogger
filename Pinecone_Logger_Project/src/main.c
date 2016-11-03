@@ -113,7 +113,7 @@ int main (void)
 		
 		//turn on heater, and turn off dendro/tc. Then, sleep for the heater duration.
 		PORTA.OUTTGL.reg = HEATER_MOSFET_PINMASK | DENDRO_TC_AMP_MOSFET_PINMASK;
-		timedSleep_seconds(&tcInstance,HEATER_TIMED_SLEEP_SECONDS);
+		timedSleep_seconds(&tcInstance, HEATER_TIMED_SLEEP_SECONDS);
 		//turn heater off, and dendro/tc back on.
 		PORTA.OUTTGL.reg = HEATER_MOSFET_PINMASK | DENDRO_TC_AMP_MOSFET_PINMASK;
 		
@@ -143,20 +143,25 @@ int main (void)
 				timedSleep_seconds(&tcInstance, transactionPacket.waitTime);
 			}
 			bool success = SDI12_GetSensedValues(&transactionPacket, &(sdiValues[sdiValueStartIndex]));
-			//TODO: if success was false, put NANs in the values.
+			if(!success){
+							//TODO: if success was false, put NANs in the values.
+			}
+
 			//TODO: change sdi to use doubles instead of floats.
 			//move the index of sdiValues so the next transaction will write to the correct place in the array.
-			sdiValueStartIndex +=loggerConfig.SDI12_SensorNumValues[sdiSensorIndex]; 
+			sdiValueStartIndex += loggerConfig.SDI12_SensorNumValues[sdiSensorIndex]; 
 			
 		}
 		//turn off the power to the SDI12 bus, the DHT22s, and stop sending HIGH on the DHT22 data lines.
-		PORTA.OUTTGL.reg = SDI_DHT22_POWER_MOSFET_PINMASK | DHT22_ALL_PINMASK ;
+		PORTA.OUTCLR.reg = SDI_DHT22_POWER_MOSFET_PINMASK | DHT22_ALL_PINMASK;
 		
 		//TODO: get the datetime
 		
-		//TODO: turn on SD card
+		PORTA.OUTSET.reg = SD_CARD_MOSFET_PINMASK;
 		
 		//TODO: log to sd card
+		
+		PORTA.OUTCLR.reg = SD_CARD_MOSFET_PINMASK;
 		
 		//TODO: sleep for interval
 		
@@ -189,7 +194,6 @@ bool MAX31856_VOLATILE_REGISTERS_TEST(void){
 void ReadThermocouples(double *tcValuesOut){
 	//start by configuring the registers to the required values.
 	Max31856ConfigureRegisters(&spiMasterModule, &spiSlaveInstance, MAX31856_THERMOCOUPLE_TYPE_USED);
-	PORTA.OUTCLR.reg = TC_MUX_SELECT_ALL_PINMASK;
 	
 	for(uint8_t index = 0; index < 4; index++){
 		//request the reading.

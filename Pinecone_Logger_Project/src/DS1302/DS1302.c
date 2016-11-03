@@ -14,6 +14,7 @@
 #define DS1302_CLOCK_BURST_WRITE_REGISTER 0xBE
 #define DS1302_CLOCK_BURST_READ_REGISTER 0xBF
 #define DS1302_CONTROL_WRITE_REGISTER 0x8E
+#define DS1302_GENERAL_PURPOSE_DATA_REGISTER 0xC1
 #define DS1302_DISABLE_WRITE_PROTECT_VALUE 0
 #define DS1302_ENABLE_WRITE_PROTECT_VALUE 1 << 7
 #define OUT_BUFFER_SECOND_INDEX 17
@@ -29,40 +30,25 @@ static uint8_t Ds1302ReadByte(void);
 
 
 void DS1302Init(void){
-	struct port_config cfg;
-	port_get_config_defaults(&cfg);
-	cfg.direction = PORT_PIN_DIR_OUTPUT;
-	cfg.input_pull = PORT_PIN_PULL_NONE;
-	port_pin_set_config(DS1302_CLOCK_PIN, &cfg);
-	port_pin_set_config(DS1302_ENABLE_PIN, &cfg);
-	port_pin_set_config(DS1302_DATA_PIN, &cfg);
-	port_pin_set_output_level(DS1302_CLOCK_PIN, LOW);
-	port_pin_set_output_level(DS1302_ENABLE_PIN, LOW);
-	port_pin_set_output_level(DS1302_DATA_PIN, LOW);
-	
+	PORTA.DIRSET.reg = DS1302_DATA_PINMASK | DS1302_CLOCK_PINMASK | DS1302_ENABLE_PINMASK;
+	PORTA.OUTCLR.reg = DS1302_DATA_PINMASK | DS1302_CLOCK_PINMASK | DS1302_ENABLE_PINMASK;
 }
 
 void Ds1302SetDateTime(const Ds1302DateTime *dateTime){
-	//set the data pin for output
-	struct port_config config;
-	port_get_config_defaults(&config);
-	config.direction = PORT_PIN_DIR_OUTPUT;
-	config.input_pull = PORT_PIN_PULL_NONE;
-	port_pin_set_config(DS1302_DATA_PIN, &config);
-	
-	//ready the clock
-	port_pin_set_output_level(DS1302_CLOCK_PIN, LOW);
-	port_pin_set_output_level(DS1302_ENABLE_PIN, HIGH);
-	delay_us(4);
+
+	//enable the clock
+	PORTA.OUTSET.reg = DS1302_ENABLE_PIN;
 	
 	//disable writeProtect
-	Ds1302WriteByte( DS1302_CONTROL_WRITE_REGISTER);
-	Ds1302WriteByte( DS1302_DISABLE_WRITE_PROTECT_VALUE);
+	Ds1302WriteByte(DS1302_CONTROL_WRITE_REGISTER);
+	Ds1302WriteByte(DS1302_DISABLE_WRITE_PROTECT_VALUE);
 	
-	port_pin_set_output_level(DS1302_ENABLE_PIN,LOW);
-	delay_us(4);
-	port_pin_set_output_level(DS1302_ENABLE_PIN,HIGH);
-	delay_us(4);
+	PORTA.OUTCLR.reg = DS1302_ENABLE_PINMASK;
+	//delay a few cycles just to make sure the DS1302 sees the change
+	portable_delay_cycles(8);
+	//re enable the DS1302
+	PORTA.OUTSET.reg = DS1302_ENABLE_PINMASK;
+	
 	
 	Ds1302WriteByte(DS1302_CLOCK_BURST_WRITE_REGISTER);
 	Ds1302WriteByte(Ds1302ByteEncode(dateTime->seconds));
@@ -75,7 +61,8 @@ void Ds1302SetDateTime(const Ds1302DateTime *dateTime){
 	//re-enable write protect
 	Ds1302WriteByte(DS1302_ENABLE_WRITE_PROTECT_VALUE);
 	
-	port_pin_set_output_level(DS1302_ENABLE_PIN, LOW);
+	//disable the DS1302, and make sure the clock and data pins are low while we're at it.
+	PORTA.OUTCLR.reg = DS1302_DATA_PINMASK | DS1302_CLOCK_PINMASK | DS1302_ENABLE_PINMASK;
 }
 
 //outBuffer required to be at least 19 bytes
@@ -90,27 +77,33 @@ void Ds1302GetDateTime(char *outBuffer){
 	outBuffer[16] = ':';
 	uint8_t rxBuffer[10];
 	
-	//set the data pin for output
-	struct port_config config;
-	port_get_config_defaults(&config);
-	config.direction = PORT_PIN_DIR_OUTPUT;
-	config.input_pull = PORT_PIN_PULL_NONE;
-	port_pin_set_config(DS1302_DATA_PIN, &config);
 	
-	port_pin_set_output_level(DS1302_CLOCK_PIN, LOW);
-	port_pin_set_output_level(DS1302_ENABLE_PIN, HIGH);
-	delay_us(4);
+	PORTA.OUTSET.reg = DS1302_ENABLE_PINMASK;
 	Ds1302WriteByte(DS1302_CLOCK_BURST_READ_REGISTER);
 	
-	//set the pin for input
-	config.direction = PORT_PIN_DIR_INPUT;
-	port_pin_set_config(DS1302_DATA_PIN, &config);
+	//set the Data pin for input, and enable input in the wrconfig
+	PORTA.DIRCLR.reg = DS1302_DATA_PINMASK;
+	#if DS1302_DATA_PINMASK < (1 << 16)
+	PORTA.WRCONFIG.reg = PORT_WRCONFIG_WRPINCFG | PORT_WRCONFIG_INEN | DS1302_DATA_PINMASK;
+	#else
+	PORTA.WRCONFIG.reg = PORT_WRCONFIG_WRPINCFG | PORT_WRCONFIG_INEN | (DS1302_DATA_PINMASK >> 16) | PORT_WRCONFIG_HWSEL;
+	#endif
 	
 	uint8_t counter;
 	for(counter = 0; counter < 10; counter++){
 		rxBuffer[counter] = Ds1302ReadByte();
 	}
-	port_pin_set_output_level(DS1302_ENABLE_PIN, LOW);
+	
+	//turn the data pin back to output mode
+	#if DS1302_DATA_PINMASK < (1 << 16)
+	PORTA.WRCONFIG.reg = PORT_WRCONFIG_WRPINCFG |  DS1302_DATA_PINMASK;
+	#else
+	PORTA.WRCONFIG.reg = PORT_WRCONFIG_WRPINCFG | (DS1302_DATA_PINMASK >> 16) | PORT_WRCONFIG_HWSEL;
+	#endif
+	PORTA.DIRCLR.reg = DS1302_DATA_PINMASK; 
+	
+	//disable the ds1302
+	PORTA.OUTCLR.reg = DS1302_ENABLE_PINMASK | DS1302_DATA_PINMASK | DS1302_CLOCK_PINMASK;
 	
 	outBuffer[OUT_BUFFER_MINUTE_INDEX] = (rxBuffer[1] >> 4) + '0';
 	outBuffer[OUT_BUFFER_MINUTE_INDEX + 1] = (rxBuffer[1] & 0x0F) + '0';
@@ -138,28 +131,30 @@ uint8_t Ds1302ReadByte(void){
 	uint8_t bitCounter;
 	for(bitCounter = 0; bitCounter < 8; bitCounter++)
 	{
-		int pinLevel = port_pin_get_input_level(DS1302_DATA_PIN);
+		int pinLevel = (PORTA.IN.reg >> DS1302_DATA_PIN) & 1;
 		outByte |= pinLevel << bitCounter;
-		delay_us(1);
-		port_pin_set_output_level(DS1302_CLOCK_PIN, HIGH);
-		delay_us(1);
-		port_pin_set_output_level(DS1302_CLOCK_PIN, LOW);
+		portable_delay_cycles(8);
+		PORTA.OUTTGL.reg = DS1302_CLOCK_PINMASK;
+		portable_delay_cycles(8);
+		PORTA.OUTTGL.reg = DS1302_CLOCK_PINMASK; 
 	}
 	return outByte;
 }
 
 void Ds1302WriteByte(uint8_t byte){
-	uint8_t bitCounter;
-	for(bitCounter = 0; bitCounter < 8; bitCounter++)
+	uint16_t bitmask;
+	for(bitmask = 1; bitmask < 256; bitmask <<= 1)
 	{
-		int8_t pinState = byte & 0x1;
-		byte >>= 1;
-		port_pin_set_output_level(DS1302_DATA_PIN, pinState);
-		delay_us(1);
-		port_pin_toggle_output_level(DS1302_CLOCK_PIN);
-		delay_us(1);
-		port_pin_toggle_output_level(DS1302_CLOCK_PIN);
-		
+		if(byte & bitmask){
+			PORTA.OUTSET.reg = DS1302_DATA_PINMASK;
+		}
+		else{
+			PORTA.OUTCLR.reg = DS1302_DATA_PINMASK;
+		}
+		portable_delay_cycles(8);
+		PORTA.OUTTGL.reg = DS1302_CLOCK_PINMASK;
+		portable_delay_cycles(8);
+		PORTA.OUTTGL.reg = DS1302_CLOCK_PINMASK;
 	}
 }
 

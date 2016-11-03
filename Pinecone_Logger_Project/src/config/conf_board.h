@@ -48,7 +48,19 @@
 #ifndef CONF_BOARD_H
 #define CONF_BOARD_H
 
+
+#define USING_SAMD20XPLAINED
+
+
+
 #define SDI12_MAX_SUPPORTED_SENSORS 25
+
+//Also avoid PA30 and PA31, these are for SWCLK and SWDIO respectively
+//Put all IN and OUT data GPIOs on the lower 16 pins to make WRCONFIG access easier.
+//pins that are only OUT can be on the top 16
+
+//On the SAM D20E, there are no pins PA12,13,20,21,26,29
+
 
 
 struct LoggerConfig{
@@ -61,20 +73,20 @@ struct LoggerConfig{
 };
 
 
-#define SD_VOLUME_NUMBER 0
-#define SD_TIME_FILENAME "0:time.txt"
-#define SD_DATALOG_FILENAME "0:data.csv"
-#define SD_READING_IN_PROGRESS_FILENAME "0:a"
-#define SD_CONFIG_FILENAME "0:lgr.cfg"
+#define SD_VOLUME_NUMBER							0
+#define SD_TIME_FILENAME							"0:time.txt"
+#define SD_DATALOG_FILENAME							"0:data.csv"
+#define SD_READING_IN_PROGRESS_FILENAME				"0:a"
+#define SD_CONFIG_FILENAME							"0:lgr.cfg"
 
-#define HEATER_TIMED_SLEEP_SECONDS 60
+#define HEATER_TIMED_SLEEP_SECONDS					60
 
-#define DHT22_1_PINMASK								1 << 22 //PIN_PA22
-#define DHT22_2_PINMASK								1 << 23 // PIN_PA23
+#define DHT22_1_PINMASK								1 << 8 // PIN_PA08
+#define DHT22_2_PINMASK								1 << 9 // PIN_PA09
 #define DHT22_ALL_PINMASK							DHT22_1_PINMASK | DHT22_2_PINMASK
 
-#define SDI_PIN										PIN_PA09
-#define SDI_PIN_PINMASK								1 << 9
+#define SDI_PIN										PIN_PA10
+#define SDI_PIN_PINMASK								1 << 10
 
 #define DEND_ANALOG_PIN_1							ADC_POSITIVE_INPUT_PIN0		//PIN_PA02
 #define DEND_ANALOG_PIN_2							ADC_POSITIVE_INPUT_PIN1		//PIN_PA03
@@ -82,9 +94,12 @@ struct LoggerConfig{
 
 #define MAX31856_THERMOCOUPLE_TYPE_USED				MAX31856_THERMOCOUPLE_TYPE_T
 
-#define DS1302_DATA_PIN								PIN_PA12
-#define DS1302_CLOCK_PIN							PIN_PA13
-#define DS1302_ENABLE_PIN							PIN_PA14
+#define DS1302_DATA_PIN_INDEX						PIN_PA11
+#define DS1302_CLOCK_PIN_INDEX						PIN_PA12
+#define DS1302_ENABLE_PIN_INDEX						PIN_PA14
+#define DS1302_DATA_PINMASK							1 << DS1302_DATA_PIN_INDEX //PIN_PA11
+#define DS1302_CLOCK_PINMASK						1 << DS1302_CLOCK_PIN_INDEX //PIN_PA12
+#define DS1302_ENABLE_PINMASK						1 << DS1302_ENABLE_PIN_INDEX //PIN_PA22
 
 #define MAX31856_SPI_SERCOM_MODULE					SERCOM1
 #define MAX31856_SPI_PINMUX_SETTING					SPI_SIGNAL_MUX_SETTING_E
@@ -101,19 +116,25 @@ struct LoggerConfig{
 #define SD_SPI_PIN2									PINMUX_PA06D_SERCOM0_PAD2
 #define SD_SPI_PIN3									PINMUX_PA07D_SERCOM0_PAD3
 #define SD_CS_PIN									PIN_PA05
-#define SD_PIN_DETECT								PIN_PB05
 #define SD_PIN_DETECT_LEVEL							0
 
-//Mosfet PINS
-#define SDI_DHT22_POWER_MOSFET_PINMASK				1 << 0	//PIN_PA00
-#define HEATER_MOSFET_PINMASK						1 << 1	//PIN_PA01
-#define DENDRO_TC_AMP_MOSFET_PINMASK				1 << 10	//PIN_PA10
-#define SD_CARD_MOSFET_PINMASK						1 << 11	//PIN_PA11
+#ifdef USING_SAMD20XPLAINED
+#define SD_PIN_DETECT								PIN_PB05
+#else
+#define SD_PIN_DETECT								PIN_PA15
+#endif
+
+
+//Mosfet PINS										
+#define SDI_DHT22_POWER_MOSFET_PINMASK				1 << 24	//PIN_PA24
+#define HEATER_MOSFET_PINMASK						1 << 25	//PIN_PA25
+#define DENDRO_TC_AMP_MOSFET_PINMASK				1 << 27	//PIN_PA27
+#define SD_CARD_MOSFET_PINMASK						1 << 28	//PIN_PA28			//NO PIN LEFT ON THE SAMD20E IF WE'RE NOT USING OSCIL PINS
 #define ALL_MOSFET_PINMASK							SDI_DHT22_POWER_MOSFET_PINMASK | HEATER_MOSFET_PINMASK | DENDRO_TC_AMP_MOSFET_PINMASK | SD_CARD_MOSFET_PINMASK
 
 //TC Mux select
-#define TC_MUX_SELECT_A_PINMASK						1 << 20 //PIN_PA20
-#define TC_MUX_SELECT_B_PINMASK						1 << 21 //PIN_PA21
+#define TC_MUX_SELECT_A_PINMASK						1 << 22 //PIN_PA22
+#define TC_MUX_SELECT_B_PINMASK						1 << 23 //PIN_PA23
 #define TC_MUX_SELECT_ALL_PINMASK					TC_MUX_SELECT_A_PINMASK | TC_MUX_SELECT_B_PINMASK
 
 #endif // CONF_BOARD_H
