@@ -13,7 +13,7 @@
 #include "DS1302/DS1302.h"
 #include "SDI12/SDI12.h"
 
-void SdCardInit(FRESULT *mountingResult);
+void SdCardInit(void);
 
 bool tryReadTimeFile(struct Ds1302DateTime *dateTime);
 

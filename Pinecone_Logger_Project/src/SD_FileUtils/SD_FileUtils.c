@@ -25,12 +25,8 @@ static bool SD_UnitDataFileIntegrityCheck(void);
 Initializes the sd mmc connection, and attempts to mount the fileSystem.
 system will be mounted into first arg, fatFilesys.
 second argument, fileResult, will show the result state of the attempted mount.
-Possible FRESULT returns here are:
-FR_OK on success
-FR_INVALID_DRIVE if volumeNumber is greater than number of volumes. If in doubt, use 0 here.
-FR_INT_ERR if assertion failed for some unknown reason (MORE DOCUMENTATION PLEASE, ASF!)
 */
-void SdCardInit(FRESULT *mountingResult)
+void SdCardInit(void)
 {
 	FATFS fatFileSys;
 	sd_mmc_init();
@@ -41,7 +37,7 @@ void SdCardInit(FRESULT *mountingResult)
 	
 	
 	memset(&fatFileSys, 0, sizeof(FATFS));
-	*mountingResult = f_mount(SD_VOLUME_NUMBER, &fatFileSys);
+	f_mount(SD_VOLUME_NUMBER, &fatFileSys);
 }
 
 /* tryReadTimeFile

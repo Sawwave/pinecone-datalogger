@@ -41,21 +41,21 @@
 #define NUM_LOG_VALUES 14
 #define LOG_VALUES_TC_BEFORE_INDEX			0
 #define LOG_VALUES_TC_AFTER_INDEX			4
-#define LOG_VALUES_DHT__INDEX				8
-#define LOG_VALUES_DEND__INDEX				12
+#define LOG_VALUES_DHT_INDEX				8
+#define LOG_VALUES_DEND_INDEX				12
 
 static void runSapFluxSystem(void);
-static void startupSdCardBootstrapping(void);
+static void startupSdCardBootstrapping(struct Ds1302DateTime *outDateTime, bool *outTimeFileReadSuccess);
 static void ReadThermocouples(double *tcValuesOut);
 static void componentInit(void);
 static void initDateTimeBuffer(void);
 static bool MAX31856_VOLATILE_REGISTERS_TEST(void);
 
-static struct spi_module spiMasterModule;
-static struct spi_slave_inst spiSlaveInstance;
-static struct adc_module adcModule1;
-static struct adc_module adcModule2;
-static struct tc_module tcInstance;
+struct spi_module spiMasterModule;
+struct spi_slave_inst spiSlaveInstance;
+struct adc_module adcModule1;
+struct adc_module adcModule2;
+struct tc_module tcInstance;
 
 static char dateTimeBuffer[20];
 static double LogValues[NUM_LOG_VALUES];
@@ -72,13 +72,9 @@ int main (void)
 	SD_UnitTest(&fileSystem);
 	#endif
 	
-	//start with all power mosfets output and LOW, as well as all data pins.
-	PORTA.DIRSET.reg = ALL_MOSFET_PINMASK | TC_MUX_SELECT_ALL_PINMASK | DHT22_ALL_PINMASK | DS1302_ALL_PINMASK | SDI_PIN_PINMASK;
-	PORTA.OUTCLR.reg = ALL_MOSFET_PINMASK | TC_MUX_SELECT_ALL_PINMASK | DHT22_ALL_PINMASK | DS1302_ALL_PINMASK | SDI_PIN_PINMASK;
-	
 	struct Ds1302DateTime dateTime;
-	bool dateTimeFileRead
-	startupSdCardBootstrapping(&dateTime, &dateTimeFileRead);
+	bool dateTimeFileFound;
+	startupSdCardBootstrapping(&dateTime, &dateTimeFileFound);
 	
 	uint8_t Ds1302StoredRegister = Ds1302GetBatteryBackedRegister(DS1302_GENERAL_PURPOSE_DATA_REGISTER_0);
 	if(Ds1302StoredRegister & 0x1){
@@ -96,7 +92,7 @@ int main (void)
 	}
 
 	
-	if(timeFileFound){
+	if(dateTimeFileFound){
 		Ds1302SetDateTime(&dateTime);
 	}
 	
@@ -115,16 +111,16 @@ int main (void)
 		
 		PORTA.OUTSET.reg = DENDRO_TC_AMP_MOSFET_PINMASK;
 		
-		LogValues[LOG_VALUES_DEND__INDEX]		= ReadDendro(&adcModule1);
-		LogValues[LOG_VALUES_DEND__INDEX + 1]	= ReadDendro(&adcModule2);
+		LogValues[LOG_VALUES_DEND_INDEX]		= ReadDendro(&adcModule1);
+		LogValues[LOG_VALUES_DEND_INDEX + 1]	= ReadDendro(&adcModule2);
 		
 		runSapFluxSystem();
 		
 		//turn of dendr/tc, and turn on SDI-12 bus and DHT22s. mark the DHT22 data pins as HIGH to start, too.
 		PORTA.OUTTGL.reg = DENDRO_TC_AMP_MOSFET_PINMASK | SDI_DHT22_POWER_MOSFET_PINMASK | DHT22_ALL_PINMASK;
 		timedSleep_seconds(&tcInstance, 2);
-		GetDht22Reading(&(LogValues[LOG_VALUES_DHT__INDEX]), &(LogValues[LOG_VALUES_DHT__INDEX + 1]), DHT22_1_PINMASK);
-		GetDht22Reading(&(LogValues[LOG_VALUES_DHT__INDEX + 2] ), &(LogValues[LOG_VALUES_DHT__INDEX + 3]), DHT22_2_PINMASK);
+		GetDht22Reading(&(LogValues[LOG_VALUES_DHT_INDEX]), &(LogValues[LOG_VALUES_DHT_INDEX + 1]), DHT22_1_PINMASK);
+		GetDht22Reading(&(LogValues[LOG_VALUES_DHT_INDEX + 2] ), &(LogValues[LOG_VALUES_DHT_INDEX + 3]), DHT22_2_PINMASK);
 
 		uint16_t sdiValueStartIndex = 0;
 		//query and read all values from all the sdi12 sensors

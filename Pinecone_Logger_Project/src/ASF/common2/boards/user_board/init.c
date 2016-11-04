@@ -1,12 +1,12 @@
 /**
- * \file
- *
- * \brief User board initialization template
- *
- */
+* \file
+*
+* \brief User board initialization template
+*
+*/
 /*
- * Support and FAQ: visit <a href="http://www.atmel.com/design-support/">Atmel Support</a>
- */
+* Support and FAQ: visit <a href="http://www.atmel.com/design-support/">Atmel Support</a>
+*/
 
 #include <asf.h>
 #include <board.h>
@@ -22,7 +22,11 @@ void board_init(void);
 void system_board_init(void)
 {
 	/* This function is meant to contain board-specific initialization code
-	 * for, e.g., the I/O pins. The initialization can rely on application-
-	 * specific board configuration, found in conf_board.h.
-	 */
+	* for, e.g., the I/O pins. The initialization can rely on application-
+	* specific board configuration, found in conf_board.h.
+	*/
+	
+	//start with all power mosfets output and LOW, as well as all data pins.
+	PORTA.DIRSET.reg = ALL_MOSFET_PINMASK | TC_MUX_SELECT_ALL_PINMASK | DHT22_ALL_PINMASK | DS1302_ALL_PINMASK | SDI_PIN_PINMASK;
+	PORTA.OUTCLR.reg = ALL_MOSFET_PINMASK | TC_MUX_SELECT_ALL_PINMASK | DHT22_ALL_PINMASK | DS1302_ALL_PINMASK | SDI_PIN_PINMASK;
 }
