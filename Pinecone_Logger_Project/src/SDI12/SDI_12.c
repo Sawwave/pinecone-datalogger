@@ -6,6 +6,7 @@
 */
 #include <asf.h>
 #include <string.h>
+#include <math.h>
 #include "SDI12/SDI12.h"
 
 #define SDI12_MAX_NUMBER_TRANSACTION_ATTEMPTS 3
@@ -22,7 +23,6 @@ char charAddParity(char address);
 uint8_t SDI12_ParseNumValuesFromResult(char outBuffer[], uint8_t outBufferLen);
 bool SDI12_GetTimeFromResponse(const char *response, uint16_t *outTime);
 bool SDI12_TIME_FORMAT_UNIT_TEST(void);
-
 
 //TODO: move this out and set up with rest of pins
 void SDI12_Setup(void){

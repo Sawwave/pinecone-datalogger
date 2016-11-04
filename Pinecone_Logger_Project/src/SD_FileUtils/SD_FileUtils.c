@@ -101,7 +101,7 @@ bool SD_CheckIntegrity(const struct LoggerConfig *loggerConfig){
 	while(sdiIndex){
 		expectedValues += loggerConfig->SDI12_SensorNumValues[--sdiIndex];
 	}
-	checkAndFixLastFileLineIntegrity(expectedValues);
+	return checkAndFixLastFileLineIntegrity(expectedValues);
 }
 
 void SD_FileCreateWithHeader(const struct LoggerConfig *loggerConf)
@@ -140,20 +140,16 @@ Config file is formmated as defined below:
 
 ABC...
 0000
-i/d
-
+ic
 
 first line:
 ABC.. specifies the SDI12 addresses of the sensors. Thus, if logger is connected to 3 sensors, with addresses 0,7, and B, line 2 may read
 07B
-
 second line:
 0000 is the number of minutes between readings that the sensor will sleep
-
 third line:
-i/d specifies if the sensor takes the reading immediately on waking up, or defers logging until after the sleep interval.
-
-
+i may be letter i or d specifies if the sensor takes the reading immediately on waking up(i), or defers logging until after the sleep interval(d).
+c may be letter c or d specifies if the sensor checks the data file if it thinks it might be corrupt (c)
 */
 bool readConfigFile(struct LoggerConfig *config){
 	FIL fileObj;
@@ -248,7 +244,7 @@ int8_t SD_UnitTest(void)
 	FRESULT res;
 	SdCardInit(&res);
 	
-	return SD_UnitDataFileIntegrityCheck();
+	SD_UnitDataFileIntegrityCheck();
 	return 0;
 }
 
@@ -455,7 +451,6 @@ bool SD_UnitDataFileIntegrityCheck(void){
 	f_open(&file, SD_DATALOG_FILENAME, FA_READ | FA_WRITE);
 	bool success = checkAndFixLastFileLineIntegrity(10);
 	f_puts("checked",&file);
-	f_close(&file);
+	f_close(&file);	
 	return success;
-	
 }
