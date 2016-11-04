@@ -28,10 +28,6 @@ static void Ds1302WriteByte(uint8_t byte);
 static uint8_t Ds1302ReadByte(void);
 
 
-void DS1302Init(void){
-	PORTA.DIRSET.reg = DS1302_DATA_PINMASK | DS1302_CLOCK_PINMASK | DS1302_ENABLE_PINMASK;
-	PORTA.OUTCLR.reg = DS1302_DATA_PINMASK | DS1302_CLOCK_PINMASK | DS1302_ENABLE_PINMASK;
-}
 
 void Ds1302SetDateTime(const Ds1302DateTime *dateTime){
 

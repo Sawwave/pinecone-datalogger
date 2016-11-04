@@ -70,8 +70,10 @@ int main (void)
 	#endif
 	
 	//start with all power mosfets off
-	PORTA.DIRSET.reg = ALL_MOSFET_PINMASK | TC_MUX_SELECT_ALL_PINMASK | DHT22_1_PINMASK | DHT22_2_PINMASK;
-	PORTA.OUTCLR.reg = ALL_MOSFET_PINMASK | TC_MUX_SELECT_ALL_PINMASK | DHT22_1_PINMASK | DHT22_2_PINMASK;
+	PORTA.DIRSET.reg = ALL_MOSFET_PINMASK | TC_MUX_SELECT_ALL_PINMASK | DHT22_ALL_PINMASK | DS1302_ALL_PINMASK;
+	PORTA.OUTCLR.reg = ALL_MOSFET_PINMASK | TC_MUX_SELECT_ALL_PINMASK | DHT22_ALL_PINMASK | DS1302_ALL_PINMASK;
+
+
 	
 	struct Ds1302DateTime dateTime;
 	
@@ -114,7 +116,6 @@ int main (void)
 	}
 	
 
-
 	/*All initialization has been done, so enter the loop!*/
 	while(1){
 		float sdiValues[totalSdiValues];
@@ -124,7 +125,7 @@ int main (void)
 		
 		PORTA.OUTSET.reg = DENDRO_TC_AMP_MOSFET_PINMASK;
 		
-		LogValues[LOG_VALUES_DEND__INDEX]			= ReadDendro(&adcModule1);
+		LogValues[LOG_VALUES_DEND__INDEX]		= ReadDendro(&adcModule1);
 		LogValues[LOG_VALUES_DEND__INDEX + 1]	= ReadDendro(&adcModule2);
 		
 		ReadThermocouples(&(LogValues[LOG_VALUES_TC_BEFORE_INDEX]));
@@ -231,8 +232,8 @@ void ReadThermocouples(double *tcValuesOut){
 	for(uint8_t index = 0; index < 4; index++){
 		//request the reading.
 		enum Max31856_Status requestStatus = Max31856RequestReading(&spiMasterModule, &spiSlaveInstance);
-		//delay until it is ready, about 200ms maximum
-		portable_delay_cycles(200*1000);
+		//enter standby mode until the reading has been prepared (a bit under 1s)
+		timedSleep_seconds(&tcInstance, 1);
 		enum Max31856_Status tempStatus = Max31856GetTemp(&spiMasterModule, &spiSlaveInstance, &(tcValuesOut[index]));
 		if(requestStatus != MAX31856_OKAY || tempStatus != MAX31856_OKAY){
 			tcValuesOut[index] = NAN;

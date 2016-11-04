@@ -26,7 +26,6 @@ typedef struct Ds1302DateTime{
 	uint8_t dayOfWeek;
 } Ds1302DateTime;
 
-void DS1302Init(void);
 
 //Ds1302SetDatetime()
 //	Sets the dateTime of a Ds1302, using the given pin configurations, and a datetime as array

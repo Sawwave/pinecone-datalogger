@@ -25,7 +25,6 @@
 #define DHT_SIGNAL_TIMEOUT					200
 #define DHT_SIGNAL_DATA_HIGH_1_LENGTH		45
 
-
 /*GetDht22Reading
 Sends and receives confirmation signals with the DHT-22 sensor
 
