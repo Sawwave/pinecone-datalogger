@@ -44,7 +44,7 @@
 #define LOG_VALUES_DHT__INDEX				8
 #define LOG_VALUES_DEND__INDEX				12
 
-
+void runSapFluxSystem(void);
 void ReadThermocouples(double *tcValuesOut);
 void componentInit(void);
 void initDateTimeBuffer(void);
@@ -58,8 +58,6 @@ struct tc_module tcInstance;
 
 char dateTimeBuffer[20];
 double LogValues[NUM_LOG_VALUES];
-
-
 
 int main (void)
 {
@@ -99,8 +97,6 @@ int main (void)
 		}
 	}
 	
-
-	
 	uint16_t totalSdiValues = 0;
 	for(uint8_t sdiIndex = 0; sdiIndex < loggerConfig.numSdiSensors;sdiIndex++){
 		totalSdiValues += loggerConfig.SDI12_SensorNumValues[sdiIndex];
@@ -129,15 +125,7 @@ int main (void)
 		LogValues[LOG_VALUES_DEND__INDEX]		= ReadDendro(&adcModule1);
 		LogValues[LOG_VALUES_DEND__INDEX + 1]	= ReadDendro(&adcModule2);
 		
-		ReadThermocouples(&(LogValues[LOG_VALUES_TC_BEFORE_INDEX]));
-		
-		//turn on heater, and turn off dendro/tc. Then, sleep for the heater duration.
-		PORTA.OUTTGL.reg = HEATER_MOSFET_PINMASK | DENDRO_TC_AMP_MOSFET_PINMASK;
-		timedSleep_seconds(&tcInstance, HEATER_TIMED_SLEEP_SECONDS);
-		//turn heater off, and dendro/tc back on.
-		PORTA.OUTTGL.reg = HEATER_MOSFET_PINMASK | DENDRO_TC_AMP_MOSFET_PINMASK;
-		
-		ReadThermocouples(&(LogValues[LOG_VALUES_TC_AFTER_INDEX]));
+		runSapFluxSystem();
 		
 		//turn of dendr/tc, and turn on SDI-12 bus and DHT22s. mark the DHT22 data pins as HIGH to start, too.
 		PORTA.OUTTGL.reg = DENDRO_TC_AMP_MOSFET_PINMASK | SDI_DHT22_POWER_MOSFET_PINMASK | DHT22_ALL_PINMASK;
@@ -223,6 +211,20 @@ bool MAX31856_VOLATILE_REGISTERS_TEST(void){
 	//read register
 	//see if equal.
 	return false;
+}
+
+
+void runSapFluxSystem(void){
+	//read the starting values for the thermocouples
+	ReadThermocouples(&(LogValues[LOG_VALUES_TC_BEFORE_INDEX]));
+	
+	//turn on heater, and turn off dendro/tc. Then, sleep for the heater duration.
+	PORTA.OUTTGL.reg = HEATER_MOSFET_PINMASK | DENDRO_TC_AMP_MOSFET_PINMASK;
+	timedSleep_seconds(&tcInstance, HEATER_TIMED_SLEEP_SECONDS);
+	//turn heater off, and dendro/tc back on.
+	PORTA.OUTTGL.reg = HEATER_MOSFET_PINMASK | DENDRO_TC_AMP_MOSFET_PINMASK;
+	
+	ReadThermocouples(&(LogValues[LOG_VALUES_TC_AFTER_INDEX]));
 }
 
 void ReadThermocouples(double *tcValuesOut){

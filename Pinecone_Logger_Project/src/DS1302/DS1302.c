@@ -60,17 +60,9 @@ void Ds1302SetDateTime(const Ds1302DateTime *dateTime){
 	PORTA.OUTCLR.reg = DS1302_DATA_PINMASK | DS1302_CLOCK_PINMASK | DS1302_ENABLE_PINMASK;
 }
 
-//outBuffer required to be at least 19 bytes
-//datetime output will look like mm/dd/yyyy hh:mm:ss
+//outBuffer required to be at least 20 bytes
+//datetime output will look like mm/dd/yyyy hh:mm:ss\null
 void Ds1302GetDateTime(char *outBuffer){
-	outBuffer[2] = '/';
-	outBuffer[5] = '/';
-	outBuffer[6] = '2';
-	outBuffer[7] = '0';
-	outBuffer[10] = ',';
-	outBuffer[13] = ':';
-	outBuffer[16] = ':';
-	outBuffer[19] = 0;
 	uint8_t rxBuffer[10];
 	
 	PORTA.OUTSET.reg = DS1302_ENABLE_PINMASK;
