@@ -37,10 +37,17 @@
 #include "Dendro/Dendro.h"
 #include "SD_FileUtils/SD_FileUtils.h"
 
+//number of loggable values, outside of datetime and sdi-12 values
+#define NUM_LOG_VALUES 14
+#define LOG_VALUES_TC_BEFORE_INDEX			0
+#define LOG_VALUES_TC_AFTER_INDEX			4
+#define LOG_VALUES_DHT__INDEX				8
+#define LOG_VALUES_DEND__INDEX				12
 
 
 void ReadThermocouples(double *tcValuesOut);
 void componentInit(void);
+void initDateTimeBuffer(void);
 bool MAX31856_VOLATILE_REGISTERS_TEST(void);
 
 struct spi_module spiMasterModule;
@@ -49,13 +56,10 @@ struct adc_module adcModule1;
 struct adc_module adcModule2;
 struct tc_module tcInstance;
 
-//number of loggable values, outside of datetime and sdi-12 values
-#define NUM_LOG_VALUES 14
+char dateTimeBuffer[20];
 double LogValues[NUM_LOG_VALUES];
-#define LOG_VALUES_TC_BEFORE_INDEX			0
-#define LOG_VALUES_TC_AFTER_INDEX			4
-#define LOG_VALUES_DHT__INDEX				8
-#define LOG_VALUES_DEND__INDEX				12
+
+
 
 int main (void)
 {
@@ -113,13 +117,12 @@ int main (void)
 		timedSleep_seconds(&tcInstance, loggerConfig.loggingInterval);
 	}
 	
+	initDateTimeBuffer();
 
 	/*All initialization has been done, so enter the loop!*/
 	while(1){
 		float sdiValues[totalSdiValues];
 		char floatingPointConversionBuffer[16];
-		char dateTimeBuffer[18];
-		dateTimeBuffer[17] = 0;	//make sure the datetime buffer is null terminated
 		
 		PORTA.OUTSET.reg = DENDRO_TC_AMP_MOSFET_PINMASK;
 		
@@ -237,4 +240,15 @@ void ReadThermocouples(double *tcValuesOut){
 		}
 		PORTA.OUTTGL.reg = ((index & 1) != 0)? TC_MUX_SELECT_ALL_PINMASK : TC_MUX_SELECT_A_PINMASK;
 	}
+}
+
+void initDateTimeBuffer(void){
+	dateTimeBuffer[2] = '/';
+	dateTimeBuffer[5] = '/';
+	dateTimeBuffer[6] = '2';
+	dateTimeBuffer[7] = '0';
+	dateTimeBuffer[10] = ',';
+	dateTimeBuffer[13] = ':';
+	dateTimeBuffer[16] = ':';
+	dateTimeBuffer[19] = 0;
 }

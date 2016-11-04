@@ -38,11 +38,11 @@ void Ds1302SetDateTime(const Ds1302DateTime *dateTime){
 	Ds1302WriteByte(DS1302_CONTROL_WRITE_REGISTER);
 	Ds1302WriteByte(DS1302_DISABLE_WRITE_PROTECT_VALUE);
 	
-	PORTA.OUTCLR.reg = DS1302_ENABLE_PINMASK;
+	PORTA.OUTTGL.reg = DS1302_ENABLE_PINMASK;
 	//delay a few cycles just to make sure the DS1302 sees the change
 	portable_delay_cycles(8);
 	//re enable the DS1302
-	PORTA.OUTSET.reg = DS1302_ENABLE_PINMASK;
+	PORTA.OUTTGL.reg = DS1302_ENABLE_PINMASK;
 	
 	
 	Ds1302WriteByte(DS1302_CLOCK_BURST_WRITE_REGISTER);
@@ -70,6 +70,7 @@ void Ds1302GetDateTime(char *outBuffer){
 	outBuffer[10] = ',';
 	outBuffer[13] = ':';
 	outBuffer[16] = ':';
+	outBuffer[19] = 0;
 	uint8_t rxBuffer[10];
 	
 	PORTA.OUTSET.reg = DS1302_ENABLE_PINMASK;
