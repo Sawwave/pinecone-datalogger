@@ -24,10 +24,6 @@ uint8_t SDI12_ParseNumValuesFromResult(char outBuffer[], uint8_t outBufferLen);
 bool SDI12_GetTimeFromResponse(const char *response, uint16_t *outTime);
 bool SDI12_TIME_FORMAT_UNIT_TEST(void);
 
-//TODO: move this out and set up with rest of pins
-void SDI12_Setup(void){
-	PORTA.DIRSET.reg = SDI_PIN_PINMASK;
-}
 
 /*SDI12_RequestSensorReading
 communicates with the sensor at the given address on the SDI12 bus, and requests a reading (M! command).

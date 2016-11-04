@@ -19,11 +19,6 @@ struct SDI_transactionPacket{
 	enum SDI12_ReturnCode transactionStatus;
 };
 
-/*SDI12_Setup
-	Configures the Data pin for the SDI-12 bus.
-	TODO: refactor this out and do this on board setup*/
-void SDI12_Setup(void);
-
 /*SDI12 PerformTransaction
 	The major workhorse of the SDI-12 library. performs a full transaction with an SDI-12 sensor.
 	In this transaction, the data logger sends a message addressed to a particular sensor, and the sensor response with its own message.
