@@ -73,18 +73,17 @@ int main (void)
 	PORTA.DIRSET.reg = ALL_MOSFET_PINMASK | TC_MUX_SELECT_ALL_PINMASK | DHT22_ALL_PINMASK | DS1302_ALL_PINMASK | SDI_PIN_PINMASK;
 	PORTA.OUTCLR.reg = ALL_MOSFET_PINMASK | TC_MUX_SELECT_ALL_PINMASK | DHT22_ALL_PINMASK | DS1302_ALL_PINMASK | SDI_PIN_PINMASK;
 
-
-	
-	struct Ds1302DateTime dateTime;
-	
 	//wake up the SD card
 	PORTA.OUTSET.reg = SD_CARD_MOSFET_PINMASK;
 	
 	SdCardInit(&mountingResult);
-	DS1302Init();
+	struct Ds1302DateTime dateTime;
 	bool timeFileFound = tryReadTimeFile(&dateTime);
 	readConfigFile(&loggerConfig);
 	SD_CreateWithHeaderIfMissing(&loggerConfig);
+	
+	/*remove power to the SD/MMC card, we'll re enable it when it's time to write the reading.*/
+	PORTA.OUTCLR.reg = SD_CARD_MOSFET_PINMASK;
 	
 	uint8_t Ds1302StoredRegister = Ds1302GetBatteryBackedRegister(DS1302_GENERAL_PURPOSE_DATA_REGISTER_0);
 	if(Ds1302StoredRegister & 0x1){
@@ -96,8 +95,7 @@ int main (void)
 		}
 	}
 	
-	/*remove power to the SD/MMC card, we'll re enable it when it's time to write the reading.*/
-	PORTA.OUTCLR.reg = SD_CARD_MOSFET_PINMASK;
+
 	
 	uint16_t totalSdiValues = 0;
 	for(uint8_t sdiIndex = 0; sdiIndex < loggerConfig.numSdiSensors;sdiIndex++){
@@ -208,7 +206,6 @@ void componentInit(void)
 {
 	initSleepTimerCounter(&tcInstance);
 	Max31856ConfigureSPI(&spiMasterModule, &spiSlaveInstance);
-	SDI12_Setup();
 	ConfigureDendroADC(&adcModule1, DEND_ANALOG_PIN_1);
 	ConfigureDendroADC(&adcModule2, DEND_ANALOG_PIN_2);
 }

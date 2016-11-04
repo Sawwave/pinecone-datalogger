@@ -76,7 +76,6 @@ struct LoggerConfig{
 #define SD_VOLUME_NUMBER							0
 #define SD_TIME_FILENAME							"0:time.txt"
 #define SD_DATALOG_FILENAME							"0:data.csv"
-#define SD_READING_IN_PROGRESS_FILENAME				"0:a"
 #define SD_CONFIG_FILENAME							"0:lgr.cfg"
 
 #define HEATER_TIMED_SLEEP_SECONDS					60
