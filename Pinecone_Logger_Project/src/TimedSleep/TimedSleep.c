@@ -37,7 +37,7 @@ void initSleepTimerCounter(struct tc_module *tc_instance){
 	Function that will be run as a callback when the sleep TimerCounter finishes.
 	Implicitly, by running this as a callback, the device will leave whatever low power mode it was in.
 	Function will disable the TimerCounter.*/
-void sleepEndFunction(struct tc_module *const module){
+static void sleepEndFunction(struct tc_module *const module){
 	tc_disable(module);
 }
 

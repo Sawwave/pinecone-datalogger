@@ -67,9 +67,6 @@ enum Dht22Status GetDht22Reading(double *temp, double *relativeHumidity, const u
 	PORTA.DIRCLR.reg = dhtPinmask;
 	PORTA.WRCONFIG.reg = wrConfigInValue;
 	//switch to input to receive confirmation
-	//config.direction = PORT_PIN_DIR_INPUT;
-	//config.input_pull = PORT_PIN_PULL_NONE;
-	//port_pin_set_config(dhtPin, &config);
 	
 	uint8_t rxBit = 8;
 	uint8_t rxByte = 0;

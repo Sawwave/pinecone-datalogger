@@ -77,7 +77,7 @@ enum Max31856_Status Max31856RequestReading(struct spi_module *spiMasterModule, 
 	return Max31856WriteSpi(spiMasterModule, slaveInst, xferBuffer, xferBufferLen);
 }
 
-enum Max31856_Status Max31856WriteSpi(struct spi_module *spiMasterModule, struct spi_slave_inst *slaveInst, uint8_t xferBuffer[], const uint8_t xferBufferLen){
+static enum Max31856_Status Max31856WriteSpi(struct spi_module *spiMasterModule, struct spi_slave_inst *slaveInst, uint8_t xferBuffer[], const uint8_t xferBufferLen){
 	//wait until the spi bus is free
 	while(spi_is_syncing(spiMasterModule));
 	enum status_code status = spi_lock(spiMasterModule);

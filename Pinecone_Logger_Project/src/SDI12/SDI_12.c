@@ -9,20 +9,17 @@
 #include <math.h>
 #include "SDI12/SDI12.h"
 
-#define SDI12_MAX_NUMBER_TRANSACTION_ATTEMPTS 3
+#define SDI12_MAX_NUMBER_TRANSACTION_ATTEMPTS		3
+#define MARKING_DELAY_CYCLES						14000	// >= 12ms marking length
+#define PARITY_I									201		//'I' is 73, 73+128= 201
+#define SPACING_8330_DELAY_CYCLES					9520 	//8330us spacing delay
+#define BIT_TIMING_DELAY_CYCLES						928		//833us bit timing			
+#define BIT_TIMING_HALF_DELAY_CYCLES				400		//416.5us to get halfway into reading a bit 
 
-#define MARKING_DELAY_CYCLES 14000			// >= 12ms marking length
-#define PARITY_I			201				//'I' is 73, 73+128= 201
-
-#define SPACING_8330_DELAY_CYCLES 9520 		//8330us spacing delay
-#define BIT_TIMING_DELAY_CYCLES 928			//833us bit timing			
-#define BIT_TIMING_HALF_DELAY_CYCLES 400	//416.5us to get halfway into reading a bit 
-
-
-char charAddParity(char address);
-uint8_t SDI12_ParseNumValuesFromResult(char outBuffer[], uint8_t outBufferLen);
-bool SDI12_GetTimeFromResponse(const char *response, uint16_t *outTime);
-bool SDI12_TIME_FORMAT_UNIT_TEST(void);
+static char charAddParity(char address);
+static uint8_t SDI12_ParseNumValuesFromResult(char outBuffer[], uint8_t outBufferLen);
+static bool SDI12_GetTimeFromResponse(const char *response, uint16_t *outTime);
+static bool SDI12_TIME_FORMAT_UNIT_TEST(void);
 
 
 /*SDI12_RequestSensorReading
@@ -123,7 +120,7 @@ If the function returns false that outTime will be invalid.
 
 response MUST be at least 4 characters long
 */
-bool SDI12_GetTimeFromResponse(const char response[], uint16_t *outTime){
+static bool SDI12_GetTimeFromResponse(const char response[], uint16_t *outTime){
 	
 	bool isProperlyFormatted = (response[1]>= '0' && response[1] <='9' &&
 	response[2] >= '0' && response[2] <='9' &&
@@ -279,7 +276,7 @@ uint8_t SDI12_GetNumReadingsFromSensorMetadata(const char address){
 reads the result from a aM or an aIM transaction,
 and returns the number of values the sensor can return.
 returns 0 in event of failure.*/
-uint8_t SDI12_ParseNumValuesFromResult(char responseBuffer[], uint8_t responseBufferLen){
+static uint8_t SDI12_ParseNumValuesFromResult(char responseBuffer[], uint8_t responseBufferLen){
 	uint8_t numValuesSensed = 0;
 	uint8_t valuesIndex = 4;
 	
@@ -294,7 +291,7 @@ uint8_t SDI12_ParseNumValuesFromResult(char responseBuffer[], uint8_t responseBu
 /*charAddParity
 	takes a given character, and adds an even parity bit in the MSB.
 */
-char charAddParity(char address){
+static char charAddParity(char address){
 	address &= 0x7F;
 	for(uint8_t bitmask = 1; bitmask != 0x80; bitmask <<= 1){
 		if(address & bitmask){
@@ -306,7 +303,7 @@ char charAddParity(char address){
 }
 
 
-bool SDI12_TIME_FORMAT_UNIT_TEST(void){
+static bool SDI12_TIME_FORMAT_UNIT_TEST(void){
 	//success conditions
 	uint16_t time;
 	bool test[42];

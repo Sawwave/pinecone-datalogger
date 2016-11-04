@@ -44,20 +44,20 @@
 #define LOG_VALUES_DHT__INDEX				8
 #define LOG_VALUES_DEND__INDEX				12
 
-void runSapFluxSystem(void);
-void ReadThermocouples(double *tcValuesOut);
-void componentInit(void);
-void initDateTimeBuffer(void);
-bool MAX31856_VOLATILE_REGISTERS_TEST(void);
+static void runSapFluxSystem(void);
+static void ReadThermocouples(double *tcValuesOut);
+static void componentInit(void);
+static void initDateTimeBuffer(void);
+static bool MAX31856_VOLATILE_REGISTERS_TEST(void);
 
-struct spi_module spiMasterModule;
-struct spi_slave_inst spiSlaveInstance;
-struct adc_module adcModule1;
-struct adc_module adcModule2;
-struct tc_module tcInstance;
+static struct spi_module spiMasterModule;
+static struct spi_slave_inst spiSlaveInstance;
+static struct adc_module adcModule1;
+static struct adc_module adcModule2;
+static struct tc_module tcInstance;
 
-char dateTimeBuffer[20];
-double LogValues[NUM_LOG_VALUES];
+static char dateTimeBuffer[20];
+static double LogValues[NUM_LOG_VALUES];
 
 int main (void)
 {
@@ -193,7 +193,7 @@ int main (void)
 	}
 }
 
-void componentInit(void)
+static void componentInit(void)
 {
 	initSleepTimerCounter(&tcInstance);
 	Max31856ConfigureSPI(&spiMasterModule, &spiSlaveInstance);
@@ -201,7 +201,7 @@ void componentInit(void)
 	ConfigureDendroADC(&adcModule2, DEND_ANALOG_PIN_2);
 }
 
-bool MAX31856_VOLATILE_REGISTERS_TEST(void){
+static bool MAX31856_VOLATILE_REGISTERS_TEST(void){
 	//turn MAX31856 on
 	delay_s(1);
 	//write register
@@ -213,8 +213,7 @@ bool MAX31856_VOLATILE_REGISTERS_TEST(void){
 	return false;
 }
 
-
-void runSapFluxSystem(void){
+static void runSapFluxSystem(void){
 	//read the starting values for the thermocouples
 	ReadThermocouples(&(LogValues[LOG_VALUES_TC_BEFORE_INDEX]));
 	
@@ -227,7 +226,7 @@ void runSapFluxSystem(void){
 	ReadThermocouples(&(LogValues[LOG_VALUES_TC_AFTER_INDEX]));
 }
 
-void ReadThermocouples(double *tcValuesOut){
+static void ReadThermocouples(double *tcValuesOut){
 	//start by configuring the registers to the required values.
 	Max31856ConfigureRegisters(&spiMasterModule, &spiSlaveInstance, MAX31856_THERMOCOUPLE_TYPE_USED);
 	
@@ -244,7 +243,7 @@ void ReadThermocouples(double *tcValuesOut){
 	}
 }
 
-void initDateTimeBuffer(void){
+static void initDateTimeBuffer(void){
 	dateTimeBuffer[2] = '/';
 	dateTimeBuffer[5] = '/';
 	dateTimeBuffer[6] = '2';

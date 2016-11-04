@@ -27,8 +27,6 @@ static uint8_t Ds1302ByteEncode(uint8_t input);
 static void Ds1302WriteByte(uint8_t byte);
 static uint8_t Ds1302ReadByte(void);
 
-
-
 void Ds1302SetDateTime(const Ds1302DateTime *dateTime){
 
 	//enable the clock
@@ -154,7 +152,7 @@ void Ds1302SetBatteryBackedRegister(const uint8_t registerAddress, const uint8_t
 	PORTA.OUTCLR.reg = DS1302_ENABLE_PINMASK | DS1302_DATA_PINMASK | DS1302_CLOCK_PINMASK;
 }
 
-uint8_t Ds1302ReadByte(void){
+static uint8_t Ds1302ReadByte(void){
 	uint8_t outByte = 0;
 	uint8_t bitCounter;
 	for(bitCounter = 0; bitCounter < 8; bitCounter++)
@@ -169,7 +167,7 @@ uint8_t Ds1302ReadByte(void){
 	return outByte;
 }
 
-void Ds1302WriteByte(uint8_t byte){
+static void Ds1302WriteByte(uint8_t byte){
 	uint16_t bitmask;
 	for(bitmask = 1; bitmask < 256; bitmask <<= 1)
 	{
@@ -186,6 +184,6 @@ void Ds1302WriteByte(uint8_t byte){
 	}
 }
 
-uint8_t Ds1302ByteEncode(uint8_t input){
+static uint8_t Ds1302ByteEncode(uint8_t input){
 	return (input % 10) + ( (input / 10) << 4);
 }

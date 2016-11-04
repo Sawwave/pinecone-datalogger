@@ -11,15 +11,15 @@
 
 #define SD_DEBUG_FILE "0:debug.txt"
 
-void SD_FileCreateWithHeader(const struct LoggerConfig *loggerConf);
-bool checkAndFixLastFileLineIntegrity(const uint16_t expectedValues);
-FRESULT SD_UnitTestRemoveFile(void);
-FRESULT SD_UnitTestCreateDebugFile(FIL *file);
-FRESULT SD_UnitTestReadFile(FIL *file);
-int SD_UnitTestLoadAndCheckDebugFile(const char *addresses, uint8_t numAddresses, const char *interval, bool defer);
-void SD_UnitTestHeaderCreate(struct LoggerConfig *config, const char *headerFileName);
-bool SD_UnitTestReadTimeFile(const char *dateTimeStr, const struct Ds1302DateTime *comparisonDateTime);
-bool SD_UnitDataFileIntegrityCheck(void);
+static void SD_FileCreateWithHeader(const struct LoggerConfig *loggerConf);
+static bool checkAndFixLastFileLineIntegrity(const uint16_t expectedValues);
+static FRESULT SD_UnitTestRemoveFile(void);
+static FRESULT SD_UnitTestCreateDebugFile(FIL *file);
+static FRESULT SD_UnitTestReadFile(FIL *file);
+static int SD_UnitTestLoadAndCheckDebugFile(const char *addresses, uint8_t numAddresses, const char *interval, bool defer);
+static void SD_UnitTestHeaderCreate(struct LoggerConfig *config, const char *headerFileName);
+static bool SD_UnitTestReadTimeFile(const char *dateTimeStr, const struct Ds1302DateTime *comparisonDateTime);
+static bool SD_UnitDataFileIntegrityCheck(void);
 
 /*SdCardInit
 Initializes the sd mmc connection, and attempts to mount the fileSystem.
@@ -104,7 +104,7 @@ bool SD_CheckIntegrity(const struct LoggerConfig *loggerConfig){
 	return checkAndFixLastFileLineIntegrity(expectedValues);
 }
 
-void SD_FileCreateWithHeader(const struct LoggerConfig *loggerConf)
+static void SD_FileCreateWithHeader(const struct LoggerConfig *loggerConf)
 {
 	FIL file;
 	f_open(&file, SD_DATALOG_FILENAME, FA_OPEN_ALWAYS | FA_WRITE);
@@ -193,7 +193,7 @@ bool readConfigFile(struct LoggerConfig *config){
 	return true;
 }
 
-bool checkAndFixLastFileLineIntegrity(const uint16_t expectedValues)
+static bool checkAndFixLastFileLineIntegrity(const uint16_t expectedValues)
 {
 	//open the data file, and start checking.
 	FIL file;
@@ -248,7 +248,7 @@ int8_t SD_UnitTest(void)
 	return 0;
 }
 
-bool SD_UnitTestReadTimeFile(const char *dateTimeStr, const struct Ds1302DateTime *comparisonDateTime){
+static bool SD_UnitTestReadTimeFile(const char *dateTimeStr, const struct Ds1302DateTime *comparisonDateTime){
 	//create a dateTime file from the given dateTime
 	FIL file;
 	struct Ds1302DateTime dateTime;
@@ -285,7 +285,7 @@ bool SD_UnitTestReadTimeFile(const char *dateTimeStr, const struct Ds1302DateTim
 	
 }
 
-void SD_UnitTestHeaderCreate(struct LoggerConfig *config, const char *headerFileName){
+static void SD_UnitTestHeaderCreate(struct LoggerConfig *config, const char *headerFileName){
 	f_unlink(SD_DATALOG_FILENAME);
 	FIL file;
 	f_open(&file,headerFileName, FA_CREATE_ALWAYS | FA_WRITE);
@@ -294,7 +294,7 @@ void SD_UnitTestHeaderCreate(struct LoggerConfig *config, const char *headerFile
 	f_close(&file);
 }
 
-int SD_UnitTestLoadAndCheckDebugFile(const char *addresses, uint8_t numAddresses, const char *interval, bool defer){
+static int SD_UnitTestLoadAndCheckDebugFile(const char *addresses, uint8_t numAddresses, const char *interval, bool defer){
 	FIL file;
 	FRESULT result;
 	result = f_open(&file,SD_CONFIG_FILENAME, FA_CREATE_ALWAYS | FA_WRITE);
@@ -343,7 +343,7 @@ int SD_UnitTestLoadAndCheckDebugFile(const char *addresses, uint8_t numAddresses
 	return 1;
 }
 
-FRESULT SD_UnitTestCreateDebugFile(FIL *file){
+static FRESULT SD_UnitTestCreateDebugFile(FIL *file){
 	FRESULT res;
 	do{
 		res = f_open(file, SD_DEBUG_FILE, FA_CREATE_ALWAYS | FA_WRITE);
@@ -367,7 +367,7 @@ FRESULT SD_UnitTestCreateDebugFile(FIL *file){
 	return res;
 }
 
-FRESULT SD_UnitTestReadFile(FIL *file){
+static FRESULT SD_UnitTestReadFile(FIL *file){
 	FRESULT res = f_open(file, SD_DEBUG_FILE,FA_READ);
 	if(res != FR_OK){
 		return res;
@@ -422,7 +422,7 @@ FRESULT SD_UnitTestReadFile(FIL *file){
 	return res;
 }
 
-FRESULT SD_UnitTestRemoveFile(void){
+static FRESULT SD_UnitTestRemoveFile(void){
 	FILINFO info;
 	FRESULT res = f_stat(SD_DEBUG_FILE, &info);
 	if(res == FR_NO_FILE){
@@ -442,7 +442,7 @@ FRESULT SD_UnitTestRemoveFile(void){
 	return res;
 }
 
-bool SD_UnitDataFileIntegrityCheck(void){
+static bool SD_UnitDataFileIntegrityCheck(void){
 	const char *dataFileMessage = "Date,Time,TcPort1,TcPort2,TcPort3,TcPort4,Dht1Temp,Dht1Rh,Dht2Temp,Dht2Rh\n1,2,3,4,5,6,7,8,9,10";
 	FIL file;
 	f_open(&file, SD_DATALOG_FILENAME, FA_WRITE| FA_CREATE_ALWAYS);
