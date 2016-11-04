@@ -149,6 +149,11 @@ int main (void)
 			struct SDI_transactionPacket transactionPacket;
 			transactionPacket.address = loggerConfig.SDI12_SensorAddresses[sdiSensorIndex];
 			SDI12_RequestSensorReading(&transactionPacket);
+			
+			//if the request was faulty (sensor missing, not recieved or badly parsed, for example), skip to the next sensor
+			if(transactionPacket.transactionStatus != SDI12_STATUS_OK){
+				continue;
+			}
 			//if the sensor asked us to wait for some time before reading, let's go into sleep mode for it.
 			if(transactionPacket.waitTime > 0){
 				timedSleep_seconds(&tcInstance, transactionPacket.waitTime);

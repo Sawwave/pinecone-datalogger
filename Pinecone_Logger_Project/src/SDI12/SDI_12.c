@@ -10,38 +10,23 @@
 
 #define SDI12_MAX_NUMBER_TRANSACTION_ATTEMPTS 3
 
-#define DEBUG_A
+#define MARKING_DELAY_CYCLES 14000			// >= 12ms marking length
+#define PARITY_I			201				//'I' is 73, 73+128= 201
 
-#define MARKING_DELAY_CYCLES 14000			//12 ms marking delay
-#define PARITY_I			201 //'I' is 73, 73+128= 201
+#define SPACING_8330_DELAY_CYCLES 9520 		//8330us spacing delay
+#define BIT_TIMING_DELAY_CYCLES 928			//833us bit timing			
+#define BIT_TIMING_HALF_DELAY_CYCLES 400	//416.5us to get halfway into reading a bit 
 
-#ifdef DEBUG_A
-#define SPACING_8330_DELAY_CYCLES 9520 //9393		//8330us spacing delay
-#define BIT_TIMING_DELAY_CYCLES 928		//833us bit timing			//916    940
-#define BIT_TIMING_HALF_DELAY_CYCLES 400	//416.5us to get halfway into reading a bit  472
-
-#else
-#define SPACING_8330_DELAY_CYCLES 9520
-#define BIT_TIMING_DELAY_CYCLES 928
-#define BIT_TIMING_HALF_DELAY_CYCLES 456
-#endif
 
 char charAddParity(char address);
 uint8_t SDI12_ParseNumValuesFromResult(char outBuffer[], uint8_t outBufferLen);
+bool SDI12_GetTimeFromResponse(const char *response, uint16_t *outTime);
 bool SDI12_TIME_FORMAT_UNIT_TEST(void);
 
+
+//TODO: move this out and set up with rest of pins
 void SDI12_Setup(void){
 	PORTA.DIRSET.reg = SDI_PIN_PINMASK;
-}
-char charAddParity(char address){
-	address &= 0x7F;
-	for(uint8_t bitmask = 1; bitmask != 0x80; bitmask <<= 1){
-		if(address & bitmask){
-			//flip the parity bit
-			address ^= 0x80;
-		}
-	}
-	return address;
 }
 
 /*SDI12_RequestSensorReading
@@ -77,7 +62,7 @@ void SDI12_RequestSensorReading(struct SDI_transactionPacket *transactionPacket)
 
 /*SDI12_GetSensedValues
 After the sensor has had values requested with SDI12_RequestSensorReading, use this function to read the values as floats
-The floats will be loaded into the outValues float array. NOTE!!!! outValues array MUST have a number of indices equal to the
+The floats will be loaded into the outValues float array. NOTE!!!! outValues array MUST have a number of indices >= the
 number of expected values from the transaction packet. Otherwise, Undefined operation or segfaults may occur.*/
 bool SDI12_GetSensedValues(struct SDI_transactionPacket *transactionPacket, float *outValues){
 
@@ -94,6 +79,11 @@ bool SDI12_GetSensedValues(struct SDI_transactionPacket *transactionPacket, floa
 	};
 	char response[36];
 	const uint8_t responseLen = 36;
+	
+	//load in NANs into all the outvalues, 
+	for(uint8_t counter = 0; counter < numValuesExpected; counter++){
+		outValues[counter] = NAN;
+	}
 	
 	while(numValuesReceived < numValuesExpected){
 		uint8_t tries = SDI12_MAX_NUMBER_TRANSACTION_ATTEMPTS;
@@ -135,11 +125,7 @@ if the 2nd, 3rd, or 4th characters aren't numbers, will return false, otherwise 
 Function also returns false if the response string is less than 4 characters long.
 If the function returns false that outTime will be invalid.
 
-!!!WARNING!!!
-As the compiler is unable to check the length of an array passed as an argument, this function has no way to determine
-if the response is long enough that dereferencing index 4 will read junk (or segfault!)
-passing an array less than 4 elements may cause undefined behavior or crash the system.
-
+response MUST be at least 4 characters long
 */
 bool SDI12_GetTimeFromResponse(const char response[], uint16_t *outTime){
 	
@@ -153,58 +139,6 @@ bool SDI12_GetTimeFromResponse(const char response[], uint16_t *outTime){
 	return isProperlyFormatted;
 }
 
-bool SDI12_TIME_FORMAT_UNIT_TEST(void){
-	//success conditions
-	uint16_t time;
-	bool test[42];
-	memset(test, false, sizeof(bool)*42);
-	test[0] = (SDI12_GetTimeFromResponse("A001", &time));
-	test[1] = (time == 1);
-	test[2] = (SDI12_GetTimeFromResponse("z001", &time));
-	test[3] = (time == 1);
-	test[4] = (SDI12_GetTimeFromResponse("9001", &time));
-	test[5] = (time == 1);
-	test[6] = (SDI12_GetTimeFromResponse("A000", &time));
-	test[7] = (time == 0);
-	test[8] = (SDI12_GetTimeFromResponse("A999", &time));
-	test[9] = (time == 999);
-	test[10] = (SDI12_GetTimeFromResponse("A020", &time));
-	test[11] = (time == 20);
-	test[12] = (SDI12_GetTimeFromResponse("0000", &time));
-	test[13] = (time == 0);
-	test[14] = (SDI12_GetTimeFromResponse("A010", &time));
-	test[15] = (time == 10);
-	test[16] = (SDI12_GetTimeFromResponse("A001", &time));
-	test[17] = (time == 1);
-	test[18] = (SDI12_GetTimeFromResponse("A001", &time));
-	test[19] = (time == 1);
-	test[20] = (SDI12_GetTimeFromResponse("A231", &time));
-	test[21] = (time == 231);
-	
-	//intentional failure conditions
-	test[22] = (! SDI12_GetTimeFromResponse("A00a", &time));
-	test[23] = (! SDI12_GetTimeFromResponse("A00A", &time));
-	test[24] = (! SDI12_GetTimeFromResponse("A00/", &time));
-	test[25] = (! SDI12_GetTimeFromResponse("A00Z", &time));
-	test[26] = (! SDI12_GetTimeFromResponse("A00:", &time));
-	test[27] = (! SDI12_GetTimeFromResponse("A0a0", &time));
-	test[28] = (! SDI12_GetTimeFromResponse("A0A0", &time));
-	test[29] = (! SDI12_GetTimeFromResponse("A0/0", &time));
-	test[30] = (! SDI12_GetTimeFromResponse("A0Z0", &time));
-	test[31] = (! SDI12_GetTimeFromResponse("A0:0", &time));
-	test[32] = (! SDI12_GetTimeFromResponse("Aa00", &time));
-	test[33] = (! SDI12_GetTimeFromResponse("AA00", &time));
-	test[34] = (! SDI12_GetTimeFromResponse("A/00", &time));
-	test[35] = (! SDI12_GetTimeFromResponse("AZ00", &time));
-	test[36] = (! SDI12_GetTimeFromResponse("A:00", &time));
-	test[37] = (! SDI12_GetTimeFromResponse("AB00", &time));
-	test[38] = (! SDI12_GetTimeFromResponse("AB00A", &time));
-	test[39] = (! SDI12_GetTimeFromResponse("AB00/", &time));
-	test[40] = (! SDI12_GetTimeFromResponse("AB00Z", &time));
-	test[41] = (! SDI12_GetTimeFromResponse("AB00:", &time));
-	return true;
-}
-
 /*SDI12_PerformTransaction
 Attempts to send the given message on the SDI-12 bus, and wait for a response.
 Returns a SDI12_ReturnCode. If it returns SDI12_Status_OK, the transaction was successful,
@@ -215,7 +149,6 @@ When using this function, if it fails, attempt a number of times defined by SDI1
 enum SDI12_ReturnCode  SDI12_PerformTransaction(const char *message, const uint8_t messageLen, char *outBuffer, const uint8_t outBufferLen){
 	//clear out the output buffer
 	memset(outBuffer, 0, sizeof(char)*outBufferLen);
-	
 
 	//disable all interrupts, since they can mess up the bit timings.
 	system_interrupt_enter_critical_section();
@@ -321,7 +254,10 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction(const char *message, const uint8
 	}
 }
 
-uint8_t SDI12_GetNumReadingsFromSensorMetadata(char address){
+/*SDI12_GetNumReadingsFromSensorMetadata
+	queries the sensor at the given address with a _IM! command to retrieve its metadata.
+	From this, the function parses the number of values to expect, and returns that value.*/
+uint8_t SDI12_GetNumReadingsFromSensorMetadata(const char address){
 	//ready the metadata command
 	char message[4] = { charAddParity(address), PARITY_I,  'M', '!'};
 	const uint8_t messageLen = 4;
@@ -354,8 +290,74 @@ uint8_t SDI12_ParseNumValuesFromResult(char responseBuffer[], uint8_t responseBu
 	while((responseBuffer[valuesIndex] >= '0') && (responseBuffer[valuesIndex] <='9') && (valuesIndex != responseBufferLen)){
 		numValuesSensed *= 10;
 		numValuesSensed += responseBuffer[valuesIndex];
-		
 		valuesIndex++;
 	}
 	return numValuesSensed;
+}
+
+/*charAddParity
+	takes a given character, and adds an even parity bit in the MSB.
+*/
+char charAddParity(char address){
+	address &= 0x7F;
+	for(uint8_t bitmask = 1; bitmask != 0x80; bitmask <<= 1){
+		if(address & bitmask){
+			//flip the parity bit
+			address ^= 0x80;
+		}
+	}
+	return address;
+}
+
+
+bool SDI12_TIME_FORMAT_UNIT_TEST(void){
+	//success conditions
+	uint16_t time;
+	bool test[42];
+	memset(test, false, sizeof(bool)*42);
+	test[0] = (SDI12_GetTimeFromResponse("A001", &time));
+	test[1] = (time == 1);
+	test[2] = (SDI12_GetTimeFromResponse("z001", &time));
+	test[3] = (time == 1);
+	test[4] = (SDI12_GetTimeFromResponse("9001", &time));
+	test[5] = (time == 1);
+	test[6] = (SDI12_GetTimeFromResponse("A000", &time));
+	test[7] = (time == 0);
+	test[8] = (SDI12_GetTimeFromResponse("A999", &time));
+	test[9] = (time == 999);
+	test[10] = (SDI12_GetTimeFromResponse("A020", &time));
+	test[11] = (time == 20);
+	test[12] = (SDI12_GetTimeFromResponse("0000", &time));
+	test[13] = (time == 0);
+	test[14] = (SDI12_GetTimeFromResponse("A010", &time));
+	test[15] = (time == 10);
+	test[16] = (SDI12_GetTimeFromResponse("A001", &time));
+	test[17] = (time == 1);
+	test[18] = (SDI12_GetTimeFromResponse("A001", &time));
+	test[19] = (time == 1);
+	test[20] = (SDI12_GetTimeFromResponse("A231", &time));
+	test[21] = (time == 231);
+	
+	//intentional failure conditions
+	test[22] = (! SDI12_GetTimeFromResponse("A00a", &time));
+	test[23] = (! SDI12_GetTimeFromResponse("A00A", &time));
+	test[24] = (! SDI12_GetTimeFromResponse("A00/", &time));
+	test[25] = (! SDI12_GetTimeFromResponse("A00Z", &time));
+	test[26] = (! SDI12_GetTimeFromResponse("A00:", &time));
+	test[27] = (! SDI12_GetTimeFromResponse("A0a0", &time));
+	test[28] = (! SDI12_GetTimeFromResponse("A0A0", &time));
+	test[29] = (! SDI12_GetTimeFromResponse("A0/0", &time));
+	test[30] = (! SDI12_GetTimeFromResponse("A0Z0", &time));
+	test[31] = (! SDI12_GetTimeFromResponse("A0:0", &time));
+	test[32] = (! SDI12_GetTimeFromResponse("Aa00", &time));
+	test[33] = (! SDI12_GetTimeFromResponse("AA00", &time));
+	test[34] = (! SDI12_GetTimeFromResponse("A/00", &time));
+	test[35] = (! SDI12_GetTimeFromResponse("AZ00", &time));
+	test[36] = (! SDI12_GetTimeFromResponse("A:00", &time));
+	test[37] = (! SDI12_GetTimeFromResponse("AB00", &time));
+	test[38] = (! SDI12_GetTimeFromResponse("AB00A", &time));
+	test[39] = (! SDI12_GetTimeFromResponse("AB00/", &time));
+	test[40] = (! SDI12_GetTimeFromResponse("AB00Z", &time));
+	test[41] = (! SDI12_GetTimeFromResponse("AB00:", &time));
+	return true;
 }
