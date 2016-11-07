@@ -82,14 +82,13 @@ int main (void)
 		char floatingPointConversionBuffer[16];
 		
 		PORTA.OUTSET.reg = DENDRO_TC_AMP_MOSFET_PINMASK;
-		
+		runSapFluxSystem();
 		LogValues[LOG_VALUES_DEND_INDEX]		= ReadDendro(&adcModule1);
 		LogValues[LOG_VALUES_DEND_INDEX + 1]	= ReadDendro(&adcModule2);
 		
-		runSapFluxSystem();
-		
 		//turn of dendr/tc, and turn on SDI-12 bus and DHT22s. mark the DHT22 data pins as HIGH to start, too.
 		PORTA.OUTTGL.reg = DENDRO_TC_AMP_MOSFET_PINMASK | SDI_DHT22_POWER_MOSFET_PINMASK | DHT22_ALL_PINMASK;
+		//sleep 2s, required for the DHT22 to function properly.
 		timedSleep_seconds(&tcInstance, 2);
 		GetDht22Reading(&(LogValues[LOG_VALUES_DHT_INDEX]), &(LogValues[LOG_VALUES_DHT_INDEX + 1]), DHT22_1_PINMASK);
 		GetDht22Reading(&(LogValues[LOG_VALUES_DHT_INDEX + 2] ), &(LogValues[LOG_VALUES_DHT_INDEX + 3]), DHT22_2_PINMASK);
@@ -159,12 +158,10 @@ Initializes Sd Card, reads the time file if existing, reads the config file, and
 static void startupReadSdCard(struct Ds1302DateTime *outDateTime, bool *outTimeFileReadSuccess){
 	//wake up the SD card
 	PORTA.OUTSET.reg = SD_CARD_MOSFET_PINMASK;
-	
 	SdCardInit();
 	*outTimeFileReadSuccess = tryReadTimeFile(outDateTime);
 	readConfigFile(&loggerConfig);
 	SD_CreateWithHeaderIfMissing(&loggerConfig);
-	
 	/*remove power to the SD/MMC card, we'll re enable it when it's time to write the reading.*/
 	PORTA.OUTCLR.reg = SD_CARD_MOSFET_PINMASK;
 }

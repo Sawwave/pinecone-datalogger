@@ -61,8 +61,6 @@
 
 //On the SAM D20E, there are no pins PA12,13,20,21,26,29
 
-
-
 struct LoggerConfig{
 	char SDI12_SensorAddresses[SDI12_MAX_SUPPORTED_SENSORS + 1];	//extra char on the end for ease of f_gets function.
 	uint8_t SDI12_SensorNumValues[SDI12_MAX_SUPPORTED_SENSORS];
@@ -71,7 +69,6 @@ struct LoggerConfig{
 	uint16_t loggingInterval;
 	bool logImmediately;
 };
-
 
 #define SD_VOLUME_NUMBER							0
 #define SD_TIME_FILENAME							"0:time.txt"
@@ -100,6 +97,7 @@ struct LoggerConfig{
 #define DS1302_CLOCK_PINMASK						1 << DS1302_CLOCK_PIN_INDEX		//PIN_PA12
 #define DS1302_ENABLE_PINMASK						1 << DS1302_ENABLE_PIN_INDEX	//PIN_PA14
 #define DS1302_ALL_PINMASK							 DS1302_DATA_PINMASK | DS1302_CLOCK_PINMASK | DS1302_ENABLE_PINMASK
+
 
 #define MAX31856_SPI_SERCOM_MODULE					SERCOM1
 #define MAX31856_SPI_PINMUX_SETTING					SPI_SIGNAL_MUX_SETTING_E
