@@ -70,7 +70,6 @@ struct LoggerConfig{
 	uint8_t numSdiSensors;
 	uint16_t loggingInterval;
 	bool logImmediately;
-	bool checkFileIntegrity;
 };
 
 

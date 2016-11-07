@@ -169,12 +169,6 @@ bool readConfigFile(struct LoggerConfig *config){
 		else{
 			config->logImmediately = true;
 		}
-		if(flagBuffer[1] == 'c'){
-			config->checkFileIntegrity = true;
-		}
-		else{
-			config->checkFileIntegrity = false;
-		}
 	}
 	return true;
 }
