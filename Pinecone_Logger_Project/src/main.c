@@ -47,7 +47,6 @@
 static void runSapFluxSystem(void);
 static void startupSdCardBootstrapping(struct Ds1302DateTime *outDateTime, bool *outTimeFileReadSuccess);
 static void ReadThermocouples(double *tcValuesOut);
-static void initDateTimeBuffer(void);
 static bool MAX31856_VOLATILE_REGISTERS_TEST(void);
 
 struct spi_module spiMasterModule;
@@ -56,7 +55,7 @@ struct adc_module adcModule1;
 struct adc_module adcModule2;
 struct tc_module tcInstance;
 
-static char dateTimeBuffer[20];
+static char dateTimeBuffer[20] = "00/00/2000,00:00:00";
 static double LogValues[NUM_LOG_VALUES];
 static struct LoggerConfig loggerConfig;
 
@@ -98,13 +97,10 @@ int main (void)
 		totalSdiValues += loggerConfig.SDI12_SensorNumValues[sdiIndex];
 	}
 
-	componentInit();
 	/*If the configuration is set to defer logging for one sleep cycle, accomplish that sleep here.*/
 	if(!loggerConfig.logImmediately){
 		timedSleep_seconds(&tcInstance, loggerConfig.loggingInterval);
 	}
-	
-	initDateTimeBuffer();
 
 	/*All initialization has been done, so enter the loop!*/
 	while(1){
@@ -237,15 +233,4 @@ static void ReadThermocouples(double *tcValuesOut){
 		}
 		PORTA.OUTTGL.reg = ((index & 1) != 0)? TC_MUX_SELECT_ALL_PINMASK : TC_MUX_SELECT_A_PINMASK;
 	}
-}
-
-static void initDateTimeBuffer(void){
-	dateTimeBuffer[2] = '/';
-	dateTimeBuffer[5] = '/';
-	dateTimeBuffer[6] = '2';
-	dateTimeBuffer[7] = '0';
-	dateTimeBuffer[10] = ',';
-	dateTimeBuffer[13] = ':';
-	dateTimeBuffer[16] = ':';
-	dateTimeBuffer[19] = 0;
 }
