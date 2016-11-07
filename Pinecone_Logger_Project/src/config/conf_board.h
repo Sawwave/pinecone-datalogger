@@ -66,6 +66,7 @@
 struct LoggerConfig{
 	char SDI12_SensorAddresses[SDI12_MAX_SUPPORTED_SENSORS + 1];	//extra char on the end for ease of f_gets function.
 	uint8_t SDI12_SensorNumValues[SDI12_MAX_SUPPORTED_SENSORS];
+	uint16_t totalSDI_12Values;
 	uint8_t numSdiSensors;
 	uint16_t loggingInterval;
 	bool logImmediately;

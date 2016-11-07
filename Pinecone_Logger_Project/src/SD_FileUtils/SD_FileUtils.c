@@ -161,16 +161,6 @@ bool readConfigFile(struct LoggerConfig *config){
 		f_gets(flagBuffer, 4, &fileObj);
 		f_close(&fileObj);
 		
-		//count up the number of addresses. Consider a null terminator, CR, or LF to be terminating.
-		config->numSdiSensors = 0;
-		while(config->SDI12_SensorAddresses[(config->numSdiSensors)] != 0 &&
-		config->SDI12_SensorAddresses[(config->numSdiSensors)] != 10 &&
-		config->SDI12_SensorAddresses[(config->numSdiSensors)] != 13){
-			//query the sensor for the num values it has
-			config->SDI12_SensorNumValues[config->numSdiSensors] = SDI12_GetNumReadingsFromSensorMetadata(config->SDI12_SensorAddresses[config->numSdiSensors]);
-			config->numSdiSensors++;
-		}
-		
 		char *ptrToIntervalBuffer = &(intervalBuffer[0]);
 		config->loggingInterval = strtol(ptrToIntervalBuffer, &ptrToIntervalBuffer, 10);
 		if(flagBuffer[0] == 'd'){
@@ -446,6 +436,6 @@ static bool SD_UnitDataFileIntegrityCheck(void){
 	f_open(&file, SD_DATALOG_FILENAME, FA_READ | FA_WRITE);
 	bool success = checkAndFixLastFileLineIntegrity(10);
 	f_puts("checked",&file);
-	f_close(&file);	
+	f_close(&file);
 	return success;
 }
