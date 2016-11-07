@@ -237,8 +237,7 @@ static bool checkAndFixLastFileLineIntegrity(const uint16_t expectedValues)
 int8_t SD_UnitTest(void)
 {
 	
-	FRESULT res;
-	SdCardInit(&res);
+	SdCardInit();
 	
 	SD_UnitDataFileIntegrityCheck();
 	return 0;

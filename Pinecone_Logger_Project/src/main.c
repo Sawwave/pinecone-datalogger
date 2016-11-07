@@ -47,7 +47,6 @@
 static void runSapFluxSystem(void);
 static void startupSdCardBootstrapping(struct Ds1302DateTime *outDateTime, bool *outTimeFileReadSuccess);
 static void ReadThermocouples(double *tcValuesOut);
-static void componentInit(void);
 static void initDateTimeBuffer(void);
 static bool MAX31856_VOLATILE_REGISTERS_TEST(void);
 
@@ -59,14 +58,19 @@ struct tc_module tcInstance;
 
 static char dateTimeBuffer[20];
 static double LogValues[NUM_LOG_VALUES];
+static struct LoggerConfig loggerConfig;
 
 int main (void)
 {
-	struct LoggerConfig loggerConfig;
 	FRESULT mountingResult;
 	
+	//Initialize SAM D20 on-chip hardware
 	system_init();
 	delay_init();
+	initSleepTimerCounter(&tcInstance);
+	Max31856ConfigureSPI(&spiMasterModule, &spiSlaveInstance);
+	ConfigureDendroADC(&adcModule1, DEND_ANALOG_PIN_1);
+	ConfigureDendroADC(&adcModule2, DEND_ANALOG_PIN_2);
 	
 	#ifdef PINECONE_LOGGER_DEBUG_UNIT_TESTS
 	SD_UnitTest(&fileSystem);
@@ -76,26 +80,24 @@ int main (void)
 	bool dateTimeFileFound;
 	startupSdCardBootstrapping(&dateTime, &dateTimeFileFound);
 	
-	uint8_t Ds1302StoredRegister = Ds1302GetBatteryBackedRegister(DS1302_GENERAL_PURPOSE_DATA_REGISTER_0);
-	if(Ds1302StoredRegister & 0x1){
-		//clear out the value in the Ds1302 register
-		Ds1302SetBatteryBackedRegister(DS1302_GENERAL_PURPOSE_DATA_REGISTER_0, 0);
-		//check for file integrity if configured to do so.
-		if(loggerConfig.checkFileIntegrity){
-			SD_CheckIntegrity(&loggerConfig);
-		}
+	if(dateTimeFileFound){
+		Ds1302SetDateTime(&dateTime);
 	}
 	
+	//check the DS1302 general purpose register to see if we might need to fix CSV integrity.
+	uint8_t Ds1302StoredRegister = Ds1302GetBatteryBackedRegister(DS1302_GENERAL_PURPOSE_DATA_REGISTER_0);
+	if(Ds1302StoredRegister & 0x1){
+		SD_CheckIntegrity(&loggerConfig);
+		//clear out the value in the Ds1302 register
+		Ds1302SetBatteryBackedRegister(DS1302_GENERAL_PURPOSE_DATA_REGISTER_0, 0);
+	}
+	
+	//count up the total number of values for SDI sensors.
 	uint16_t totalSdiValues = 0;
 	for(uint8_t sdiIndex = 0; sdiIndex < loggerConfig.numSdiSensors;sdiIndex++){
 		totalSdiValues += loggerConfig.SDI12_SensorNumValues[sdiIndex];
 	}
 
-	
-	if(dateTimeFileFound){
-		Ds1302SetDateTime(&dateTime);
-	}
-	
 	componentInit();
 	/*If the configuration is set to defer logging for one sleep cycle, accomplish that sleep here.*/
 	if(!loggerConfig.logImmediately){
@@ -182,19 +184,11 @@ int main (void)
 	}
 }
 
-static void componentInit(void)
-{
-	initSleepTimerCounter(&tcInstance);
-	Max31856ConfigureSPI(&spiMasterModule, &spiSlaveInstance);
-	ConfigureDendroADC(&adcModule1, DEND_ANALOG_PIN_1);
-	ConfigureDendroADC(&adcModule2, DEND_ANALOG_PIN_2);
-}
-
 static void startupSdCardBootstrapping(struct Ds1302DateTime *outDateTime, bool *outTimeFileReadSuccess){
 	//wake up the SD card
 	PORTA.OUTSET.reg = SD_CARD_MOSFET_PINMASK;
 	
-	SdCardInit(&mountingResult);
+	SdCardInit();
 	*outTimeFileReadSuccess = tryReadTimeFile(outDateTime);
 	readConfigFile(&loggerConfig);
 	SD_CreateWithHeaderIfMissing(&loggerConfig);
