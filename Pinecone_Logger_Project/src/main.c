@@ -49,6 +49,7 @@ static void startupReadSdCard(struct Ds1302DateTime *outDateTime, bool *outTimeF
 static void ReadThermocouples(double *tcValuesOut);
 static bool MAX31856_VOLATILE_REGISTERS_TEST(void);
 static void LoggerInit(void);
+static void ReadDendrometers(void);
 static void LogAllSdiSensors(float *sdiValuesArray);
 static void WriteValuesToSD(float *sdiValuesArray);
 
@@ -78,14 +79,14 @@ int main (void)
 	
 	LoggerInit();
 
+	//sdiValues is defined here because the length of the array determined by config file, not a compile time constant.
+	float sdiValues[loggerConfig.totalSDI_12Values];
+	
 	/*All initialization has been done, so enter the loop!*/
 	while(1){
-		float sdiValues[loggerConfig.totalSDI_12Values];
-		
 		PORTA.OUTSET.reg = DENDRO_TC_AMP_MOSFET_PINMASK;
 		runSapFluxSystem();
-		LogValues[LOG_VALUES_DEND_INDEX]		= ReadDendro(&adcModule1);
-		LogValues[LOG_VALUES_DEND_INDEX + 1]	= ReadDendro(&adcModule2);
+		ReadDendrometers();
 		
 		//turn of dendr/tc, and turn on SDI-12 bus and DHT22s. mark the DHT22 data pins as HIGH to start, too.
 		PORTA.OUTTGL.reg = DENDRO_TC_AMP_MOSFET_PINMASK | SDI_DHT22_POWER_MOSFET_PINMASK | DHT22_ALL_PINMASK;
@@ -93,7 +94,6 @@ int main (void)
 		timedSleep_seconds(&tcInstance, 2);
 		GetDht22Reading(&(LogValues[LOG_VALUES_DHT_INDEX]), &(LogValues[LOG_VALUES_DHT_INDEX + 1]), DHT22_1_PINMASK);
 		GetDht22Reading(&(LogValues[LOG_VALUES_DHT_INDEX + 2] ), &(LogValues[LOG_VALUES_DHT_INDEX + 3]), DHT22_2_PINMASK);
-
 
 		LogAllSdiSensors(sdiValues);
 		
@@ -104,6 +104,43 @@ int main (void)
 		
 		WriteValuesToSD(sdiValues);
 		
+		timedSleep_seconds(&tcInstance, loggerConfig.loggingInterval);
+	}
+}
+
+/*LoggerInit
+Main initialization of board state and external hardware components before the main loop begins.*/
+static void LoggerInit(void){
+	struct Ds1302DateTime dateTime;
+	bool dateTimeFileFound;
+	startupReadSdCard(&dateTime, &dateTimeFileFound);
+	
+	if(dateTimeFileFound){
+		Ds1302SetDateTime(&dateTime);
+	}
+	
+	//count up the number of addresses in the loggerConfig's SDI_12 address list. Consider a null terminator, CR, or LF to be terminating.
+	loggerConfig.numSdiSensors = 0;
+	while(loggerConfig.SDI12_SensorAddresses[(loggerConfig.numSdiSensors)] != 0 &&
+	loggerConfig.SDI12_SensorAddresses[(loggerConfig.numSdiSensors)] != 10 &&
+	loggerConfig.SDI12_SensorAddresses[(loggerConfig.numSdiSensors)] != 13){
+		//query the sensor for the num values it has
+		uint8_t numValuesFromSensor = SDI12_GetNumReadingsFromSensorMetadata(loggerConfig.SDI12_SensorAddresses[loggerConfig.numSdiSensors]);
+		loggerConfig.SDI12_SensorNumValues[loggerConfig.numSdiSensors] = numValuesFromSensor;
+		loggerConfig.totalSDI_12Values += numValuesFromSensor;
+		loggerConfig.numSdiSensors++;
+	}
+	
+	//check the DS1302 general purpose register to see if we might need to fix CSV integrity.
+	uint8_t Ds1302StoredRegister = Ds1302GetBatteryBackedRegister(DS1302_GENERAL_PURPOSE_DATA_REGISTER_0);
+	if(Ds1302StoredRegister & 0x1){
+		SD_CheckIntegrity(&loggerConfig);
+		//clear out the value in the Ds1302 register
+		Ds1302SetBatteryBackedRegister(DS1302_GENERAL_PURPOSE_DATA_REGISTER_0, 0);
+	}
+
+	/*If the configuration is set to defer logging for one sleep cycle, accomplish that sleep here.*/
+	if(!loggerConfig.logImmediately){
 		timedSleep_seconds(&tcInstance, loggerConfig.loggingInterval);
 	}
 }
@@ -119,18 +156,6 @@ static void startupReadSdCard(struct Ds1302DateTime *outDateTime, bool *outTimeF
 	SD_CreateWithHeaderIfMissing(&loggerConfig);
 	/*remove power to the SD/MMC card, we'll re enable it when it's time to write the reading.*/
 	PORTA.OUTCLR.reg = SD_CARD_MOSFET_PINMASK;
-}
-
-static bool MAX31856_VOLATILE_REGISTERS_TEST(void){
-	//turn MAX31856 on
-	delay_s(1);
-	//write register
-	//turn MAX31856 off
-	delay_s(1);
-	//turn it on
-	//read register
-	//see if equal.
-	return false;
 }
 
 static void runSapFluxSystem(void){
@@ -163,42 +188,9 @@ static void ReadThermocouples(double *tcValuesOut){
 	}
 }
 
-/*LoggerInit
-Main initialization of board state and external hardware components before the main loop begins.*/
-static void LoggerInit(void){
-	struct Ds1302DateTime dateTime;
-	bool dateTimeFileFound;
-	startupReadSdCard(&dateTime, &dateTimeFileFound);
-	
-	if(dateTimeFileFound){
-		Ds1302SetDateTime(&dateTime);
-	}
-	
-	
-	//count up the number of addresses in the loggerConfig's SDI_12 address list. Consider a null terminator, CR, or LF to be terminating.
-	loggerConfig.numSdiSensors = 0;
-	while(loggerConfig.SDI12_SensorAddresses[(loggerConfig.numSdiSensors)] != 0 &&
-	loggerConfig.SDI12_SensorAddresses[(loggerConfig.numSdiSensors)] != 10 &&
-	loggerConfig.SDI12_SensorAddresses[(loggerConfig.numSdiSensors)] != 13){
-		//query the sensor for the num values it has
-		uint8_t numValuesFromSensor = SDI12_GetNumReadingsFromSensorMetadata(loggerConfig.SDI12_SensorAddresses[loggerConfig.numSdiSensors]);
-		loggerConfig.SDI12_SensorNumValues[loggerConfig.numSdiSensors] = numValuesFromSensor;
-		loggerConfig.totalSDI_12Values += numValuesFromSensor;
-		loggerConfig.numSdiSensors++;
-	}
-	
-	//check the DS1302 general purpose register to see if we might need to fix CSV integrity.
-	uint8_t Ds1302StoredRegister = Ds1302GetBatteryBackedRegister(DS1302_GENERAL_PURPOSE_DATA_REGISTER_0);
-	if(Ds1302StoredRegister & 0x1){
-		SD_CheckIntegrity(&loggerConfig);
-		//clear out the value in the Ds1302 register
-		Ds1302SetBatteryBackedRegister(DS1302_GENERAL_PURPOSE_DATA_REGISTER_0, 0);
-	}
-
-	/*If the configuration is set to defer logging for one sleep cycle, accomplish that sleep here.*/
-	if(!loggerConfig.logImmediately){
-		timedSleep_seconds(&tcInstance, loggerConfig.loggingInterval);
-	}
+static void ReadDendrometers(void){
+	LogValues[LOG_VALUES_DEND_INDEX]		= ReadDendro(&adcModule1);
+	LogValues[LOG_VALUES_DEND_INDEX + 1]	= ReadDendro(&adcModule2);
 }
 
 static void LogAllSdiSensors(float *sdiValuesArray){
@@ -229,7 +221,6 @@ static void LogAllSdiSensors(float *sdiValuesArray){
 }
 
 static void WriteValuesToSD(float *sdiValuesArray){
-	
 	//write a 1 into the DS1302 General Purpose Register
 	Ds1302SetBatteryBackedRegister(DS1302_GENERAL_PURPOSE_DATA_REGISTER_0, 0x1);
 	//log all values to dataFile
@@ -242,12 +233,12 @@ static void WriteValuesToSD(float *sdiValuesArray){
 	f_open(&file,SD_DATALOG_FILENAME, FA_OPEN_ALWAYS);
 	f_puts(dateTimeBuffer, &file);
 	for(uint8_t logValueIndex = 0; logValueIndex < NUM_LOG_VALUES; logValueIndex++){
-		snprintf(floatingPointConversionBuffer,16,",%f", LogValues[logValueIndex]);
+		snprintf(floatingPointConversionBuffer, 16, ",%f", LogValues[logValueIndex]);
 		f_puts(floatingPointConversionBuffer, &file);
 	}
 	
 	for(uint8_t sdiCounter = 0; sdiCounter < loggerConfig.totalSDI_12Values; sdiCounter++){
-		snprintf(floatingPointConversionBuffer,16, ",%f", sdiValuesArray[sdiCounter]);
+		snprintf(floatingPointConversionBuffer, 16, ",%f", sdiValuesArray[sdiCounter]);
 		f_puts(floatingPointConversionBuffer, &file);
 	}
 	f_close(&file);
