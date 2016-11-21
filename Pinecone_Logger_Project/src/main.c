@@ -90,7 +90,7 @@ int main (void)
 
 	//wake up the SD card
 	PORTA.OUTSET.reg = SD_CARD_MOSFET_PINMASK;
-	SdCardInit();
+	SdCardInit(&fatFileSys);
 	tryReadTimeFile();
 	readConfigFile(&loggerConfig);
 	SD_CreateWithHeaderIfMissing(&loggerConfig);

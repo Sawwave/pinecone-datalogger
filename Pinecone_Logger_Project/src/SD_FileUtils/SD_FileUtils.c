@@ -25,7 +25,7 @@ Initializes the sd mmc connection, and attempts to mount the fileSystem.
 system will be mounted into first arg, fatFilesys.
 second argument, fileResult, will show the result state of the attempted mount.
 */
- void SdCardInit(FATFS &fatFileSys)
+ void SdCardInit(FATFS *fatFileSys)
 {
 	FRESULT res;
 	sd_mmc_init();
@@ -223,8 +223,8 @@ static bool checkAndFixLastFileLineIntegrity(const uint16_t expectedValues)
 
 int8_t SD_UnitTest(void)
 {
-	
-	SdCardInit();
+	FATFS fatfs;
+	SdCardInit(&fatfs);
 	
 	SD_UnitDataFileIntegrityCheck();
 	return 0;

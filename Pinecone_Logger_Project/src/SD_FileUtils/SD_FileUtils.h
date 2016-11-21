@@ -13,7 +13,7 @@
 #include "DS1302/DS1302.h"
 #include "SDI12/SDI12.h"
 
-void SdCardInit(FATFS &fatFileSys);
+void SdCardInit(FATFS *fatFileSys);
 
 void tryReadTimeFile(void);
 
