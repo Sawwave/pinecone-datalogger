@@ -15,7 +15,7 @@
 
 void SdCardInit(void);
 
-bool tryReadTimeFile(struct Ds1302DateTime *dateTime);
+void tryReadTimeFile(void);
 
 bool SD_CreateWithHeaderIfMissing(const struct LoggerConfig *loggerConfig);
 

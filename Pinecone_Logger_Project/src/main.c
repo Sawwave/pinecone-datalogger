@@ -27,31 +27,39 @@
 /*
 * Support and FAQ: visit <a href="http://www.atmel.com/design-support/">Atmel Support</a>
 */
+
+#define SLIM_DEBUG
+
 #include <asf.h>
 #include <math.h>
-#include "DHT22/DHT22.h"
 #include "DS1302/DS1302.h"
+#include "DHT22/DHT22.h"
 #include "MAX31856/MAX31856.h"
 #include "TimedSleep/TimedSleep.h"
 #include "SDI12/SDI12.h"
 #include "Dendro/Dendro.h"
 #include "SD_FileUtils/SD_FileUtils.h"
 
+
 //number of loggable values, outside of datetime and sdi-12 values
-#define NUM_LOG_VALUES 14
+#define NUM_LOG_VALUES						14
 #define LOG_VALUES_TC_BEFORE_INDEX			0
 #define LOG_VALUES_TC_AFTER_INDEX			4
 #define LOG_VALUES_DHT_INDEX				8
 #define LOG_VALUES_DEND_INDEX				12
 
-static void runSapFluxSystem(void);
-static void startupReadSdCard(struct Ds1302DateTime *outDateTime, bool *outTimeFileReadSuccess);
-static void ReadThermocouples(double *tcValuesOut);
-static bool MAX31856_VOLATILE_REGISTERS_TEST(void);
+
+static void MainLoop(void);
 static void LoggerInit(void);
+static void runSapFluxSystem(void);
+
+static void ReadThermocouples(double *tcValuesOut);
+//static bool MAX31856_VOLATILE_REGISTERS_TEST(void);
+
 static void ReadDendrometers(void);
 static void LogAllSdiSensors(float *sdiValuesArray);
 static void WriteValuesToSD(float *sdiValuesArray);
+
 
 struct spi_module spiMasterModule;
 struct spi_slave_inst spiSlaveInstance;
@@ -59,8 +67,10 @@ struct adc_module adcModule1;
 struct adc_module adcModule2;
 struct tc_module tcInstance;
 
-static char dateTimeBuffer[20] = "00/00/2000,00:00:00";
 static double LogValues[NUM_LOG_VALUES];
+
+static char dateTimeBuffer[20] = "00/00/2000,00:00:00";
+
 static struct LoggerConfig loggerConfig;
 
 int main (void)
@@ -68,20 +78,37 @@ int main (void)
 	//Initialize SAM D20 on-chip hardware
 	system_init();
 	delay_init();
+	
+	irq_initialize_vectors();
+	cpu_irq_enable();
+	
 	initSleepTimerCounter(&tcInstance);
 	Max31856ConfigureSPI(&spiMasterModule, &spiSlaveInstance);
 	ConfigureDendroADC(&adcModule1, DEND_ANALOG_PIN_1);
 	ConfigureDendroADC(&adcModule2, DEND_ANALOG_PIN_2);
+	//#define PINECONE_LOGGER_DEBUG_UNIT_TEST
+	#ifdef PINECONE_LOGGER_DEBUG_UNIT_TEST
 	
-	#ifdef PINECONE_LOGGER_DEBUG_UNIT_TESTS
-	SD_UnitTest(&fileSystem);
+	SD_UnitTest();
 	#endif
 	
+	//wake up the SD card
+	PORTA.OUTSET.reg = SD_CARD_MOSFET_PINMASK;
+	SdCardInit();
+	tryReadTimeFile();
+	readConfigFile(&loggerConfig);
+	SD_CreateWithHeaderIfMissing(&loggerConfig);
+	/*remove power to the SD/MMC card, we'll re enable it when it's time to write the reading.*/
+	PORTA.OUTCLR.reg = SD_CARD_MOSFET_PINMASK;
+
 	LoggerInit();
 
+	MainLoop();
+}
+
+static void MainLoop(void){
 	//sdiValues is defined here because the length of the array determined by config file, not a compile time constant.
 	float sdiValues[loggerConfig.totalSDI_12Values];
-	
 	/*All initialization has been done, so enter the loop!*/
 	while(1){
 		PORTA.OUTSET.reg = DENDRO_TC_AMP_MOSFET_PINMASK;
@@ -111,23 +138,16 @@ int main (void)
 /*LoggerInit
 Main initialization of board state and external hardware components before the main loop begins.*/
 static void LoggerInit(void){
-	struct Ds1302DateTime dateTime;
-	bool dateTimeFileFound;
-	startupReadSdCard(&dateTime, &dateTimeFileFound);
-	
-	if(dateTimeFileFound){
-		Ds1302SetDateTime(&dateTime);
-	}
 	
 	//count up the number of addresses in the loggerConfig's SDI_12 address list. Consider a null terminator, CR, or LF to be terminating.
 	loggerConfig.numSdiSensors = 0;
+	loggerConfig.totalSDI_12Values = 0;
 	while(loggerConfig.SDI12_SensorAddresses[(loggerConfig.numSdiSensors)] != 0 &&
 	loggerConfig.SDI12_SensorAddresses[(loggerConfig.numSdiSensors)] != 10 &&
 	loggerConfig.SDI12_SensorAddresses[(loggerConfig.numSdiSensors)] != 13){
 		//query the sensor for the num values it has
-		uint8_t numValuesFromSensor = SDI12_GetNumReadingsFromSensorMetadata(loggerConfig.SDI12_SensorAddresses[loggerConfig.numSdiSensors]);
-		loggerConfig.SDI12_SensorNumValues[loggerConfig.numSdiSensors] = numValuesFromSensor;
-		loggerConfig.totalSDI_12Values += numValuesFromSensor;
+		loggerConfig.SDI12_SensorNumValues[loggerConfig.numSdiSensors] = SDI12_GetNumReadingsFromSensorMetadata(loggerConfig.SDI12_SensorAddresses[loggerConfig.numSdiSensors]);
+		loggerConfig.totalSDI_12Values += loggerConfig.SDI12_SensorNumValues[loggerConfig.numSdiSensors];
 		loggerConfig.numSdiSensors++;
 	}
 	
@@ -145,18 +165,6 @@ static void LoggerInit(void){
 	}
 }
 
-/*startupSdCardBootstrapping
-Initializes Sd Card, reads the time file if existing, reads the config file, and creates data file with heaters if missing.*/
-static void startupReadSdCard(struct Ds1302DateTime *outDateTime, bool *outTimeFileReadSuccess){
-	//wake up the SD card
-	PORTA.OUTSET.reg = SD_CARD_MOSFET_PINMASK;
-	SdCardInit();
-	*outTimeFileReadSuccess = tryReadTimeFile(outDateTime);
-	readConfigFile(&loggerConfig);
-	SD_CreateWithHeaderIfMissing(&loggerConfig);
-	/*remove power to the SD/MMC card, we'll re enable it when it's time to write the reading.*/
-	PORTA.OUTCLR.reg = SD_CARD_MOSFET_PINMASK;
-}
 
 static void runSapFluxSystem(void){
 	//read the starting values for the thermocouples

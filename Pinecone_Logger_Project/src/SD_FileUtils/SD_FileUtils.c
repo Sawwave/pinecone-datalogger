@@ -18,7 +18,6 @@ static FRESULT SD_UnitTestCreateDebugFile(FIL *file);
 static FRESULT SD_UnitTestReadFile(FIL *file);
 static int SD_UnitTestLoadAndCheckDebugFile(const char *addresses, uint8_t numAddresses, const char *interval, bool defer);
 static void SD_UnitTestHeaderCreate(struct LoggerConfig *config, const char *headerFileName);
-static bool SD_UnitTestReadTimeFile(const char *dateTimeStr, const struct Ds1302DateTime *comparisonDateTime);
 static bool SD_UnitDataFileIntegrityCheck(void);
 
 /*SdCardInit
@@ -26,56 +25,61 @@ Initializes the sd mmc connection, and attempts to mount the fileSystem.
 system will be mounted into first arg, fatFilesys.
 second argument, fileResult, will show the result state of the attempted mount.
 */
-void SdCardInit(void)
+ void SdCardInit(void)
 {
 	FATFS fatFileSys;
+	FRESULT res;
 	sd_mmc_init();
 	Ctrl_status checkStatus;
 	do{
 		checkStatus = sd_mmc_test_unit_ready(0);
 	} while (checkStatus != CTRL_GOOD);
 	
-	
 	memset(&fatFileSys, 0, sizeof(FATFS));
-	f_mount(SD_VOLUME_NUMBER, &fatFileSys);
+	res = f_mount(SD_VOLUME_NUMBER, &fatFileSys);
+	if(res !=  FR_OK){
+		checkStatus = CTRL_FAIL;
+	}
 }
 
 /* tryReadTimeFile
 //attempts to read the time file, whose filename is defined in boardconf.h.
-File should be in format hh,mm,ss,dd,mm,yyyy\n\n
-comma is suggested, but any non-numeric, non +- non \n, character should work as a seperater.
+File should be in format hh,mm,ss,mm,dd,yyyy\n\n
+comma is suggested, but any non-numeric, non +- non \n, character should work as a separator.
 
 returns false if file didn't exist, or there was an error.
-
 */
-bool tryReadTimeFile(struct Ds1302DateTime *dateTime){
+void tryReadTimeFile(void){
+	struct Ds1302DateTime dateTime;
+
 	FIL fileObj;
-	char buf[22];
-	char *bufferPointer = &(buf[0]);
 	//see if we can talk to the SD card
-	FRESULT status = f_open(&fileObj, SD_TIME_FILENAME, FA_READ);
-	if(status != FR_OK){
-		return false;
+	FRESULT status = f_open(&fileObj, SD_TIME_FILENAME, FA_READ | FA_OPEN_EXISTING);
+	if(status == FR_OK){
+		//reads until \n in found, or until buff is filled
+		UINT numBytesRead;
+		const uint8_t timeBufferLen = 19;
+		char buf[timeBufferLen];
+		f_read(&fileObj, buf, timeBufferLen, &numBytesRead);
+		f_close(&fileObj);
+		if(numBytesRead >= timeBufferLen){
+			
+			//convert two digit strings to values.
+			//expected format: hh:mm:ss,dd/mm/yyyy
+			dateTime.hours = (buf[1]- '0') + ((buf[0]- '0')*10);
+			dateTime.minutes = (buf[4]- '0') + ((buf[3]- '0')*10);
+			dateTime.seconds = (buf[7]- '0') + ((buf[6]- '0')*10);
+			dateTime.date = (buf[10]- '0') + ((buf[9]- '0')*10);
+			dateTime.month = (buf[13]- '0') + ((buf[12]- '0')*10);
+			dateTime.year = (buf[18]- '0') + ((buf[17]- '0')*10);
+			
+			//set the time
+			Ds1302SetDateTime(&dateTime);
+		}
 	}
-	//reads until \n in found, or until buff is filled
-	f_gets(buf, 22, &fileObj);
-	f_close(&fileObj);
-	if(f_error(&fileObj)){
-		return false;
-	}
-	
-	dateTime->hours		= (uint8_t)strtol(bufferPointer, &bufferPointer, 10);
-	dateTime->minutes	= (uint8_t)strtol(bufferPointer+1, &bufferPointer, 10);
-	dateTime->seconds	= (uint8_t)strtol(bufferPointer+1, &bufferPointer, 10);
-	dateTime->date		= (uint8_t)strtol(bufferPointer+1, &bufferPointer, 10);
-	dateTime->month		= (uint8_t)strtol(bufferPointer+1, &bufferPointer, 10);
-	dateTime->year		= (uint8_t)strtol(bufferPointer+1, &bufferPointer, 10);
-	
-	return !(dateTime->date && dateTime->month && dateTime->year);
 }
 
 /*
-
 return true if header was created or file already existed.*/
 bool SD_CreateWithHeaderIfMissing(const struct LoggerConfig *loggerConfig)
 {
@@ -225,43 +229,6 @@ int8_t SD_UnitTest(void)
 	
 	SD_UnitDataFileIntegrityCheck();
 	return 0;
-}
-
-static bool SD_UnitTestReadTimeFile(const char *dateTimeStr, const struct Ds1302DateTime *comparisonDateTime){
-	//create a dateTime file from the given dateTime
-	FIL file;
-	struct Ds1302DateTime dateTime;
-	//char buffer[32];
-	f_open(&file, SD_TIME_FILENAME, FA_CREATE_ALWAYS | FA_WRITE);
-	f_puts(dateTimeStr, &file);
-	f_close(&file);
-	
-	//TODO: change tryReadTimeFile to return the datetime struct, then set from there. Better separation of utility, and easier testing.
-	bool readTimeSuccess = tryReadTimeFile(&dateTime);
-	if(!readTimeSuccess){
-		return false;
-	}
-	if(comparisonDateTime->date != dateTime.date){
-		return false;
-	}
-	if(comparisonDateTime->hours != dateTime.hours){
-		return false;
-	}
-	if(comparisonDateTime->minutes != dateTime.minutes){
-		return false;
-	}
-	if(comparisonDateTime->month != dateTime.month){
-		return false;
-	}
-	if(comparisonDateTime->seconds != dateTime.seconds){
-		return false;
-	}
-	if(comparisonDateTime->year != dateTime.year){
-		return false;
-	}
-	return true;
-	
-	
 }
 
 static void SD_UnitTestHeaderCreate(struct LoggerConfig *config, const char *headerFileName){
