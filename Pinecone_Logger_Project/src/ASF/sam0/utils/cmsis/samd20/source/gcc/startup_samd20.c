@@ -244,6 +244,6 @@ void Reset_Handler(void)
  */
 void Dummy_Handler(void)
 {
-        while (0) {
+        while (1) {
         }
 }

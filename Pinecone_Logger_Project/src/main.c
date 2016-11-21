@@ -66,6 +66,7 @@ struct spi_slave_inst spiSlaveInstance;
 struct adc_module adcModule1;
 struct adc_module adcModule2;
 struct tc_module tcInstance;
+FATFS fatFileSys;
 
 static double LogValues[NUM_LOG_VALUES];
 
@@ -86,18 +87,15 @@ int main (void)
 	Max31856ConfigureSPI(&spiMasterModule, &spiSlaveInstance);
 	ConfigureDendroADC(&adcModule1, DEND_ANALOG_PIN_1);
 	ConfigureDendroADC(&adcModule2, DEND_ANALOG_PIN_2);
-	//#define PINECONE_LOGGER_DEBUG_UNIT_TEST
-	#ifdef PINECONE_LOGGER_DEBUG_UNIT_TEST
-	
-	SD_UnitTest();
-	#endif
-	
+
 	//wake up the SD card
 	PORTA.OUTSET.reg = SD_CARD_MOSFET_PINMASK;
 	SdCardInit();
 	tryReadTimeFile();
 	readConfigFile(&loggerConfig);
 	SD_CreateWithHeaderIfMissing(&loggerConfig);
+	
+	while(1);
 	/*remove power to the SD/MMC card, we'll re enable it when it's time to write the reading.*/
 	PORTA.OUTCLR.reg = SD_CARD_MOSFET_PINMASK;
 
