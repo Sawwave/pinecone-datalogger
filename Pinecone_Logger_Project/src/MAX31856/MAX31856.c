@@ -42,7 +42,12 @@ void Max31856ConfigureSPI(struct spi_module *spiMasterModule, struct spi_slave_i
 }
 
 enum Max31856_Status Max31856CheckWrittenRegister(struct spi_module *spiMasterModule, struct spi_slave_inst *slaveInst){
-	while(spi_lock(spiMasterModule) == STATUS_BUSY);
+	uint16_t spiLockAttempts = 50000;
+	while(spi_lock(spiMasterModule) == STATUS_BUSY){
+		if(spiLockAttempts-- == 0){
+			return MAX31856_CONNECTION_ERROR;
+		}
+	}
 	spi_enable(spiMasterModule);
 	spi_select_slave(spiMasterModule, slaveInst, true);
 	
