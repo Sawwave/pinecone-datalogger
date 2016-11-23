@@ -83,8 +83,8 @@ struct LoggerConfig{
 
 #ifdef USING_SAMD20XPLAINED
 
-#define DHT22_1_PINMASK								1 << 15							// PIN_PA08
-#define DHT22_2_PINMASK								1 << 15							// PIN_PA09
+#define DHT22_1_PINMASK								1 << 8							// PIN_PA08
+#define DHT22_2_PINMASK								1 << 9							// PIN_PA09
 #define DHT22_ALL_PINMASK							DHT22_1_PINMASK | DHT22_2_PINMASK
 
 #define SDI_PIN										PIN_PA10

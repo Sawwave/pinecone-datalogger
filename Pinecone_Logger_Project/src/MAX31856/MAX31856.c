@@ -71,8 +71,12 @@ enum Max31856_Status Max31856RequestReading(struct spi_module *spiMasterModule, 
 }
 
 static enum Max31856_Status Max31856WriteSpi(struct spi_module *spiMasterModule, struct spi_slave_inst *slaveInst, uint8_t xferBuffer[], const uint8_t xferBufferLen){
-	
-	while(spi_lock(spiMasterModule) == STATUS_BUSY);
+	uint16_t spiLockAttempts = 50000;
+	while(spi_lock(spiMasterModule) == STATUS_BUSY){
+		if(spiLockAttempts-- == 0){
+				return MAX31856_CONNECTION_ERROR;
+		}
+	}
 	spi_enable(spiMasterModule);
 	//wait until the spi bus is free
 	while(spi_is_syncing(spiMasterModule));

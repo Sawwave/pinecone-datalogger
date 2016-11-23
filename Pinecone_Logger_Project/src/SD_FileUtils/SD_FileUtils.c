@@ -83,13 +83,14 @@ return true if header was created or file already existed.*/
 bool SD_CreateWithHeaderIfMissing(const struct LoggerConfig *loggerConfig)
 {
 	FILINFO fileInfo;
-	FRESULT statsResult = f_stat(SD_DATALOG_FILENAME, &fileInfo);
+	FIL file;
+	FRESULT statsResult = f_open(&file, SD_DATALOG_FILENAME, FA_READ | FA_OPEN_EXISTING);
+	f_close(&file);
 	if (statsResult == FR_NO_FILE){
 		SD_FileCreateWithHeader(loggerConfig);
-		return true;
 	}
 	
-	//if we've got here, return false if the stats was something other than FR_OK or FR_NO_FILe (would've exited above)
+	//if we've got here, return false if the stats was something other than FR_OK
 	return statsResult == FR_OK;
 }
 
@@ -134,11 +135,11 @@ static void SD_FileCreateWithHeader(const struct LoggerConfig *loggerConf)
 /*readConfigFile
 
 Reads the Configuration file, and stores the configuration in the given struct.
-Config file is formmated as defined below:
+Config file is formated as defined below:
 
 ABC...
 0000
-ic
+i
 
 first line:
 ABC.. specifies the SDI12 addresses of the sensors. Thus, if logger is connected to 3 sensors, with addresses 0,7, and B, line 2 may read
@@ -147,7 +148,6 @@ second line:
 0000 is the number of minutes between readings that the sensor will sleep
 third line:
 i may be letter i or d specifies if the sensor takes the reading immediately on waking up(i), or defers logging until after the sleep interval(d).
-c may be letter c or d specifies if the sensor checks the data file if it thinks it might be corrupt (c)
 */
 bool readConfigFile(struct LoggerConfig *config){
 	FIL fileObj;
