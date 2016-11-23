@@ -74,7 +74,7 @@ static enum Max31856_Status Max31856WriteSpi(struct spi_module *spiMasterModule,
 	uint16_t spiLockAttempts = 50000;
 	while(spi_lock(spiMasterModule) == STATUS_BUSY){
 		if(spiLockAttempts-- == 0){
-				return MAX31856_CONNECTION_ERROR;
+			return MAX31856_CONNECTION_ERROR;
 		}
 	}
 	spi_enable(spiMasterModule);
@@ -107,7 +107,12 @@ enum Max31856_Status Max31856GetTemp(struct spi_module *spiMasterModule, struct 
 	}
 	
 	enum status_code status;
-	while(spi_lock(spiMasterModule) == STATUS_BUSY);
+	uint16_t spiLockAttempts = 50000;
+	while(spi_lock(spiMasterModule) == STATUS_BUSY){
+		if(spiLockAttempts-- == 0){
+			return MAX31856_CONNECTION_ERROR;
+		}
+	}
 	spi_enable(spiMasterModule);
 	spi_select_slave(spiMasterModule, slaveInst, true);
 	
