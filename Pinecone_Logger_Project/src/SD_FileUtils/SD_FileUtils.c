@@ -109,8 +109,8 @@ static void SD_FileCreateWithHeader(const struct LoggerConfig *loggerConf)
 	f_open(&file, SD_DATALOG_FILENAME, FA_OPEN_ALWAYS | FA_WRITE);
 	//create the header for the data file
 	f_puts("Date,Time,TcBefore1,TcBefore2,TcBefore3,TcBefore4,TcAfter1,TcAfter2,TcAfter3,TcAfter4,Dht1Temp,Dht1Rh,Dht2Temp,Dht2Rh,Dend1,Dend2", &file);
-
-	char sdiColumnHeader[10] = {',','S','D','I','_','A','.','0','0',0};	//,SDI12_A.00
+	const uint8_t sdiColumnHeaderSize = 10;
+	char sdiColumnHeader[sdiColumnHeaderSize] = {',','S','D','I','_','A','.','0','0',0};	//,SDI12_A.00
 	const uint8_t sdiHeaderAddressIndex = 5;
 	const uint8_t sdiHeaderOnesValueIndex = 8;
 	

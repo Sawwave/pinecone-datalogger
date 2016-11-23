@@ -59,7 +59,7 @@ void Ds1302SetDateTime(const Ds1302DateTime *dateTime){
 }
 
 //outBuffer required to be at least 20 bytes
-//datetime output will look like mm/dd/yyyy hh:mm:ss\null
+//datetime output will look like \nmm/dd/yyyy hh:mm:ss
 void Ds1302GetDateTime(char *outBuffer){
 	uint8_t rxBuffer[10];
 	
