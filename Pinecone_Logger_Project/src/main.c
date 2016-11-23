@@ -61,16 +61,16 @@ static void LogAllSdiSensors(float *sdiValuesArray);
 static void WriteValuesToSD(float *sdiValuesArray);
 
 
-struct spi_module spiMasterModule;
-struct spi_slave_inst spiSlaveInstance;
-struct adc_module adcModule1;
-struct adc_module adcModule2;
-struct tc_module tcInstance;
-FATFS fatFileSys;
+static struct spi_module spiMasterModule;
+static struct spi_slave_inst spiSlaveInstance;
+static struct adc_module adcModule1;
+static struct adc_module adcModule2;
+static struct tc_module tcInstance;
+static FATFS fatFileSys;
 
 static double LogValues[NUM_LOG_VALUES];
-
-static char dateTimeBuffer[20] = "00/00/2000,00:00:00";
+static const uint8_t dateTimeBufferLen = 20;
+static char dateTimeBuffer[dateTimeBufferLen] = "00/00/2000,00:00:00";
 
 static struct LoggerConfig loggerConfig;
 
@@ -95,7 +95,6 @@ int main (void)
 	readConfigFile(&loggerConfig);
 	SD_CreateWithHeaderIfMissing(&loggerConfig);
 	
-	while(1);
 	/*remove power to the SD/MMC card, we'll re enable it when it's time to write the reading.*/
 	PORTA.OUTCLR.reg = SD_CARD_MOSFET_PINMASK;
 
@@ -237,7 +236,11 @@ static void WriteValuesToSD(float *sdiValuesArray){
 	char floatingPointConversionBuffer[16];
 
 	f_open(&file,SD_DATALOG_FILENAME, FA_OPEN_ALWAYS);
-	f_puts(dateTimeBuffer, &file);
+	{
+		uint8_t bytesWritten;
+		f_write(&file, dateTimeBuffer, dateTimeBufferLen,&bytesWritten);
+	}
+
 	for(uint8_t logValueIndex = 0; logValueIndex < NUM_LOG_VALUES; logValueIndex++){
 		snprintf(floatingPointConversionBuffer, 16, ",%f", LogValues[logValueIndex]);
 		f_puts(floatingPointConversionBuffer, &file);

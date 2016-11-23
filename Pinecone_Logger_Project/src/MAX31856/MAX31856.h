@@ -45,6 +45,6 @@ enum Max31856_Status Max31856RequestReading(struct spi_module *spiMasterModule, 
 
 /*Max31856GetTemp
 	retrieves the temperature value from the Max31856,, loading it into the outTemp pointer*/
-enum Max31856_Status Max31856GetTemp(struct spi_module *spiMasterModule, struct spi_slave_inst *slaveInst, double *outTemp);
+enum Max31856_Status Max31856GetTemp(struct spi_module *spiMasterModule, struct spi_slave_inst *slaveInst, float *outTemp);
 
 #endif /* MAX31856_H_ */

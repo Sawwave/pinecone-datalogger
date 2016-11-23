@@ -34,8 +34,8 @@ second argument, fileResult, will show the result state of the attempted mount.
 		checkStatus = sd_mmc_test_unit_ready(0);
 	} while (checkStatus != CTRL_GOOD);
 	
-	memset(&fatFileSys, 0, sizeof(FATFS));
-	res = f_mount(SD_VOLUME_NUMBER, &fatFileSys);
+	memset(fatFileSys, 0, sizeof(FATFS));
+	res = f_mount(SD_VOLUME_NUMBER, fatFileSys);
 	if(res !=  FR_OK){
 		checkStatus = CTRL_FAIL;
 	}

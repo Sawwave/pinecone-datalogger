@@ -28,7 +28,7 @@ void Max31856ConfigureSPI(struct spi_module *spiMasterModule, struct spi_slave_i
 	spiMasterConfig.pinmux_pad0 = MAX31856_SPI_PAD0;
 	spiMasterConfig.pinmux_pad1 = MAX31856_SPI_PAD1;
 	spiMasterConfig.pinmux_pad2 = MAX31856_SPI_PAD2;
-	spiMasterConfig.pinmux_pad3 = PINMUX_UNUSED;
+	spiMasterConfig.pinmux_pad3 = MAX31856_SPI_PAD3;
 	//xfers in MSB order by default.
 	//since CPHA must be 1 for the Max31856, use xfer mode 1 or 3.
 	spiMasterConfig.transfer_mode = SPI_TRANSFER_MODE_3;
@@ -95,7 +95,7 @@ static enum Max31856_Status Max31856WriteSpi(struct spi_module *spiMasterModule,
 	return MAX31856_CONNECTION_ERROR;
 }
 
-enum Max31856_Status Max31856GetTemp(struct spi_module *spiMasterModule, struct spi_slave_inst *slaveInst, double outTemp[]){
+enum Max31856_Status Max31856GetTemp(struct spi_module *spiMasterModule, struct spi_slave_inst *slaveInst, float outTemp[]){
 	uint8_t timeout = 200;
 	//wait until the spi bus is free
 	while(spi_is_syncing(spiMasterModule)){
