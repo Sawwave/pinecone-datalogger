@@ -69,8 +69,8 @@ static struct tc_module tcInstance;
 static FATFS fatFileSys;
 
 static double LogValues[NUM_LOG_VALUES];
-#define dateTimeBufferLen  20			//defined as to not variably modify length at file scope.
-static char dateTimeBuffer[dateTimeBufferLen] = "00/00/2000,00:00:00";
+#define dateTimeBufferLen  21			//defined as to not variably modify length at file scope.
+static char dateTimeBuffer[dateTimeBufferLen] = "\n00/00/2000,00:00:00";	//buffer starts with \n since this always starts a measurement.
 
 static struct LoggerConfig loggerConfig;
 
@@ -233,7 +233,6 @@ static void WriteValuesToSD(float *sdiValuesArray){
 	PORTA.OUTSET.reg = SD_CARD_MOSFET_PINMASK;
 
 	f_open(&file,SD_DATALOG_FILENAME, FA_OPEN_ALWAYS);
-	f_putc('\n', &file);
 	UINT bytesWritten;
 	f_write(&file, dateTimeBuffer, dateTimeBufferLen, &bytesWritten);
 
