@@ -69,7 +69,7 @@ static struct tc_module tcInstance;
 static FATFS fatFileSys;
 
 static double LogValues[NUM_LOG_VALUES];
-static const uint8_t dateTimeBufferLen = 20;
+#define dateTimeBufferLen  20			//defined as to not variably modify length at file scope.
 static char dateTimeBuffer[dateTimeBufferLen] = "00/00/2000,00:00:00";
 
 static struct LoggerConfig loggerConfig;
@@ -230,26 +230,20 @@ static void WriteValuesToSD(float *sdiValuesArray){
 	Ds1302SetBatteryBackedRegister(DS1302_GENERAL_PURPOSE_DATA_REGISTER_0, 0x1);
 	//log all values to dataFile
 	FIL file;
-	
 	PORTA.OUTSET.reg = SD_CARD_MOSFET_PINMASK;
 
-	char floatingPointConversionBuffer[16];
-
 	f_open(&file,SD_DATALOG_FILENAME, FA_OPEN_ALWAYS);
-	{
-		uint8_t bytesWritten;
-		f_write(&file, dateTimeBuffer, dateTimeBufferLen,&bytesWritten);
-	}
+	f_putc('\n', &file);
+	UINT bytesWritten;
+	f_write(&file, dateTimeBuffer, dateTimeBufferLen, &bytesWritten);
 
 	for(uint8_t logValueIndex = 0; logValueIndex < NUM_LOG_VALUES; logValueIndex++){
-		snprintf(floatingPointConversionBuffer, 16, ",%f", LogValues[logValueIndex]);
-		f_puts(floatingPointConversionBuffer, &file);
+		f_printf(&file, ",%f",LogValues[logValueIndex]);
 	}
 	
 	for(uint8_t sdiCounter = 0; sdiCounter < loggerConfig.totalSDI_12Values; sdiCounter++){
-		snprintf(floatingPointConversionBuffer, 16, ",%f", sdiValuesArray[sdiCounter]);
-		f_puts(floatingPointConversionBuffer, &file);
-	}
+		f_printf(&file, ",%f", sdiValuesArray[sdiCounter]);
+	}	
 	f_close(&file);
 	
 	PORTA.OUTCLR.reg = SD_CARD_MOSFET_PINMASK;
