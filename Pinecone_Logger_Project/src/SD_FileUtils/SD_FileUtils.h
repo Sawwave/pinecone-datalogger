@@ -19,7 +19,7 @@ void tryReadTimeFile(void);
 
 bool SD_CreateWithHeaderIfMissing(const struct LoggerConfig *loggerConfig);
 
-bool readConfigFile(struct LoggerConfig *config);
+void readConfigFile(struct LoggerConfig *config);
 
 bool SD_CheckIntegrity(const struct LoggerConfig *loggerConfig);
 

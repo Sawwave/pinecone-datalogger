@@ -148,7 +148,7 @@ second line:
 third line:
 i may be letter i or d specifies if the sensor takes the reading immediately on waking up(i), or defers logging until after the sleep interval(d).
 */
-bool readConfigFile(struct LoggerConfig *config){
+void readConfigFile(struct LoggerConfig *config){
 	FIL fileObj;
 	char intervalBuffer[5];
 	char flagBuffer[4];
@@ -171,7 +171,6 @@ bool readConfigFile(struct LoggerConfig *config){
 			config->logImmediately = true;
 		}
 	}
-	return true;
 }
 
 static bool checkAndFixLastFileLineIntegrity(const uint16_t expectedValues)
