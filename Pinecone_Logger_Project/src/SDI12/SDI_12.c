@@ -250,7 +250,7 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction(const char *message, const uint8
 /*SDI12_GetNumReadingsFromSensorMetadata
 	queries the sensor at the given address with a _IM! command to retrieve its metadata.
 	From this, the function parses the number of values to expect, and returns that value.*/
-uint8_t SDI12_GetNumReadingsFromSensorMetadata(const char address){
+uint8_t SDI12_GetNumReadingsFromMetadata(const char address){
 	//ready the metadata command
 	char message[4] = { charAddParity(address), PARITY_I,  'M', '!'};
 	const uint8_t messageLen = 4;

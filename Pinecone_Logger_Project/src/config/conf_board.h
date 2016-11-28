@@ -78,9 +78,6 @@ struct LoggerConfig{
 
 #define HEATER_TIMED_SLEEP_SECONDS					60
 
-
-
-
 #ifdef USING_SAMD20XPLAINED
 
 #define DHT22_1_PINMASK								1 << 8							// PIN_PA08

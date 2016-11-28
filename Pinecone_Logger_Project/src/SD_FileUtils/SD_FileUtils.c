@@ -43,7 +43,7 @@ second argument, fileResult, will show the result state of the attempted mount.
 
 /* tryReadTimeFile
 //attempts to read the time file, whose filename is defined in boardconf.h.
-File should be in format hh,mm,ss,mm,dd,yyyy\n\n
+File should be in format hh,mm,ss,mm,dd,yyyy
 comma is suggested, but any non-numeric, non +- non \n, character should work as a separator.
 
 returns false if file didn't exist, or there was an error.
@@ -64,12 +64,11 @@ void tryReadTimeFile(void){
 		if(numBytesRead >= timeBufferLen){
 			
 			//convert two digit strings to values.
-			//expected format: hh:mm:ss,dd/mm/yyyy
 			dateTime.hours = (buf[1]- '0') + ((buf[0]- '0')*10);
 			dateTime.minutes = (buf[4]- '0') + ((buf[3]- '0')*10);
 			dateTime.seconds = (buf[7]- '0') + ((buf[6]- '0')*10);
-			dateTime.date = (buf[10]- '0') + ((buf[9]- '0')*10);
-			dateTime.month = (buf[13]- '0') + ((buf[12]- '0')*10);
+			dateTime.month = (buf[10]- '0') + ((buf[9]- '0')*10);
+			dateTime.date = (buf[13]- '0') + ((buf[12]- '0')*10);
 			dateTime.year = (buf[18]- '0') + ((buf[17]- '0')*10);
 			
 			//set the time

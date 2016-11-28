@@ -40,6 +40,6 @@ bool SDI12_GetSensedValues(struct SDI_transactionPacket *transactionPacket, floa
 /*SDI12_GetNumReadingsFromSensorMetadata
 	queries the sensor at the given address with a _IM! command to retrieve its metadata.
 	From this, the function parses the number of values to expect, and returns that value.*/
-uint8_t SDI12_GetNumReadingsFromSensorMetadata(const char address);
+uint8_t SDI12_GetNumReadingsFromMetadata(const char address);
 
 #endif /* SDI12_H_ */

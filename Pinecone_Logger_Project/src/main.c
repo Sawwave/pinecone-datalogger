@@ -226,7 +226,7 @@ static void LogAllSdiSensors(float *sdiValuesArray){
 }
 
 static void WriteValuesToSD(float *sdiValuesArray){
-	//write a 1 into the DS1302 General Purpose Register
+	//write a 255 into the DS1302 General Purpose Register
 	Ds1302SetBatteryBackedRegister(DS1302_GENERAL_PURPOSE_DATA_REGISTER_0, 0xFF);
 	//log all values to dataFile
 	FIL file;

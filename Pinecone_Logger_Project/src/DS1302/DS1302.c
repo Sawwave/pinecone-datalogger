@@ -28,7 +28,6 @@ static void Ds1302WriteByte(uint8_t byte);
 static uint8_t Ds1302ReadByte(void);
 
 void Ds1302SetDateTime(const Ds1302DateTime *dateTime){
-
 	//enable the clock
 	PORTA.OUTSET.reg = DS1302_ENABLE_PIN_INDEX;
 	
@@ -41,7 +40,6 @@ void Ds1302SetDateTime(const Ds1302DateTime *dateTime){
 	portable_delay_cycles(8);
 	//re enable the DS1302
 	PORTA.OUTTGL.reg = DS1302_ENABLE_PINMASK;
-	
 	
 	Ds1302WriteByte(DS1302_CLOCK_BURST_WRITE_REGISTER);
 	Ds1302WriteByte(Ds1302ByteEncode(dateTime->seconds));
