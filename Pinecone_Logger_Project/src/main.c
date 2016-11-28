@@ -93,6 +93,7 @@ int main (void)
 	SdCardInit(&fatFileSys);
 	tryReadTimeFile();
 	readConfigFile(&loggerConfig);
+	configGetSdiMetadata();
 	SD_CreateWithHeaderIfMissing(&loggerConfig);
 	
 	/*remove power to the SD/MMC card, we'll re enable it when it's time to write the reading.*/
@@ -132,10 +133,8 @@ static void MainLoop(void){
 	}
 }
 
-/*LoggerInit
-Main initialization of board state and external hardware components before the main loop begins.*/
-static void LoggerInit(void){
-	
+static void configGetSdiMetadata()
+{
 	//count up the number of addresses in the loggerConfig's SDI_12 address list. Consider a null terminator, CR, or LF to be terminating.
 	loggerConfig.numSdiSensors = 0;
 	loggerConfig.totalSDI_12Values = 0;
@@ -147,7 +146,11 @@ static void LoggerInit(void){
 		loggerConfig.totalSDI_12Values += loggerConfig.SDI12_SensorNumValues[loggerConfig.numSdiSensors];
 		loggerConfig.numSdiSensors++;
 	}
-	
+}
+
+/*LoggerInit
+Main initialization of board state and external hardware components before the main loop begins.*/
+static void LoggerInit(void){
 	//check the DS1302 general purpose register to see if we might need to fix CSV integrity.
 	uint8_t Ds1302StoredRegister = Ds1302GetBatteryBackedRegister(DS1302_GENERAL_PURPOSE_DATA_REGISTER_0);
 	if(Ds1302StoredRegister){
@@ -242,7 +245,7 @@ static void WriteValuesToSD(float *sdiValuesArray){
 	
 	for(uint8_t sdiCounter = 0; sdiCounter < loggerConfig.totalSDI_12Values; sdiCounter++){
 		f_printf(&file, ",%f", sdiValuesArray[sdiCounter]);
-	}	
+	}
 	f_close(&file);
 	
 	PORTA.OUTCLR.reg = SD_CARD_MOSFET_PINMASK;
