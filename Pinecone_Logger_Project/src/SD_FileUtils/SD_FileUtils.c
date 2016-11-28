@@ -79,7 +79,7 @@ void tryReadTimeFile(void){
 
 /*
 return true if header was created or file already existed.*/
-bool SD_CreateWithHeaderIfMissing(const struct LoggerConfig *loggerConfig)
+void SD_CreateWithHeaderIfMissing(const struct LoggerConfig *loggerConfig)
 {
 	FILINFO fileInfo;
 	FIL file;
@@ -88,9 +88,6 @@ bool SD_CreateWithHeaderIfMissing(const struct LoggerConfig *loggerConfig)
 	if (statsResult == FR_NO_FILE){
 		SD_FileCreateWithHeader(loggerConfig);
 	}
-	
-	//if we've got here, return false if the stats was something other than FR_OK
-	return statsResult == FR_OK;
 }
 
 bool SD_CheckIntegrity(const struct LoggerConfig *loggerConfig){

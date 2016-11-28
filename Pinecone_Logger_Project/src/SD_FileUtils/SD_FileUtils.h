@@ -17,7 +17,7 @@ void SdCardInit(FATFS *fatFileSys);
 
 void tryReadTimeFile(void);
 
-bool SD_CreateWithHeaderIfMissing(const struct LoggerConfig *loggerConfig);
+void SD_CreateWithHeaderIfMissing(const struct LoggerConfig *loggerConfig);
 
 void readConfigFile(struct LoggerConfig *config);
 
