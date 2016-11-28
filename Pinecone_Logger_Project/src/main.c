@@ -143,14 +143,14 @@ static void LoggerInit(void){
 	loggerConfig.SDI12_SensorAddresses[(loggerConfig.numSdiSensors)] != 10 &&
 	loggerConfig.SDI12_SensorAddresses[(loggerConfig.numSdiSensors)] != 13){
 		//query the sensor for the num values it has
-		loggerConfig.SDI12_SensorNumValues[loggerConfig.numSdiSensors] = SDI12_GetNumReadingsFromSensorMetadata(loggerConfig.SDI12_SensorAddresses[loggerConfig.numSdiSensors]);
+		loggerConfig.SDI12_SensorNumValues[loggerConfig.numSdiSensors] = SDI12_GetNumReadingsFromMetadata(loggerConfig.SDI12_SensorAddresses[loggerConfig.numSdiSensors]);
 		loggerConfig.totalSDI_12Values += loggerConfig.SDI12_SensorNumValues[loggerConfig.numSdiSensors];
 		loggerConfig.numSdiSensors++;
 	}
 	
 	//check the DS1302 general purpose register to see if we might need to fix CSV integrity.
 	uint8_t Ds1302StoredRegister = Ds1302GetBatteryBackedRegister(DS1302_GENERAL_PURPOSE_DATA_REGISTER_0);
-	if(Ds1302StoredRegister & 0x1){
+	if(Ds1302StoredRegister){
 		SD_CheckIntegrity(&loggerConfig);
 		//clear out the value in the Ds1302 register
 		Ds1302SetBatteryBackedRegister(DS1302_GENERAL_PURPOSE_DATA_REGISTER_0, 0);
@@ -227,7 +227,7 @@ static void LogAllSdiSensors(float *sdiValuesArray){
 
 static void WriteValuesToSD(float *sdiValuesArray){
 	//write a 1 into the DS1302 General Purpose Register
-	Ds1302SetBatteryBackedRegister(DS1302_GENERAL_PURPOSE_DATA_REGISTER_0, 0x1);
+	Ds1302SetBatteryBackedRegister(DS1302_GENERAL_PURPOSE_DATA_REGISTER_0, 0xFF);
 	//log all values to dataFile
 	FIL file;
 	PORTA.OUTSET.reg = SD_CARD_MOSFET_PINMASK;
