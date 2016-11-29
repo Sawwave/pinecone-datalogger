@@ -43,7 +43,7 @@ third byte: integral temp data
 fourth byte: decimal temp data
 fifth: 8 bit checksum
 checksum should equal the addition of the first 4 bytes */
-enum Dht22Status GetDht22Reading(double *temp, double *relativeHumidity, const uint32_t dhtPinmask)
+enum Dht22Status GetDht22Reading(float *temp, float *relativeHumidity, const uint32_t dhtPinmask)
 {
 	//NOTE! this is probably unnecessary, just ignore for now.
 	//put the pinmask in the correct bits, enable IN, write the mux, and write the pincfg

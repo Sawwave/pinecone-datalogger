@@ -20,7 +20,7 @@ enum Dht22Status{ DHT_STATUS_OKAY, DHT_STATUS_TIMEOUT, DHT_STATUS_CHECKSUM_ERROR
 	
 	NOTE: make sure the DHT22 has been powered for at LEAST 2 second before using this function.
 	If this is not done, the sensor will have undefined behavior. */
-enum Dht22Status GetDht22Reading(double *temp, double *relativeHumidity, const uint32_t dhtPinmask);
+enum Dht22Status GetDht22Reading(float *temp, float *relativeHumidity, const uint32_t dhtPinmask);
 
 
 #endif /* DHT22_H_ */
