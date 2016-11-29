@@ -82,12 +82,7 @@ int main (void)
 	irq_initialize_vectors();
 	
 	cpu_irq_enable();
-	
-	uint8_t numVals = SDI12_GetNumReadingsFromMetadata('2');
-	
-	
-	
-	
+
 	initSleepTimerCounter(&tcInstance);
 	Max31856ConfigureSPI(&spiMasterModule, &spiSlaveInstance);
 	ConfigureDendroADC(&adcModule1, DEND_ANALOG_PIN_1);
@@ -196,7 +191,7 @@ static void ReadThermocouples(float *tcValuesOut){
 			timedSleep_seconds(&tcInstance, 1);
 			//if successful, Max31856GetTemp will set the out value to the temperature. Otherwise, it will be NAN.
 			enum Max31856_Status tempStatus = Max31856GetTemp(&spiMasterModule, &spiSlaveInstance, &(tcValuesOut[index]));
-		};
+		}
 		else{
 			tcValuesOut[index] = NAN;
 		}

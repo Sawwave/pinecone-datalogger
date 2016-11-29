@@ -91,7 +91,7 @@ void SD_CreateWithHeaderIfMissing(const struct LoggerConfig *loggerConfig)
 
 bool SD_CheckIntegrity(const struct LoggerConfig *loggerConfig){
 	//count up the number of SDI values we're expecting
-	uint16_t expectedValues = 16; //start with 14 values, we'll add more for the SDI12s
+	uint16_t expectedValues = 14; //start with 14 values, we'll add more for the SDI12s
 	uint8_t sdiIndex = loggerConfig->numSdiSensors;
 	while(sdiIndex){
 		expectedValues += loggerConfig->SDI12_SensorNumValues[--sdiIndex];

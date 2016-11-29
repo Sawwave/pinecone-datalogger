@@ -9,7 +9,6 @@
 #ifndef SDI12_H_
 #define SDI12_H_
 
-
 enum SDI12_ReturnCode {SDI12_STATUS_OK, SDI12_TRANSACTION_TIMEOUT, SDI12_BAD_RESPONSE, SDI12_TRANSACTION_FAILURE};
 
 struct SDI_transactionPacket{
@@ -36,10 +35,5 @@ void SDI12_RequestSensorReading(struct SDI_transactionPacket *transactionPacket)
 	Takes a transaction packet, and a float array to load the values into.
 	Performs a transaction with the sensor to retrieve the sensed values. Will return true on success, false on failure.*/
 bool SDI12_GetSensedValues(struct SDI_transactionPacket *transactionPacket, float *outValues);
-
-/*SDI12_GetNumReadingsFromSensorMetadata
-	queries the sensor at the given address with a _IM! command to retrieve its metadata.
-	From this, the function parses the number of values to expect, and returns that value.*/
-uint8_t SDI12_GetNumReadingsFromMetadata(const char address);
 
 #endif /* SDI12_H_ */
