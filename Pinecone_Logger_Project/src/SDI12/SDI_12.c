@@ -197,7 +197,10 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction(const char *message, const uint8
 		#endif
 		return SDI12_TRANSACTION_TIMEOUT;
 	}
-	
+	//delay for a full byte frame
+	for(uint8_t c=0;c<10;c++){
+		portable_delay_cycles(BIT_TIMING_DELAY_CYCLES);
+	}
 	uint8_t byteNumber = 0;
 	do{
 		//we've received the signal, now delay partway into the bits to read them
@@ -247,6 +250,7 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction(const char *message, const uint8
 	}
 }
 
+TODO: replace metadata function with full transaction and throw away readings.
 /*SDI12_GetNumReadingsFromSensorMetadata
 	queries the sensor at the given address with a _IM! command to retrieve its metadata.
 	From this, the function parses the number of values to expect, and returns that value.*/

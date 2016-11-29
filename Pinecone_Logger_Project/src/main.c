@@ -53,12 +53,11 @@ static void MainLoop(void);
 static void LoggerInit(void);
 static void runSapFluxSystem(void);
 
-static void ReadThermocouples(double *tcValuesOut);
-//static bool MAX31856_VOLATILE_REGISTERS_TEST(void);
-
+static void ReadThermocouples(float *tcValuesOut);
 static void ReadDendrometers(void);
 static void LogAllSdiSensors(float *sdiValuesArray);
 static void WriteValuesToSD(float *sdiValuesArray);
+static void configGetSdiMetadata(void);
 
 
 static struct spi_module spiMasterModule;
@@ -68,7 +67,7 @@ static struct adc_module adcModule2;
 static struct tc_module tcInstance;
 static FATFS fatFileSys;
 
-static double LogValues[NUM_LOG_VALUES];
+static float LogValues[NUM_LOG_VALUES];
 #define dateTimeBufferLen  21			//defined as to not variably modify length at file scope.
 static char dateTimeBuffer[dateTimeBufferLen] = "\n00/00/2000,00:00:00";	//buffer starts with \n since this always starts a measurement.
 
@@ -81,7 +80,13 @@ int main (void)
 	delay_init();
 	
 	irq_initialize_vectors();
+	
 	cpu_irq_enable();
+	
+	uint8_t numVals = SDI12_GetNumReadingsFromMetadata('2');
+	
+	
+	
 	
 	initSleepTimerCounter(&tcInstance);
 	Max31856ConfigureSPI(&spiMasterModule, &spiSlaveInstance);
@@ -133,7 +138,7 @@ static void MainLoop(void){
 	}
 }
 
-static void configGetSdiMetadata()
+static void configGetSdiMetadata(void)
 {
 	//count up the number of addresses in the loggerConfig's SDI_12 address list. Consider a null terminator, CR, or LF to be terminating.
 	loggerConfig.numSdiSensors = 0;
@@ -179,17 +184,20 @@ static void runSapFluxSystem(void){
 	ReadThermocouples(&(LogValues[LOG_VALUES_TC_AFTER_INDEX]));
 }
 
-static void ReadThermocouples(double *tcValuesOut){
+static void ReadThermocouples(float *tcValuesOut){
 	//start by configuring the registers to the required values.
 	Max31856ConfigureRegisters(&spiMasterModule, &spiSlaveInstance, MAX31856_THERMOCOUPLE_TYPE_USED);
 	
 	for(uint8_t index = 0; index < 4; index++){
 		//request the reading.
 		enum Max31856_Status requestStatus = Max31856RequestReading(&spiMasterModule, &spiSlaveInstance);
-		//enter standby mode until the reading has been prepared (a bit under 1s)
-		timedSleep_seconds(&tcInstance, 1);
-		enum Max31856_Status tempStatus = Max31856GetTemp(&spiMasterModule, &spiSlaveInstance, &(tcValuesOut[index]));
-		if(requestStatus != MAX31856_OKAY || tempStatus != MAX31856_OKAY){
+		if(requestStatus == MAX31856_OKAY){
+			//enter standby mode until the reading has been prepared (a bit under 1s)
+			timedSleep_seconds(&tcInstance, 1);
+			//if successful, Max31856GetTemp will set the out value to the temperature. Otherwise, it will be NAN.
+			enum Max31856_Status tempStatus = Max31856GetTemp(&spiMasterModule, &spiSlaveInstance, &(tcValuesOut[index]));
+		};
+		else{
 			tcValuesOut[index] = NAN;
 		}
 		PORTA.OUTTGL.reg = ((index & 1) != 0)? TC_MUX_SELECT_ALL_PINMASK : TC_MUX_SELECT_A_PINMASK;

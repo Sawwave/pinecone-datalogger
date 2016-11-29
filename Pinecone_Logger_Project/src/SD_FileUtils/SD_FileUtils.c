@@ -81,7 +81,6 @@ void tryReadTimeFile(void){
 return true if header was created or file already existed.*/
 void SD_CreateWithHeaderIfMissing(const struct LoggerConfig *loggerConfig)
 {
-	FILINFO fileInfo;
 	FIL file;
 	FRESULT statsResult = f_open(&file, SD_DATALOG_FILENAME, FA_READ | FA_OPEN_EXISTING);
 	f_close(&file);
@@ -255,11 +254,7 @@ static int SD_UnitTestLoadAndCheckDebugFile(const char *addresses, uint8_t numAd
 	f_close(&file);
 
 	struct LoggerConfig config;
-	bool success = readConfigFile(&config);
-	if(!success)
-	{
-		return -4;
-	}
+	readConfigFile(&config);
 	
 	if(config.numSdiSensors != numAddresses){
 		return -5;

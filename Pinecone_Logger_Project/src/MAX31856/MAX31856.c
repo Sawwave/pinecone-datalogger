@@ -104,17 +104,21 @@ static enum Max31856_Status Max31856WriteSpi(struct spi_module *spiMasterModule,
 	return MAX31856_CONNECTION_ERROR;
 }
 
-enum Max31856_Status Max31856GetTemp(struct spi_module *spiMasterModule, struct spi_slave_inst *slaveInst, float outTemp[]){
+enum Max31856_Status Max31856GetTemp(struct spi_module *spiMasterModule, struct spi_slave_inst *slaveInst, float *outTemp){
 	uint8_t timeout = 200;
 	//wait until the spi bus is free
 	while(spi_is_syncing(spiMasterModule)){
-		if(!timeout--) return MAX31856_SPI_ERROR;
+		if(!timeout--) {
+			*outTemp = NAN;
+			return MAX31856_SPI_ERROR;
+		}
 	}
 	
 	enum status_code status;
 	uint16_t spiLockAttempts = 50000;
 	while(spi_lock(spiMasterModule) == STATUS_BUSY){
 		if(spiLockAttempts-- == 0){
+			*outTemp = NAN;
 			return MAX31856_CONNECTION_ERROR;
 		}
 	}
@@ -146,18 +150,21 @@ enum Max31856_Status Max31856GetTemp(struct spi_module *spiMasterModule, struct 
 		//check the fault byte
 		uint8_t faultByte = receiveBuffer[4];
 		if(faultByte & 0x01){
+			*outTemp = NAN;
 			return MAX31856_TC_NOT_CONNECTED;
 		}
 		else if (faultByte & 0x02){
+			*outTemp = NAN;
 			return MAX31856_FAULT_VOLTAGE;
 		}
 		else if (faultByte & 0x14){
+			*outTemp = NAN;
 			return MAX31856_TEMP_TOO_LOW;
 		}
 		else if (faultByte & 0x28){
+			*outTemp = NAN;
 			return MAX31856_TEMP_TOO_HIGH;
 		}
 		else return MAX31856_OKAY;
 	}
-	return MAX31856_CONNECTION_ERROR;
 }
