@@ -50,7 +50,6 @@
 
 
 static void MainLoop(void);
-static void LoggerInit(void);
 static void runSapFluxSystem(void);
 
 static void ReadThermocouples(float *tcValuesOut);
@@ -77,9 +76,7 @@ int main (void)
 	//Initialize SAM D20 on-chip hardware
 	system_init();
 	delay_init();
-	
 	irq_initialize_vectors();
-	
 	cpu_irq_enable();
 
 	initSleepTimerCounter(&tcInstance);
@@ -97,14 +94,15 @@ int main (void)
 	/*remove power to the SD/MMC card, we'll re enable it when it's time to write the reading.*/
 	PORTA.OUTCLR.reg = SD_CARD_MOSFET_PINMASK;
 
-	LoggerInit();
+	/*If the configuration is set to defer logging for one sleep cycle, accomplish that sleep here.*/
+	if(!loggerConfig.logImmediately){
+		timedSleep_seconds(&tcInstance, loggerConfig.loggingInterval);
+	}
 
 	MainLoop();
 }
 
 static void MainLoop(void){
-	//sdiValues is defined here because the length of the array determined by config file, not a compile time constant.
-	float sdiValues[loggerConfig.totalSDI_12Values];
 	/*All initialization has been done, so enter the loop!*/
 	while(1){
 		PORTA.OUTSET.reg = DENDRO_TC_AMP_MOSFET_PINMASK;
@@ -118,28 +116,18 @@ static void MainLoop(void){
 		GetDht22Reading(&(LogValues[LOG_VALUES_DHT_INDEX]), &(LogValues[LOG_VALUES_DHT_INDEX + 1]), DHT22_1_PINMASK);
 		GetDht22Reading(&(LogValues[LOG_VALUES_DHT_INDEX + 2] ), &(LogValues[LOG_VALUES_DHT_INDEX + 3]), DHT22_2_PINMASK);
 
-		LogAllSdiSensors(sdiValues);
+		//LogAllSdiSensors(sdiValues);
 		
 		//turn off the power to the SDI12 bus, the DHT22s, and stop sending HIGH on the DHT22 data lines.
 		PORTA.OUTCLR.reg = SDI_DHT22_POWER_MOSFET_PINMASK | DHT22_ALL_PINMASK;
 		
 		Ds1302GetDateTime(dateTimeBuffer);
 		
-		WriteValuesToSD(sdiValues);
+		//WriteValuesToSD(sdiValues);
 		
 		timedSleep_seconds(&tcInstance, loggerConfig.loggingInterval);
 	}
 }
-
-/*LoggerInit
-Main initialization of board state and external hardware components before the main loop begins.*/
-static void LoggerInit(void){
-	/*If the configuration is set to defer logging for one sleep cycle, accomplish that sleep here.*/
-	if(!loggerConfig.logImmediately){
-		timedSleep_seconds(&tcInstance, loggerConfig.loggingInterval);
-	}
-}
-
 
 static void runSapFluxSystem(void){
 	//read the starting values for the thermocouples
@@ -220,9 +208,9 @@ static void WriteValuesToSD(float *sdiValuesArray){
 		f_printf(&file, ",%f",LogValues[logValueIndex]);
 	}
 	
-	for(uint8_t sdiCounter = 0; sdiCounter < loggerConfig.totalSDI_12Values; sdiCounter++){
-		f_printf(&file, ",%f", sdiValuesArray[sdiCounter]);
-	}
+	//for(uint8_t sdiCounter = 0; sdiCounter < loggerConfig.totalSDI_12Values; sdiCounter++){
+		//f_printf(&file, ",%f", sdiValuesArray[sdiCounter]);
+	//}
 	f_close(&file);
 	
 	PORTA.OUTCLR.reg = SD_CARD_MOSFET_PINMASK;

@@ -133,6 +133,7 @@ Reads the Configuration file, and stores the configuration in the given struct.
 Config file is formated as defined below:
 
 ABC...
+9,9,9...
 0000
 i
 
@@ -140,24 +141,38 @@ first line:
 ABC.. specifies the SDI12 addresses of the sensors. Thus, if logger is connected to 3 sensors, with addresses 0,7, and B, line 2 may read
 07B
 second line:
-0000 is the number of minutes between readings that the sensor will sleep
+9,9,9,... specifies the SDI12 number of values for each of the sdi sensors addressed in the first line.
 third line:
+0000 is the number of minutes between readings that the sensor will sleep
+fouth line:
 i may be letter i or d specifies if the sensor takes the reading immediately on waking up(i), or defers logging until after the sleep interval(d).
 */
 void readConfigFile(struct LoggerConfig *config){
+	const uint16_t numValuesBufferSize = SDI12_MAX_SUPPORTED_SENSORS * 4;
 	FIL fileObj;
 	char intervalBuffer[5];
 	char flagBuffer[4];
+	char numValuesBuffer[numValuesBufferSize];
 	memset(intervalBuffer, 0, 5 * sizeof(char));
-	memset(flagBuffer, 0, 10 * sizeof(char));
+	memset(flagBuffer, 0, 4 * sizeof(char));
 	memset(config->SDI12_SensorAddresses, 0, sizeof(char) * (SDI12_MAX_SUPPORTED_SENSORS + 1));
 	
 	if(f_open(&fileObj, SD_CONFIG_FILENAME, FA_READ) == FR_OK){
-		f_gets(config->SDI12_SensorAddresses, SDI12_MAX_SUPPORTED_SENSORS + 1, &fileObj);
+		f_gets(config->SDI12_SensorAddresses, SDI12_MAX_SUPPORTED_SENSORS, &fileObj);
+		f_gets(numValuesBuffer, numValuesBufferSize, &fileObj);
 		f_gets(intervalBuffer, 6, &fileObj);
 		f_gets(flagBuffer, 4, &fileObj);
 		f_close(&fileObj);
+		char *ptrToNumValuesBuffer = &(numValuesBuffer[0]);
+		//count up the number of sdi sensors, and convert the numValues into ints for the config
+		config->numSdiSensors = 0;
+		while(config->SDI12_SensorAddresses[config->numSdiSensors] >= '0'){//the only way the sdi sensor can be valid is if it's ASCII value is over '0'
+			config->SDI12_SensorNumValues[config->numSdiSensors] =  strtol(ptrToNumValuesBuffer, &ptrToNumValuesBuffer, 10);
+			config->numSdiSensors++;
+			
+		}
 		
+		//convert the interval to an integer to store in our config struct.
 		char *ptrToIntervalBuffer = &(intervalBuffer[0]);
 		config->loggingInterval = strtol(ptrToIntervalBuffer, &ptrToIntervalBuffer, 10);
 		if(flagBuffer[0] == 'd'){

@@ -250,32 +250,6 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction(const char *message, const uint8
 	}
 }
 
-TODO: replace metadata function with full transaction and throw away readings.
-/*SDI12_GetNumReadingsFromSensorMetadata
-	queries the sensor at the given address with a _IM! command to retrieve its metadata.
-	From this, the function parses the number of values to expect, and returns that value.*/
-uint8_t SDI12_GetNumReadingsFromMetadata(const char address){
-	//ready the metadata command
-	char message[4] = { charAddParity(address), PARITY_I,  'M', '!'};
-	const uint8_t messageLen = 4;
-	char outBuffer[12];
-	uint8_t outBufferLen = 12;
-	
-	uint8_t tries = SDI12_MAX_NUMBER_TRANSACTION_ATTEMPTS;
-	while(tries--){
-		memset(outBuffer, 0, outBufferLen);
-
-		SDI12_PerformTransaction(message, messageLen, outBuffer, outBufferLen);
-		uint8_t numValues = SDI12_ParseNumValuesFromResult(outBuffer, outBufferLen);
-		if(numValues != 0)
-		{
-			return SDI12_ParseNumValuesFromResult(outBuffer, outBufferLen);
-		}
-	}
-	//if none of the tries succeeded, just return 0 in failure
-	return 0;
-}
-
 /*SDI12_ParseNumValuesFromResult
 reads the result from a aM or an aIM transaction,
 and returns the number of values the sensor can return.

@@ -7,6 +7,7 @@
 
 #include "Max31856/Max31856.h"
 #include "conf_board.h"
+#include <math.h>
 
 #define MAX31856_REG0_REQUEST_READING	0x40
 #define MAX31856_REG0_VAL				0x00
