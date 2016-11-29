@@ -57,7 +57,6 @@ static void ReadThermocouples(float *tcValuesOut);
 static void ReadDendrometers(void);
 static void LogAllSdiSensors(float *sdiValuesArray);
 static void WriteValuesToSD(float *sdiValuesArray);
-static void configGetSdiMetadata(void);
 
 
 static struct spi_module spiMasterModule;
@@ -93,7 +92,6 @@ int main (void)
 	SdCardInit(&fatFileSys);
 	tryReadTimeFile();
 	readConfigFile(&loggerConfig);
-	configGetSdiMetadata();
 	SD_CreateWithHeaderIfMissing(&loggerConfig);
 	
 	/*remove power to the SD/MMC card, we'll re enable it when it's time to write the reading.*/
@@ -133,32 +131,9 @@ static void MainLoop(void){
 	}
 }
 
-static void configGetSdiMetadata(void)
-{
-	//count up the number of addresses in the loggerConfig's SDI_12 address list. Consider a null terminator, CR, or LF to be terminating.
-	loggerConfig.numSdiSensors = 0;
-	loggerConfig.totalSDI_12Values = 0;
-	while(loggerConfig.SDI12_SensorAddresses[(loggerConfig.numSdiSensors)] != 0 &&
-	loggerConfig.SDI12_SensorAddresses[(loggerConfig.numSdiSensors)] != 10 &&
-	loggerConfig.SDI12_SensorAddresses[(loggerConfig.numSdiSensors)] != 13){
-		//query the sensor for the num values it has
-		loggerConfig.SDI12_SensorNumValues[loggerConfig.numSdiSensors] = SDI12_GetNumReadingsFromMetadata(loggerConfig.SDI12_SensorAddresses[loggerConfig.numSdiSensors]);
-		loggerConfig.totalSDI_12Values += loggerConfig.SDI12_SensorNumValues[loggerConfig.numSdiSensors];
-		loggerConfig.numSdiSensors++;
-	}
-}
-
 /*LoggerInit
 Main initialization of board state and external hardware components before the main loop begins.*/
 static void LoggerInit(void){
-	//check the DS1302 general purpose register to see if we might need to fix CSV integrity.
-	uint8_t Ds1302StoredRegister = Ds1302GetBatteryBackedRegister(DS1302_GENERAL_PURPOSE_DATA_REGISTER_0);
-	if(Ds1302StoredRegister){
-		SD_CheckIntegrity(&loggerConfig);
-		//clear out the value in the Ds1302 register
-		Ds1302SetBatteryBackedRegister(DS1302_GENERAL_PURPOSE_DATA_REGISTER_0, 0);
-	}
-
 	/*If the configuration is set to defer logging for one sleep cycle, accomplish that sleep here.*/
 	if(!loggerConfig.logImmediately){
 		timedSleep_seconds(&tcInstance, loggerConfig.loggingInterval);
@@ -232,8 +207,7 @@ static void LogAllSdiSensors(float *sdiValuesArray){
 }
 
 static void WriteValuesToSD(float *sdiValuesArray){
-	//write a 255 into the DS1302 General Purpose Register
-	Ds1302SetBatteryBackedRegister(DS1302_GENERAL_PURPOSE_DATA_REGISTER_0, 0xFF);
+
 	//log all values to dataFile
 	FIL file;
 	PORTA.OUTSET.reg = SD_CARD_MOSFET_PINMASK;
@@ -252,7 +226,4 @@ static void WriteValuesToSD(float *sdiValuesArray){
 	f_close(&file);
 	
 	PORTA.OUTCLR.reg = SD_CARD_MOSFET_PINMASK;
-	
-	//write a 0 into the DS1302 General Purpose Register
-	Ds1302SetBatteryBackedRegister(DS1302_GENERAL_PURPOSE_DATA_REGISTER_0, 0);
 }
