@@ -47,10 +47,10 @@
 #define LOG_VALUES_DHT_INDEX				8
 #define LOG_VALUES_DEND_INDEX				12
 
-static void MainLoop(void);
-static void runSapFluxSystem(void);
-static void ReadThermocouples(float *tcValuesOut);
-static void ReadDendrometers(void);
+static inline void MainLoop(void);
+static inline void runSapFluxSystem(void);
+static inline void ReadThermocouples(float *tcValuesOut);
+static inline void ReadDendrometers(void);
 static inline void RecordDateTime(FIL *dataFile);
 static inline void RecordNonSdiValues(FIL *dataFile);
 static inline void QueryAndRecordSdiValues(FIL *dataFile);
@@ -62,7 +62,6 @@ static struct adc_module adcModule2;
 static struct tc_module tcInstance;
 static FATFS fatFileSys;
 static struct LoggerConfig loggerConfig;
-
 
 #define dateTimeBufferLen  21			//defined as to not variably modify length at file scope.
 static char dateTimeBuffer[dateTimeBufferLen] = "\n00/00/2000,00:00:00";	//buffer starts with \n since this always starts a measurement.
@@ -100,7 +99,7 @@ int main (void)
 	MainLoop();
 }
 
-static void MainLoop(void){
+static inline void MainLoop(void){
 	while(1){
 		//just to be safe, make sure ALL power mosfets start off
 		PORTA.OUTCLR.reg = ALL_MOSFET_PINMASK;
@@ -135,15 +134,15 @@ static void MainLoop(void){
 
 static inline void RecordDateTime(FIL *dataFile){
 	UINT bytesWritten;
-	f_write(&dataFile, dateTimeBuffer, dateTimeBufferLen, &bytesWritten);
+	f_write(dataFile, dateTimeBuffer, dateTimeBufferLen, &bytesWritten);
 }
 
 static inline void RecordNonSdiValues(FIL *dataFile){
 	//write all non-SDI12 values
 	for(uint8_t logValueIndex = 0; logValueIndex < NUM_LOG_VALUES; logValueIndex++){
-		f_printf(&dataFile, commaFloatFormatStr, LogValues[logValueIndex]);
+		f_printf(dataFile, commaFloatFormatStr, LogValues[logValueIndex]);
 	}
-	f_sync(&dataFile);
+	f_sync(dataFile);
 }
 
 static inline void QueryAndRecordSdiValues(FIL *dataFile){
@@ -162,13 +161,13 @@ static inline void QueryAndRecordSdiValues(FIL *dataFile){
 			success = SDI12_GetSensedValues(&transactionPacket, sdiValuesForSensor);
 		}
 		for(uint8_t i=0; i< loggerConfig.SDI12_SensorNumValues[sdiIndex];i++){
-			f_printf(&dataFile, commaFloatFormatStr, (success ? sdiValuesForSensor[i] : NAN));
+			f_printf(dataFile, commaFloatFormatStr, (success ? sdiValuesForSensor[i] : NAN));
 		}
-		f_sync(&dataFile);
+		f_sync(dataFile);
 	}
 }
 
-static void runSapFluxSystem(void){
+static inline void runSapFluxSystem(void){
 	//read the starting values for the thermocouples
 	ReadThermocouples(&(LogValues[LOG_VALUES_TC_BEFORE_INDEX]));
 	
@@ -181,7 +180,7 @@ static void runSapFluxSystem(void){
 	ReadThermocouples(&(LogValues[LOG_VALUES_TC_AFTER_INDEX]));
 }
 
-static void ReadThermocouples(float *tcValuesOut){
+static inline void ReadThermocouples(float *tcValuesOut){
 	//start by configuring the registers to the required values.
 	Max31856ConfigureRegisters(&spiMasterModule, &spiSlaveInstance, MAX31856_THERMOCOUPLE_TYPE_USED);
 	
@@ -201,7 +200,7 @@ static void ReadThermocouples(float *tcValuesOut){
 	}
 }
 
-static void ReadDendrometers(void){
+static inline void ReadDendrometers(void){
 	LogValues[LOG_VALUES_DEND_INDEX]		= ReadDendro(&adcModule1);
 	LogValues[LOG_VALUES_DEND_INDEX + 1]	= ReadDendro(&adcModule2);
 }

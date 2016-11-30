@@ -75,7 +75,13 @@ struct LoggerConfig{
 #define SD_DATALOG_FILENAME							"0:data.csv"
 #define SD_CONFIG_FILENAME							"0:lgr.cfg"
 
+#define DEBUG_HEATER_OFF
+
+#ifdef DEBUG_HEATER_OFF
+#define HEATER_TIMED_SLEEP_SECONDS					1
+#else
 #define HEATER_TIMED_SLEEP_SECONDS					60
+#endif
 
 #ifdef USING_SAMD20XPLAINED
 
