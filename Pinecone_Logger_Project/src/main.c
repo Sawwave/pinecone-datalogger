@@ -40,7 +40,6 @@
 #include "Dendro/Dendro.h"
 #include "SD_FileUtils/SD_FileUtils.h"
 
-
 //number of loggable values, outside of datetime and sdi-12 values
 #define NUM_LOG_VALUES						14
 #define LOG_VALUES_TC_BEFORE_INDEX			0
@@ -48,13 +47,13 @@
 #define LOG_VALUES_DHT_INDEX				8
 #define LOG_VALUES_DEND_INDEX				12
 
-
 static void MainLoop(void);
 static void runSapFluxSystem(void);
-
 static void ReadThermocouples(float *tcValuesOut);
 static void ReadDendrometers(void);
-
+static inline void RecordDateTime(FIL *dataFile);
+static inline void RecordNonSdiValues(FIL *dataFile);
+static inline void QueryAndRecordSdiValues(FIL *dataFile);
 
 static struct spi_module spiMasterModule;
 static struct spi_slave_inst spiSlaveInstance;
@@ -62,12 +61,13 @@ static struct adc_module adcModule1;
 static struct adc_module adcModule2;
 static struct tc_module tcInstance;
 static FATFS fatFileSys;
+static struct LoggerConfig loggerConfig;
 
-static float LogValues[NUM_LOG_VALUES];
+
 #define dateTimeBufferLen  21			//defined as to not variably modify length at file scope.
 static char dateTimeBuffer[dateTimeBufferLen] = "\n00/00/2000,00:00:00";	//buffer starts with \n since this always starts a measurement.
-
-static struct LoggerConfig loggerConfig;
+static const char *commaFloatFormatStr = ",%f";
+static float LogValues[NUM_LOG_VALUES];
 
 int main (void)
 {
@@ -101,12 +101,9 @@ int main (void)
 }
 
 static void MainLoop(void){
-
-	FIL dataFile;
-	f_open(&dataFile, SD_DATALOG_FILENAME, FA_WRITE);
-	
-	/*All initialization has been done, so enter the loop!*/
 	while(1){
+		//just to be safe, make sure ALL power mosfets start off
+		PORTA.OUTCLR.reg = ALL_MOSFET_PINMASK;
 		PORTA.OUTSET.reg = DENDRO_TC_AMP_MOSFET_PINMASK;
 		runSapFluxSystem();
 		ReadDendrometers();
@@ -119,45 +116,55 @@ static void MainLoop(void){
 		GetDht22Reading(&(LogValues[LOG_VALUES_DHT_INDEX + 2] ), &(LogValues[LOG_VALUES_DHT_INDEX + 3]), DHT22_2_PINMASK);
 
 		//turn off the power to the SDI12 bus, the DHT22s, and stop sending HIGH on the DHT22 data lines.
-		PORTA.OUTCLR.reg = SDI_DHT22_POWER_MOSFET_PINMASK | DHT22_ALL_PINMASK;
+		PORTA.OUTCLR.reg = DHT22_ALL_PINMASK;
 		
 		Ds1302GetDateTime(dateTimeBuffer);
 		
 		PORTA.OUTSET.reg = SD_CARD_MOSFET_PINMASK;
+		FIL dataFile;
+		f_open(&dataFile, SD_DATALOG_FILENAME, FA_WRITE);
+		RecordDateTime(&dataFile);
+		RecordNonSdiValues(&dataFile);
+		QueryAndRecordSdiValues(&dataFile);
+		f_close(&dataFile);
+		PORTA.OUTCLR.reg = ALL_MOSFET_PINMASK;
+		
+		timedSleep_seconds(&tcInstance, loggerConfig.loggingInterval);
+	}
+}
 
-		UINT bytesWritten;
-		f_open(&dataFile,SD_DATALOG_FILENAME, FA_WRITE);
-		f_write(&dataFile, dateTimeBuffer, dateTimeBufferLen, &bytesWritten);
-		for(uint8_t logValueIndex = 0; logValueIndex < NUM_LOG_VALUES; logValueIndex++){
-			f_printf(&dataFile, ",%f",LogValues[logValueIndex]);
+static inline void RecordDateTime(FIL *dataFile){
+	UINT bytesWritten;
+	f_write(&dataFile, dateTimeBuffer, dateTimeBufferLen, &bytesWritten);
+}
+
+static inline void RecordNonSdiValues(FIL *dataFile){
+	//write all non-SDI12 values
+	for(uint8_t logValueIndex = 0; logValueIndex < NUM_LOG_VALUES; logValueIndex++){
+		f_printf(&dataFile, commaFloatFormatStr, LogValues[logValueIndex]);
+	}
+	f_sync(&dataFile);
+}
+
+static inline void QueryAndRecordSdiValues(FIL *dataFile){
+	for(uint8_t sdiIndex = 0; sdiIndex < loggerConfig.numSdiSensors; sdiIndex++){
+		bool success = false;
+		float sdiValuesForSensor[loggerConfig.SDI12_SensorNumValues[sdiIndex]];
+		struct SDI_transactionPacket transactionPacket;
+		transactionPacket.address = loggerConfig.SDI12_SensorAddresses[sdiIndex];
+
+		SDI12_RequestSensorReading(&transactionPacket);
+		if(transactionPacket.transactionStatus == SDI12_STATUS_OK){
+			//if the sensor asked us to wait for some time before reading, let's go into sleep mode for it.
+			if(transactionPacket.waitTime > 0){
+				timedSleep_seconds(&tcInstance, transactionPacket.waitTime);
+			}
+			success = SDI12_GetSensedValues(&transactionPacket, sdiValuesForSensor);
+		}
+		for(uint8_t i=0; i< loggerConfig.SDI12_SensorNumValues[sdiIndex];i++){
+			f_printf(&dataFile, commaFloatFormatStr, (success ? sdiValuesForSensor[i] : NAN));
 		}
 		f_sync(&dataFile);
-		
-		for(uint8_t sdiIndex = 0; sdiIndex< loggerConfig.numSdiSensors; sdiIndex++){
-			bool success = false;
-			float sdiValuesForSensor[loggerConfig.SDI12_SensorNumValues[sdiIndex]];
-			struct SDI_transactionPacket transactionPacket;
-			transactionPacket.address = loggerConfig.SDI12_SensorAddresses[sdiIndex];
-
-			SDI12_RequestSensorReading(&transactionPacket);
-			if(transactionPacket.transactionStatus == SDI12_STATUS_OK){
-				//if the sensor asked us to wait for some time before reading, let's go into sleep mode for it.
-				if(transactionPacket.waitTime > 0){
-					timedSleep_seconds(&tcInstance, transactionPacket.waitTime);
-				}
-				success = SDI12_GetSensedValues(&transactionPacket, sdiValuesForSensor);
-			}
-			for(uint8_t i=0; i< loggerConfig.SDI12_SensorNumValues[sdiIndex];i++){
-				if(success)
-				f_write(&dataFile, ",NAN", 4, &bytesWritten);
-				else
-				f_printf(&dataFile, ",%f", sdiValuesForSensor[i]);
-			}
-			f_sync(&dataFile);
-		}
-		PORTA.OUTCLR.reg = SD_CARD_MOSFET_PINMASK;
-
-		timedSleep_seconds(&tcInstance, loggerConfig.loggingInterval);
 	}
 }
 
