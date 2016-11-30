@@ -8,8 +8,8 @@
 #ifndef DHT22_H_
 #define DHT22_H_
 
-
 #include <stdint.h>
+
 
 enum Dht22Status{ DHT_STATUS_OKAY, DHT_STATUS_TIMEOUT, DHT_STATUS_CHECKSUM_ERROR };
 

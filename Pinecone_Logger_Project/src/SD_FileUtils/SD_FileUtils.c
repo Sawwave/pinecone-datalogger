@@ -148,10 +148,10 @@ fouth line:
 i may be letter i or d specifies if the sensor takes the reading immediately on waking up(i), or defers logging until after the sleep interval(d).
 */
 void readConfigFile(struct LoggerConfig *config){
-	const uint16_t numValuesBufferSize = SDI12_MAX_SUPPORTED_SENSORS * 4;
 	FIL fileObj;
 	char intervalBuffer[5];
 	char flagBuffer[4];
+	const uint16_t numValuesBufferSize = SDI12_MAX_SUPPORTED_SENSORS * 4;
 	char numValuesBuffer[numValuesBufferSize];
 	memset(intervalBuffer, 0, 5 * sizeof(char));
 	memset(flagBuffer, 0, 4 * sizeof(char));
@@ -163,18 +163,19 @@ void readConfigFile(struct LoggerConfig *config){
 		f_gets(intervalBuffer, 6, &fileObj);
 		f_gets(flagBuffer, 4, &fileObj);
 		f_close(&fileObj);
+		
 		char *ptrToNumValuesBuffer = &(numValuesBuffer[0]);
 		//count up the number of sdi sensors, and convert the numValues into ints for the config
 		config->numSdiSensors = 0;
 		while(config->SDI12_SensorAddresses[config->numSdiSensors] >= '0'){//the only way the sdi sensor can be valid is if it's ASCII value is over '0'
 			config->SDI12_SensorNumValues[config->numSdiSensors] =  strtol(ptrToNumValuesBuffer, &ptrToNumValuesBuffer, 10);
 			config->numSdiSensors++;
-			
 		}
 		
 		//convert the interval to an integer to store in our config struct.
 		char *ptrToIntervalBuffer = &(intervalBuffer[0]);
 		config->loggingInterval = strtol(ptrToIntervalBuffer, &ptrToIntervalBuffer, 10);
+		
 		if(flagBuffer[0] == 'd'){
 			config->logImmediately = false;
 		}

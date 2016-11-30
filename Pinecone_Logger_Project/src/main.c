@@ -54,8 +54,6 @@ static void runSapFluxSystem(void);
 
 static void ReadThermocouples(float *tcValuesOut);
 static void ReadDendrometers(void);
-static void LogAllSdiSensors(float *sdiValuesArray);
-static void WriteValuesToSD(float *sdiValuesArray);
 
 
 static struct spi_module spiMasterModule;
@@ -103,28 +101,62 @@ int main (void)
 }
 
 static void MainLoop(void){
+
+	FIL dataFile;
+	f_open(&dataFile, SD_DATALOG_FILENAME, FA_WRITE);
+	
 	/*All initialization has been done, so enter the loop!*/
 	while(1){
 		PORTA.OUTSET.reg = DENDRO_TC_AMP_MOSFET_PINMASK;
 		runSapFluxSystem();
 		ReadDendrometers();
 		
-		//turn of dendr/tc, and turn on SDI-12 bus and DHT22s. mark the DHT22 data pins as HIGH to start, too.
+		//turn of dendro/tc, and turn on SDI-12 bus and DHT22s. mark the DHT22 data pins as HIGH to start, too.
 		PORTA.OUTTGL.reg = DENDRO_TC_AMP_MOSFET_PINMASK | SDI_DHT22_POWER_MOSFET_PINMASK | DHT22_ALL_PINMASK;
 		//sleep 2s, required for the DHT22 to function properly.
 		timedSleep_seconds(&tcInstance, 2);
 		GetDht22Reading(&(LogValues[LOG_VALUES_DHT_INDEX]), &(LogValues[LOG_VALUES_DHT_INDEX + 1]), DHT22_1_PINMASK);
 		GetDht22Reading(&(LogValues[LOG_VALUES_DHT_INDEX + 2] ), &(LogValues[LOG_VALUES_DHT_INDEX + 3]), DHT22_2_PINMASK);
 
-		//LogAllSdiSensors(sdiValues);
-		
 		//turn off the power to the SDI12 bus, the DHT22s, and stop sending HIGH on the DHT22 data lines.
 		PORTA.OUTCLR.reg = SDI_DHT22_POWER_MOSFET_PINMASK | DHT22_ALL_PINMASK;
 		
 		Ds1302GetDateTime(dateTimeBuffer);
 		
-		//WriteValuesToSD(sdiValues);
+		PORTA.OUTSET.reg = SD_CARD_MOSFET_PINMASK;
+
+		UINT bytesWritten;
+		f_open(&dataFile,SD_DATALOG_FILENAME, FA_WRITE);
+		f_write(&dataFile, dateTimeBuffer, dateTimeBufferLen, &bytesWritten);
+		for(uint8_t logValueIndex = 0; logValueIndex < NUM_LOG_VALUES; logValueIndex++){
+			f_printf(&dataFile, ",%f",LogValues[logValueIndex]);
+		}
+		f_sync(&dataFile);
 		
+		for(uint8_t sdiIndex = 0; sdiIndex< loggerConfig.numSdiSensors; sdiIndex++){
+			bool success = false;
+			float sdiValuesForSensor[loggerConfig.SDI12_SensorNumValues[sdiIndex]];
+			struct SDI_transactionPacket transactionPacket;
+			transactionPacket.address = loggerConfig.SDI12_SensorAddresses[sdiIndex];
+
+			SDI12_RequestSensorReading(&transactionPacket);
+			if(transactionPacket.transactionStatus == SDI12_STATUS_OK){
+				//if the sensor asked us to wait for some time before reading, let's go into sleep mode for it.
+				if(transactionPacket.waitTime > 0){
+					timedSleep_seconds(&tcInstance, transactionPacket.waitTime);
+				}
+				success = SDI12_GetSensedValues(&transactionPacket, sdiValuesForSensor);
+			}
+			for(uint8_t i=0; i< loggerConfig.SDI12_SensorNumValues[sdiIndex];i++){
+				if(success)
+				f_write(&dataFile, ",NAN", 4, &bytesWritten);
+				else
+				f_printf(&dataFile, ",%f", sdiValuesForSensor[i]);
+			}
+			f_sync(&dataFile);
+		}
+		PORTA.OUTCLR.reg = SD_CARD_MOSFET_PINMASK;
+
 		timedSleep_seconds(&tcInstance, loggerConfig.loggingInterval);
 	}
 }
@@ -165,53 +197,4 @@ static void ReadThermocouples(float *tcValuesOut){
 static void ReadDendrometers(void){
 	LogValues[LOG_VALUES_DEND_INDEX]		= ReadDendro(&adcModule1);
 	LogValues[LOG_VALUES_DEND_INDEX + 1]	= ReadDendro(&adcModule2);
-}
-
-static void LogAllSdiSensors(float *sdiValuesArray){
-	uint16_t sdiValueStartIndex = 0;
-	//query and read all values from all the sdi12 sensors
-	for(uint8_t sdiSensorIndex = 0; sdiSensorIndex < loggerConfig.numSdiSensors; sdiSensorIndex++){
-		struct SDI_transactionPacket transactionPacket;
-		transactionPacket.address = loggerConfig.SDI12_SensorAddresses[sdiSensorIndex];
-		SDI12_RequestSensorReading(&transactionPacket);
-		
-		//if the request was faulty (sensor missing, not received or badly parsed, for example), skip to the next sensor
-		if(transactionPacket.transactionStatus != SDI12_STATUS_OK){
-			continue;
-		}
-		//if the sensor asked us to wait for some time before reading, let's go into sleep mode for it.
-		if(transactionPacket.waitTime > 0){
-			timedSleep_seconds(&tcInstance, transactionPacket.waitTime);
-		}
-		bool success = SDI12_GetSensedValues(&transactionPacket, &(sdiValuesArray[sdiValueStartIndex]));
-		if(!success){
-			//TODO: if success was false, put NANs in the values.
-		}
-
-		//TODO: change sdi to use doubles instead of floats.
-		//move the index of sdiValues so the next transaction will write to the correct place in the array.
-		sdiValueStartIndex += loggerConfig.SDI12_SensorNumValues[sdiSensorIndex];
-	}
-}
-
-static void WriteValuesToSD(float *sdiValuesArray){
-
-	//log all values to dataFile
-	FIL file;
-	PORTA.OUTSET.reg = SD_CARD_MOSFET_PINMASK;
-
-	f_open(&file,SD_DATALOG_FILENAME, FA_OPEN_ALWAYS);
-	UINT bytesWritten;
-	f_write(&file, dateTimeBuffer, dateTimeBufferLen, &bytesWritten);
-
-	for(uint8_t logValueIndex = 0; logValueIndex < NUM_LOG_VALUES; logValueIndex++){
-		f_printf(&file, ",%f",LogValues[logValueIndex]);
-	}
-	
-	//for(uint8_t sdiCounter = 0; sdiCounter < loggerConfig.totalSDI_12Values; sdiCounter++){
-		//f_printf(&file, ",%f", sdiValuesArray[sdiCounter]);
-	//}
-	f_close(&file);
-	
-	PORTA.OUTCLR.reg = SD_CARD_MOSFET_PINMASK;
 }
