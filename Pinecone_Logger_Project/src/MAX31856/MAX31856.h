@@ -27,7 +27,9 @@
 enum Max31856_Status {MAX31856_OKAY, MAX31856_CONNECTION_ERROR, MAX31856_TEMP_TOO_HIGH, MAX31856_TEMP_TOO_LOW, MAX31856_TC_NOT_CONNECTED, MAX31856_FAULT_VOLTAGE, MAX31856_SPI_ERROR};
 
 /*Max31856ConfigureSPI
-	configures the given spi module and slave instance to be used with the MAX31856.*/
+Sets the SPI configuration settings for the Max31856.
+Since different devices may operate at different SPI modes,
+character sizes, call this again if you had to change the SPI master settings.*/
 void Max31856ConfigureSPI(struct spi_module *spiMasterModule, struct spi_slave_inst *spiSlaveInstance);
 
 /*Max31856CheckWrittenRegister

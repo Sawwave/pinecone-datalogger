@@ -42,6 +42,8 @@ void Max31856ConfigureSPI(struct spi_module *spiMasterModule, struct spi_slave_i
 	spi_attach_slave(spiSlaveInstance, &slaveConfig);
 }
 
+/*Max31856CheckWrittenRegister
+	protyping helper function to write to a register, and check success by reading the register.*/
 enum Max31856_Status Max31856CheckWrittenRegister(struct spi_module *spiMasterModule, struct spi_slave_inst *slaveInst){
 	uint16_t spiLockAttempts = 50000;
 	while(spi_lock(spiMasterModule) == STATUS_BUSY){
@@ -64,47 +66,25 @@ enum Max31856_Status Max31856CheckWrittenRegister(struct spi_module *spiMasterMo
 	return status == STATUS_OK ?  MAX31856_OKAY : MAX31856_SPI_ERROR;
 };
 
+/*Max31856ConfigureRegisters
+	communicates on the SPI to set the registers on the MAX31856 to the correct configuration*/
 enum Max31856_Status Max31856ConfigureRegisters(struct spi_module *spiMasterModule, struct spi_slave_inst *slaveInst, uint32_t thermocoupleType){
 	uint8_t xferBuffer[3] = {MAX31856_WRITE_REGISTER_MASK, MAX31856_REG0_VAL, MAX31856_REG1_VAL | thermocoupleType};
 	uint8_t xferBufferLen = 3;
 	return Max31856WriteSpi(spiMasterModule, slaveInst, xferBuffer, xferBufferLen);
 }
 
+/*Max31856RequestReading
+	Sends a message over SPI to request a reading from the Max31856. A delay of up to 800ms will be required before the reading is prepared. 
+	It is recommended to just enter standby mode for 1s while the sensor takes the measurement.*/
 enum Max31856_Status Max31856RequestReading(struct spi_module *spiMasterModule, struct spi_slave_inst *slaveInst){
 	uint8_t xferBuffer[2] = {MAX31856_WRITE_REGISTER_MASK, MAX31856_REG0_REQUEST_READING};
 	uint8_t xferBufferLen = 2;
 	return Max31856WriteSpi(spiMasterModule, slaveInst, xferBuffer, xferBufferLen);
 }
 
-static enum Max31856_Status Max31856WriteSpi(struct spi_module *spiMasterModule, struct spi_slave_inst *slaveInst, uint8_t xferBuffer[], const uint8_t xferBufferLen){
-	uint16_t spiLockAttempts = 50000;
-	while(spi_lock(spiMasterModule) == STATUS_BUSY){
-		if(spiLockAttempts-- == 0){
-			return MAX31856_CONNECTION_ERROR;
-		}
-	}
-	spi_enable(spiMasterModule);
-	//wait until the spi bus is free
-	while(spi_is_syncing(spiMasterModule));
-	enum status_code status = spi_lock(spiMasterModule);
-	if(status == STATUS_OK){
-		while(!spi_is_ready_to_write(spiMasterModule));
-		
-		spi_select_slave(spiMasterModule, slaveInst, true);
-		//write the default values to the first 2 registers to the amplifier
-		status = spi_write_buffer_wait(spiMasterModule, xferBuffer, xferBufferLen);
-		while(!spi_is_write_complete(spiMasterModule));
-		spi_unlock(spiMasterModule);
-		spi_select_slave(spiMasterModule, slaveInst, false);
-		spi_disable(spiMasterModule);
-		spi_unlock(spiMasterModule);
-		if(status == STATUS_OK){
-			return MAX31856_OKAY;
-		}
-	}
-	return MAX31856_CONNECTION_ERROR;
-}
-
+/*Max31856GetTemp
+	retrieves the temperature value from the Max31856,, loading it into the outTemp pointer*/
 enum Max31856_Status Max31856GetTemp(struct spi_module *spiMasterModule, struct spi_slave_inst *slaveInst, float *outTemp){
 	uint8_t timeout = 200;
 	//wait until the spi bus is free
@@ -170,4 +150,38 @@ enum Max31856_Status Max31856GetTemp(struct spi_module *spiMasterModule, struct 
 	}
 	*outTemp = NAN;
 	return MAX31856_SPI_ERROR;
+}
+
+/*Max31856WriteSpi
+Using on-chip SPI hardware, performs an SPI transaction with the spiMasterModule.
+function will write bytes equal to xferBufferLen from xferBuffer to the SPI bus.
+returns MAX31856_OKAY on success, MAX31856_CONNECTION_ERROR on spi error.
+*/
+static enum Max31856_Status Max31856WriteSpi(struct spi_module *spiMasterModule, struct spi_slave_inst *slaveInst, uint8_t xferBuffer[], const uint8_t xferBufferLen){
+	uint16_t spiLockAttempts = 50000;
+	while(spi_lock(spiMasterModule) == STATUS_BUSY){
+		if(spiLockAttempts-- == 0){
+			return MAX31856_CONNECTION_ERROR;
+		}
+	}
+	spi_enable(spiMasterModule);
+	//wait until the spi bus is free
+	while(spi_is_syncing(spiMasterModule));
+	enum status_code status = spi_lock(spiMasterModule);
+	if(status == STATUS_OK){
+		while(!spi_is_ready_to_write(spiMasterModule));
+		
+		spi_select_slave(spiMasterModule, slaveInst, true);
+		//write the default values to the first 2 registers to the amplifier
+		status = spi_write_buffer_wait(spiMasterModule, xferBuffer, xferBufferLen);
+		while(!spi_is_write_complete(spiMasterModule));
+		spi_unlock(spiMasterModule);
+		spi_select_slave(spiMasterModule, slaveInst, false);
+		spi_disable(spiMasterModule);
+		spi_unlock(spiMasterModule);
+		if(status == STATUS_OK){
+			return MAX31856_OKAY;
+		}
+	}
+	return MAX31856_CONNECTION_ERROR;
 }
