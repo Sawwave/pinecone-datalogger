@@ -13,7 +13,7 @@
 #include "power.h"
 
 #define TIMED_SLEEP_TC_HARDWARE TC2
-static void sleepEndFunction(struct tc_module *const module);
+static void SleepEndFunction(struct tc_module *const module);
 
 /*initSleepTimerCounter
 	Sets up TimerCounters 4 and 5 to work together as a 32-bit timer.
@@ -29,7 +29,7 @@ void InitSleepTimerCounter(struct tc_module *tc_instance){
 	tcConfig.oneshot = true;
 	tcConfig.run_in_standby = true;
 	tc_init(tc_instance, TIMED_SLEEP_TC_HARDWARE, &tcConfig);
-	tc_register_callback(tc_instance, sleepEndFunction, TC_CALLBACK_CC_CHANNEL0);
+	tc_register_callback(tc_instance, SleepEndFunction, TC_CALLBACK_CC_CHANNEL0);
 	tc_enable_callback(tc_instance, TC_CALLBACK_CC_CHANNEL0);
 }
 
@@ -37,13 +37,17 @@ void InitSleepTimerCounter(struct tc_module *tc_instance){
 	Function that will be run as a callback when the sleep TimerCounter finishes.
 	Implicitly, by running this as a callback, the device will leave whatever low power mode it was in.
 	Function will disable the TimerCounter.*/
-static void sleepEndFunction(struct tc_module *const module){
+static void SleepEndFunction(struct tc_module *const module){
 	tc_disable(module);
 }
 
-/*timedSleep_seconds
-Configures the TimerCounter that was initialized with initSleepTimerCounter to sleep for the given number of seconds.
-	Upon running this function, device will enter standby state, and will be woken up with the TimerCounter callback.*/
+/*TimedSleep_seconds
+sets a timer-counter, and then enters standby sleep mode.
+The timer-counter should wake the device from sleep mode upon completion.
+NOTE: Generic Clock Generator 1 should be enabled, allowed to run in standby,
+use the internal 32KHz oscillator, and have an internal prescaler of 512.
+Internal 32KHz oscillator should also be enabled, and able to run in standby
+*/
 void TimedSleepSeconds(struct tc_module *tc_instance, const uint32_t seconds){
 	tc_set_count_value(tc_instance, 0);
 	tc_set_compare_value(tc_instance, TC_COMPARE_CAPTURE_CHANNEL_0, seconds);
