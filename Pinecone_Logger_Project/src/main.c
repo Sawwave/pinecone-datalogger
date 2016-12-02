@@ -87,7 +87,7 @@ int main (void)
 	SD_CreateWithHeaderIfMissing(&loggerConfig);
 	
 	/*remove power to the SD/MMC card, we'll re enable it when it's time to write the reading.*/
-	PORTA.OUTCLR.reg = SD_CARD_MOSFET_PINMASK;
+	PORTA.OUTCLR.reg = ALL_MOSFET_PINMASK;
 
 	/*If the configuration is set to defer logging for one sleep cycle, accomplish that sleep here.*/
 	if(!loggerConfig.logImmediately){
@@ -99,8 +99,6 @@ int main (void)
 
 static inline void MainLoop(void){
 	while(1){
-		//just to be safe, make sure ALL power mosfets start off
-		PORTA.OUTCLR.reg = ALL_MOSFET_PINMASK;
 		PORTA.OUTSET.reg = DENDRO_TC_AMP_MOSFET_PINMASK;
 		runSapFluxSystem();
 		ReadDendrometers();
