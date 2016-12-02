@@ -1,9 +1,9 @@
 /*
- * SDI12.h
- *
- * Created: 10/18/2016 4:26:07 PM
- *  Author: tim.anderson
- */ 
+* SDI12.h
+*
+* Created: 10/18/2016 4:26:07 PM
+*  Author: tim.anderson
+*/
 
 
 #ifndef SDI12_H_
@@ -19,21 +19,23 @@ struct SDI_transactionPacket{
 };
 
 /*SDI12 PerformTransaction
-	The major workhorse of the SDI-12 library. performs a full transaction with an SDI-12 sensor.
-	In this transaction, the data logger sends a message addressed to a particular sensor, and the sensor response with its own message.
-	outBuffer should be large enough to accommodate the expected response. For example, an _M! message should be somewhere in the range of
-	12-16 characters to be safe.
-	Returns SDI12_STATUS_OK on success, but may SDI12_TRANSACTION_TIMEOUT, SDI12_BAD_RESPONSE, or simply SDI12_TRANSACTION_FAILURE.*/
+The major workhorse of the SDI-12 library. performs a full transaction with an SDI-12 sensor.
+In this transaction, the data logger sends a message addressed to a particular sensor, and the sensor response with its own message.
+outBuffer should be large enough to accommodate the expected response. For example, an _M! message should be somewhere in the range of
+12-16 characters to be safe.
+Returns SDI12_STATUS_OK on success, but may SDI12_TRANSACTION_TIMEOUT, SDI12_BAD_RESPONSE, or simply SDI12_TRANSACTION_FAILURE.*/
 enum SDI12_ReturnCode SDI12_PerformTransaction(const char *message, const uint8_t messageLen, char *outBuffer, const uint8_t outBufferLen);
 
 /*SDI12_RequestSensorReading
-	 takes a Transaction Packet struct with the address loaded into it, and makes an _M! transaction.
-	 Upon completion, loads the return code, wait time, and number of values expected into the packet for further computation.*/
+communicates with the sensor at the given address on the SDI12 bus, and requests a reading (M! command).
+Will load SDI12_STATUS_OK into the packet on success, SDI12_BAD_RESPONSE on failure.
+*/
 void SDI12_RequestSensorReading(struct SDI_transactionPacket *transactionPacket);
 
 /*SDI12_GetSensedValues
-	Takes a transaction packet, and a float array to load the values into.
-	Performs a transaction with the sensor to retrieve the sensed values. Will return true on success, false on failure.*/
+After the sensor has had values requested with SDI12_RequestSensorReading, use this function to read the values as floats
+The floats will be loaded into the outValues float array. NOTE!!!! outValues array MUST have a number of indices >= the
+number of expected values from the transaction packet. Otherwise, Undefined operation or segfaults may occur.*/
 bool SDI12_GetSensedValues(struct SDI_transactionPacket *transactionPacket, float *outValues);
 
 #endif /* SDI12_H_ */
