@@ -57,11 +57,10 @@ static inline void QueryAndRecordSdiValues(FIL *dataFile);
 
 static struct spi_module spiMasterModule;
 static struct spi_slave_inst spiSlaveInstance;
-static struct adc_module adcModule1;
-static struct adc_module adcModule2;
+static struct adc_module adcModule;
 static struct tc_module tcInstance;
-static FATFS fatFileSys;
 static struct LoggerConfig loggerConfig;
+static FATFS fatFileSys;
 
 #define dateTimeBufferLen  21			//defined as to not variably modify length at file scope.
 static char dateTimeBuffer[dateTimeBufferLen] = "\n00/00/2000,00:00:00";	//buffer starts with \n since this always starts a measurement.
@@ -78,8 +77,7 @@ int main (void)
 
 	initSleepTimerCounter(&tcInstance);
 	Max31856ConfigureSPI(&spiMasterModule, &spiSlaveInstance);
-	ConfigureDendroADC(&adcModule1, DEND_ANALOG_PIN_1);
-	ConfigureDendroADC(&adcModule2, DEND_ANALOG_PIN_2);
+	ConfigureDendroADC(&adcModule);
 
 	//wake up the SD card
 	PORTA.OUTSET.reg = SD_CARD_MOSFET_PINMASK;
@@ -201,6 +199,8 @@ static inline void ReadThermocouples(float *tcValuesOut){
 }
 
 static inline void ReadDendrometers(void){
-	LogValues[LOG_VALUES_DEND_INDEX]		= ReadDendro(&adcModule1);
-	LogValues[LOG_VALUES_DEND_INDEX + 1]	= ReadDendro(&adcModule2);
+	adc_enable(&adcModule);
+	LogValues[LOG_VALUES_DEND_INDEX]		= ReadDendro(&adcModule, DEND_ANALOG_PIN_1);
+	LogValues[LOG_VALUES_DEND_INDEX + 1]	= ReadDendro(&adcModule, DEND_ANALOG_PIN_2);
+	adc_disable(&adcModule);
 }
