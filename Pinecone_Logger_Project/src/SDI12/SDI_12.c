@@ -16,7 +16,7 @@
 #define BIT_TIMING_DELAY_CYCLES						928		//833us bit timing			
 #define BIT_TIMING_HALF_DELAY_CYCLES				400		//416.5us to get halfway into reading a bit 
 
-static char charAddParity(char address);
+static char CharAddParity(char address);
 static uint8_t SDI12_ParseNumValuesFromResult(char outBuffer[], uint8_t outBufferLen);
 static bool SDI12_GetTimeFromResponse(const char *response, uint16_t *outTime);
 static bool SDI12_TIME_FORMAT_UNIT_TEST(void);
@@ -29,7 +29,7 @@ Will load SDI12_STATUS_OK into the packet on success, SDI12_BAD_RESPONSE on fail
 void SDI12_RequestSensorReading(struct SDI_transactionPacket *transactionPacket){
 	uint8_t tries = SDI12_MAX_NUMBER_TRANSACTION_ATTEMPTS;
 	const uint8_t messageLen = 3;
-	char message[3] = { charAddParity(transactionPacket->address), 'M', '!'};
+	char message[3] = { CharAddParity(transactionPacket->address), 'M', '!'};
 	const uint8_t responseLength = 12;
 	char response[12];
 	memset(response, 0, sizeof(response));
@@ -65,9 +65,9 @@ bool SDI12_GetSensedValues(struct SDI_transactionPacket *transactionPacket, floa
 	const uint8_t messageLen = 4;
 	char message[4] =
 	{
-		charAddParity(transactionPacket->address),
+		CharAddParity(transactionPacket->address),
 		'D',
-		charAddParity(dNumberChar),
+		CharAddParity(dNumberChar),
 		'!'
 	};
 	char response[36];
@@ -269,7 +269,7 @@ static uint8_t SDI12_ParseNumValuesFromResult(char responseBuffer[], uint8_t res
 /*charAddParity
 	takes a given character, and adds an even parity bit in the MSB.
 */
-static char charAddParity(char address){
+static char CharAddParity(char address){
 	address &= 0x7F;
 	for(uint8_t bitmask = 1; bitmask != 0x80; bitmask <<= 1){
 		if(address & bitmask){

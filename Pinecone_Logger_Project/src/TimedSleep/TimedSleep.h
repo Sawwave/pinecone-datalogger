@@ -17,7 +17,7 @@ NOTE: Generic Clock Generator 1 should be enabled, allowed to run in standby,
 use the internal 32KHz oscillator, and have an internal prescaler of 512.
 Internal 32KHz oscillator should also be enabled, and able to run in standby
 */
-void timedSleepSeconds(struct tc_module *tc_instance, const uint32_t seconds);
-void initSleepTimerCounter(struct tc_module *tc_instance);
+void TimedSleepSeconds(struct tc_module *tc_instance, const uint32_t seconds);
+void InitSleepTimerCounter(struct tc_module *tc_instance);
 
 #endif /* TIMEDSLEEP_H_ */

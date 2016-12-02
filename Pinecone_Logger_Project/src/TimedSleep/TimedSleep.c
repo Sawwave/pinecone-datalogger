@@ -20,7 +20,7 @@ static void sleepEndFunction(struct tc_module *const module);
 	Timer will be set to only run once once enabled, and run through standby to wake device up when needed.
 	Upon finishing, the TimerCounter will be disabled as device leaves sleep mode.
 	*/
-void initSleepTimerCounter(struct tc_module *tc_instance){
+void InitSleepTimerCounter(struct tc_module *tc_instance){
 	struct tc_config tcConfig;
 	tc_get_config_defaults(&tcConfig);
 	tcConfig.counter_size = TC_COUNTER_SIZE_32BIT;
@@ -44,7 +44,7 @@ static void sleepEndFunction(struct tc_module *const module){
 /*timedSleep_seconds
 Configures the TimerCounter that was initialized with initSleepTimerCounter to sleep for the given number of seconds.
 	Upon running this function, device will enter standby state, and will be woken up with the TimerCounter callback.*/
-void timedSleepSeconds(struct tc_module *tc_instance, const uint32_t seconds){
+void TimedSleepSeconds(struct tc_module *tc_instance, const uint32_t seconds){
 	tc_set_count_value(tc_instance, 0);
 	tc_set_compare_value(tc_instance, TC_COMPARE_CAPTURE_CHANNEL_0, seconds);
 	tc_enable(tc_instance);

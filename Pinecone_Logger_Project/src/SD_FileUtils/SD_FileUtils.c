@@ -48,7 +48,7 @@ comma is suggested, but any non-numeric, non +- non \n, character should work as
 
 returns false if file didn't exist, or there was an error.
 */
-void tryReadTimeFile(void){
+void TryReadTimeFile(void){
 	struct Ds1302DateTime dateTime;
 
 	FIL fileObj;
@@ -147,7 +147,7 @@ third line:
 fouth line:
 i may be letter i or d specifies if the sensor takes the reading immediately on waking up(i), or defers logging until after the sleep interval(d).
 */
-void readConfigFile(struct LoggerConfig *config){
+void ReadConfigFile(struct LoggerConfig *config){
 	FIL fileObj;
 	char intervalBuffer[5];
 	char flagBuffer[4];
@@ -270,7 +270,7 @@ static int SD_UnitTestLoadAndCheckDebugFile(const char *addresses, uint8_t numAd
 	f_close(&file);
 
 	struct LoggerConfig config;
-	readConfigFile(&config);
+	ReadConfigFile(&config);
 	
 	if(config.numSdiSensors != numAddresses){
 		return -5;

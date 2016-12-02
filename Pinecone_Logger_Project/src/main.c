@@ -48,7 +48,7 @@
 #define LOG_VALUES_DEND_INDEX				12
 
 static inline void MainLoop(void);
-static inline void runSapFluxSystem(void);
+static inline void RunSapFluxSystem(void);
 static inline void ReadThermocouples(float *tcValuesOut);
 static inline void ReadDendrometers(void);
 static inline void RecordDateTime(FIL *dataFile);
@@ -100,7 +100,7 @@ int main (void)
 static inline void MainLoop(void){
 	while(1){
 		PORTA.OUTSET.reg = DENDRO_TC_AMP_MOSFET_PINMASK;
-		runSapFluxSystem();
+		RunSapFluxSystem();
 		ReadDendrometers();
 		
 		//turn of dendro/tc, and turn on SDI-12 bus and DHT22s. mark the DHT22 data pins as HIGH to start, too.
@@ -163,7 +163,7 @@ static inline void QueryAndRecordSdiValues(FIL *dataFile){
 	}
 }
 
-static inline void runSapFluxSystem(void){
+static inline void RunSapFluxSystem(void){
 	//read the starting values for the thermocouples
 	ReadThermocouples(&(LogValues[LOG_VALUES_TC_BEFORE_INDEX]));
 	
