@@ -12,7 +12,7 @@
 #define SD_DEBUG_FILE "0:debug.txt"
 
 static void SD_FileCreateWithHeader(const struct LoggerConfig *loggerConf);
-static bool checkAndFixLastFileLineIntegrity(const uint16_t expectedValues);
+static bool CheckAndFixLastFileLineIntegrity(const uint16_t expectedValues);
 static FRESULT SD_UnitTestRemoveFile(void);
 static FRESULT SD_UnitTestCreateDebugFile(FIL *file);
 static FRESULT SD_UnitTestReadFile(FIL *file);
@@ -42,7 +42,7 @@ void SdCardInit(FATFS *fatFileSys)
 }
 
 /* tryReadTimeFile
-//attempts to read the time file, whose filename is defined in boardconf.h.
+attempts to read the time file, whose filename is defined in boardconf.h.
 File should be in format hh,mm,ss,mm,dd,yyyy
 comma is suggested, but any non-numeric, non +- non \n, character should work as a separator.
 
@@ -77,7 +77,9 @@ void TryReadTimeFile(void){
 	}
 }
 
-/*
+/* SD_CreateWithHeaderIfMissing
+Function determines if the datalog file exists. If it doesn't,
+the function calls to SD_FileCreatWithHeader
 return true if header was created or file already existed.*/
 void SD_CreateWithHeaderIfMissing(const struct LoggerConfig *loggerConfig)
 {
@@ -89,15 +91,6 @@ void SD_CreateWithHeaderIfMissing(const struct LoggerConfig *loggerConfig)
 	}
 }
 
-bool SD_CheckIntegrity(const struct LoggerConfig *loggerConfig){
-	//count up the number of SDI values we're expecting
-	uint16_t expectedValues = 14; //start with 14 values, we'll add more for the SDI12s
-	uint8_t sdiIndex = loggerConfig->numSdiSensors;
-	while(sdiIndex){
-		expectedValues += loggerConfig->SDI12_SensorNumValues[--sdiIndex];
-	}
-	return checkAndFixLastFileLineIntegrity(expectedValues);
-}
 
 static void SD_FileCreateWithHeader(const struct LoggerConfig *loggerConf)
 {
@@ -185,7 +178,24 @@ void ReadConfigFile(struct LoggerConfig *config){
 	}
 }
 
-static bool checkAndFixLastFileLineIntegrity(const uint16_t expectedValues)
+/*SD_CheckIntegrity
+If the logger has a reason to think that the previous log was interrupted, this function may be called.
+Function determines how many values should be in each line, and passes that information to CheckAndFixLastFileLineIntegrity
+to potentiallyf fix integrity issues.*/
+bool SD_CheckIntegrity(const struct LoggerConfig *loggerConfig){
+	//count up the number of SDI values we're expecting
+	uint16_t expectedValues = 14; //start with 14 values, we'll add more for the SDI12s
+	uint8_t sdiIndex = loggerConfig->numSdiSensors;
+	while(sdiIndex){
+		expectedValues += loggerConfig->SDI12_SensorNumValues[--sdiIndex];
+	}
+	return CheckAndFixLastFileLineIntegrity(expectedValues);
+}
+
+/*CheckAndFixLastFileLineIntegrity
+takes a number of values expected to be in each line of the data log file.
+If the last line has fewer than this many values, function will write NANs until there are as many values as needed.*/
+static bool CheckAndFixLastFileLineIntegrity(const uint16_t expectedValues)
 {
 	//open the data file, and start checking.
 	FIL file;
@@ -399,7 +409,7 @@ static bool SD_UnitDataFileIntegrityCheck(void){
 	f_puts(dataFileMessage, &file);
 	f_close(&file);
 	f_open(&file, SD_DATALOG_FILENAME, FA_READ | FA_WRITE);
-	bool success = checkAndFixLastFileLineIntegrity(10);
+	bool success = CheckAndFixLastFileLineIntegrity(10);
 	f_puts("checked",&file);
 	f_close(&file);
 	return success;
