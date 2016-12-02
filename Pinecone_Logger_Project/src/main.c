@@ -201,6 +201,7 @@ static inline void ReadThermocouples(float *tcValuesOut){
 static inline void ReadDendrometers(void){
 	adc_enable(&adcModule);
 	LogValues[LOG_VALUES_DEND_INDEX]		= ReadDendro(&adcModule, DEND_ANALOG_PIN_1);
+	adc_flush(&adcModule);
 	LogValues[LOG_VALUES_DEND_INDEX + 1]	= ReadDendro(&adcModule, DEND_ANALOG_PIN_2);
 	adc_disable(&adcModule);
 }
