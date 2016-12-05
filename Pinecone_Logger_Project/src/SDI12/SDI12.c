@@ -174,8 +174,6 @@ After the sensor has had values requested with SDI12_RequestSensorReading, use t
 The floats will be loaded into the outValues float array. NOTE!!!! outValues array MUST have a number of indices >= the
 number of expected values from the transaction packet. Otherwise, Undefined operation or segfaults may occur.*/
 bool SDI12_GetSensedValues(struct SDI_transactionPacket *transactionPacket, float *outValues){
-
-	uint8_t numValuesExpected = transactionPacket->numberOfValuesToReturn;
 	uint8_t dNumberChar = '0';
 	uint8_t numValuesReceived = 0;
 	const uint8_t messageLen = 4;
@@ -190,11 +188,11 @@ bool SDI12_GetSensedValues(struct SDI_transactionPacket *transactionPacket, floa
 	const uint8_t responseLen = 36;
 	
 	//load in NANs into all the outvalues,
-	for(uint8_t counter = 0; counter < numValuesExpected; counter++){
+	for(uint8_t counter = 0; counter < transactionPacket->numberOfValuesToReturn; counter++){
 		outValues[counter] = NAN;
 	}
 	
-	while(numValuesReceived < numValuesExpected){
+	while(numValuesReceived < transactionPacket->numberOfValuesToReturn){
 		uint8_t tries = SDI12_MAX_NUMBER_TRANSACTION_ATTEMPTS;
 		while(tries--){
 			transactionPacket->transactionStatus = SDI12_PerformTransaction(message, messageLen, response, responseLen);
@@ -222,7 +220,7 @@ bool SDI12_GetSensedValues(struct SDI_transactionPacket *transactionPacket, floa
 			//these values couldn't be gathered in the give number of tries, so we'll call this sensor gathering a failure.
 			return false;
 		}
-		message[1]++;	//increment the index of the D_! command, thus asking for the next values on the next transaction.
+		message[1] = CharAddParity(message[1] +1 );	//increment the index of the D_! command, thus asking for the next values on the next transaction.
 	}
 	return true;
 }
@@ -231,7 +229,7 @@ bool SDI12_GetSensedValues(struct SDI_transactionPacket *transactionPacket, floa
 takes a given character, and adds an even parity bit in the MSB.
 */
 static char CharAddParity(char address){
-	address &= 0x7F;
+	address &= 0x7F;	//make sure that the MSB starts cleared
 	for(uint8_t bitmask = 1; bitmask != 0x80; bitmask <<= 1){
 		if(address & bitmask){
 			//flip the parity bit
