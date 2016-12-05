@@ -60,7 +60,7 @@ src\ASF\sam0\drivers\port\port.c
 
 src\ASF\thirdparty\fatfs\fatfs-r0.09\src\ff.c
 
-src\SDI12\SDI_12.c
+src\SDI12\SDI12.c
 
 src\ASF\common2\boards\user_board\init.c
 

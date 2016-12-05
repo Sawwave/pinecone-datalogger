@@ -158,7 +158,7 @@ C_SRCS +=  \
 ../src/ASF/common/services/storage/ctrl_access/ctrl_access.c \
 ../src/ASF/sam0/drivers/port/port.c \
 ../src/ASF/thirdparty/fatfs/fatfs-r0.09/src/ff.c \
-../src/SDI12/SDI_12.c \
+../src/SDI12/SDI12.c \
 ../src/ASF/common2/boards/user_board/init.c \
 ../src/ASF/common/utils/interrupt/interrupt_sam_nvic.c \
 ../src/ASF/sam0/drivers/system/clock/clock_samd20/clock.c \
@@ -208,7 +208,7 @@ src/ASF/common/services/sleepmgr/samd/sleepmgr.o \
 src/ASF/common/services/storage/ctrl_access/ctrl_access.o \
 src/ASF/sam0/drivers/port/port.o \
 src/ASF/thirdparty/fatfs/fatfs-r0.09/src/ff.o \
-src/SDI12/SDI_12.o \
+src/SDI12/SDI12.o \
 src/ASF/common2/boards/user_board/init.o \
 src/ASF/common/utils/interrupt/interrupt_sam_nvic.o \
 src/ASF/sam0/drivers/system/clock/clock_samd20/clock.o \
@@ -251,7 +251,7 @@ src/ASF/common/services/sleepmgr/samd/sleepmgr.o \
 src/ASF/common/services/storage/ctrl_access/ctrl_access.o \
 src/ASF/sam0/drivers/port/port.o \
 src/ASF/thirdparty/fatfs/fatfs-r0.09/src/ff.o \
-src/SDI12/SDI_12.o \
+src/SDI12/SDI12.o \
 src/ASF/common2/boards/user_board/init.o \
 src/ASF/common/utils/interrupt/interrupt_sam_nvic.o \
 src/ASF/sam0/drivers/system/clock/clock_samd20/clock.o \
@@ -294,7 +294,7 @@ src/ASF/common/services/sleepmgr/samd/sleepmgr.d \
 src/ASF/common/services/storage/ctrl_access/ctrl_access.d \
 src/ASF/sam0/drivers/port/port.d \
 src/ASF/thirdparty/fatfs/fatfs-r0.09/src/ff.d \
-src/SDI12/SDI_12.d \
+src/SDI12/SDI12.d \
 src/ASF/common2/boards/user_board/init.d \
 src/ASF/common/utils/interrupt/interrupt_sam_nvic.d \
 src/ASF/sam0/drivers/system/clock/clock_samd20/clock.d \
@@ -337,7 +337,7 @@ src/ASF/common/services/sleepmgr/samd/sleepmgr.d \
 src/ASF/common/services/storage/ctrl_access/ctrl_access.d \
 src/ASF/sam0/drivers/port/port.d \
 src/ASF/thirdparty/fatfs/fatfs-r0.09/src/ff.d \
-src/SDI12/SDI_12.d \
+src/SDI12/SDI12.d \
 src/ASF/common2/boards/user_board/init.d \
 src/ASF/common/utils/interrupt/interrupt_sam_nvic.d \
 src/ASF/sam0/drivers/system/clock/clock_samd20/clock.d \

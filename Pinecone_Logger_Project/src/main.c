@@ -75,15 +75,15 @@ int main (void)
 	irq_initialize_vectors();
 	cpu_irq_enable();
 
-	initSleepTimerCounter(&tcInstance);
+	InitSleepTimerCounter(&tcInstance);
 	Max31856ConfigureSPI(&spiMasterModule, &spiSlaveInstance);
 	ConfigureDendroADC(&adcModule);
 
 	//wake up the SD card
 	PORTA.OUTSET.reg = SD_CARD_MOSFET_PINMASK;
 	SdCardInit(&fatFileSys);
-	tryReadTimeFile();
-	readConfigFile(&loggerConfig);
+	TryReadTimeFile();
+	ReadConfigFile(&loggerConfig);
 	SD_CreateWithHeaderIfMissing(&loggerConfig);
 	
 	/*remove power to the SD/MMC card, we'll re enable it when it's time to write the reading.*/
@@ -91,7 +91,7 @@ int main (void)
 
 	/*If the configuration is set to defer logging for one sleep cycle, accomplish that sleep here.*/
 	if(!loggerConfig.logImmediately){
-		timedSleepSeconds(&tcInstance, loggerConfig.loggingInterval);
+		TimedSleepSeconds(&tcInstance, loggerConfig.loggingInterval);
 	}
 
 	MainLoop();
@@ -106,7 +106,7 @@ static inline void MainLoop(void){
 		//turn of dendro/tc, and turn on SDI-12 bus and DHT22s. mark the DHT22 data pins as HIGH to start, too.
 		PORTA.OUTTGL.reg = DENDRO_TC_AMP_MOSFET_PINMASK | SDI_DHT22_POWER_MOSFET_PINMASK | DHT22_ALL_PINMASK;
 		//sleep 2s, required for the DHT22 to function properly.
-		timedSleepSeconds(&tcInstance, 2);
+		TimedSleepSeconds(&tcInstance, 2);
 		GetDht22Reading(&(LogValues[LOG_VALUES_DHT_INDEX]), &(LogValues[LOG_VALUES_DHT_INDEX + 1]), DHT22_1_PINMASK);
 		GetDht22Reading(&(LogValues[LOG_VALUES_DHT_INDEX + 2] ), &(LogValues[LOG_VALUES_DHT_INDEX + 3]), DHT22_2_PINMASK);
 
@@ -124,7 +124,7 @@ static inline void MainLoop(void){
 		f_close(&dataFile);
 		PORTA.OUTCLR.reg = ALL_MOSFET_PINMASK;
 		
-		timedSleepSeconds(&tcInstance, loggerConfig.loggingInterval);
+		TimedSleepSeconds(&tcInstance, loggerConfig.loggingInterval);
 	}
 }
 
@@ -152,7 +152,7 @@ static inline void QueryAndRecordSdiValues(FIL *dataFile){
 		if(transactionPacket.transactionStatus == SDI12_STATUS_OK){
 			//if the sensor asked us to wait for some time before reading, let's go into sleep mode for it.
 			if(transactionPacket.waitTime > 0){
-				timedSleepSeconds(&tcInstance, transactionPacket.waitTime);
+				TimedSleepSeconds(&tcInstance, transactionPacket.waitTime);
 			}
 			success = SDI12_GetSensedValues(&transactionPacket, sdiValuesForSensor);
 		}
@@ -169,7 +169,7 @@ static inline void RunSapFluxSystem(void){
 	
 	//turn on heater, and turn off dendro/tc. Then, sleep for the heater duration.
 	PORTA.OUTTGL.reg = HEATER_MOSFET_PINMASK | DENDRO_TC_AMP_MOSFET_PINMASK;
-	timedSleepSeconds(&tcInstance, HEATER_TIMED_SLEEP_SECONDS);
+	TimedSleepSeconds(&tcInstance, HEATER_TIMED_SLEEP_SECONDS);
 	//turn heater off, and dendro/tc back on.
 	PORTA.OUTTGL.reg = HEATER_MOSFET_PINMASK | DENDRO_TC_AMP_MOSFET_PINMASK;
 	
@@ -185,7 +185,7 @@ static inline void ReadThermocouples(float *tcValuesOut){
 		enum Max31856_Status requestStatus = Max31856RequestReading(&spiMasterModule, &spiSlaveInstance);
 		if(requestStatus == MAX31856_OKAY){
 			//enter standby mode until the reading has been prepared (a bit under 1s)
-			timedSleepSeconds(&tcInstance, 1);
+			TimedSleepSeconds(&tcInstance, 1);
 			//if successful, Max31856GetTemp will set the out value to the temperature. Otherwise, it will be NAN.
 			Max31856GetTemp(&spiMasterModule, &spiSlaveInstance, &(tcValuesOut[index]));
 		}

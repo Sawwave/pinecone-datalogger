@@ -23,7 +23,7 @@
 #define HOST_SIGNAL_INIT_LOW_CYCLES			1143
 #define HOST_SIGNAL_INIT_HIGH_CYCLES		8
 #define DHT_SIGNAL_TIMEOUT					200
-#define DHT_SIGNAL_DATA_HIGH_1_LENGTH		45
+#define DHT_SIGNAL_DATA_HIGH_1_LENGTH		20
 
 /*GetDht22Reading
 Sends and receives confirmation signals with the DHT-22 sensor
@@ -54,6 +54,7 @@ enum Dht22Status GetDht22Reading(float *temp, float *relativeHumidity, const uin
 	*relativeHumidity = 0;
 	uint8_t rxBuffer[5];
 	memset(rxBuffer, 0, 5);
+	uint8_t timings[83];
 	
 	//set pin for output
 	PORTA.DIRSET.reg = dhtPinmask;
@@ -86,7 +87,9 @@ enum Dht22Status GetDht22Reading(float *temp, float *relativeHumidity, const uin
 				return DHT_STATUS_TIMEOUT;
 			}
 		}while(!!(PORTA.IN.reg & dhtPinmask) == (bitCounter & 1));
-
+		if((bitCounter >= 0) && (bitCounter & 1)){
+			timings[bitCounter/2] = timeTaken;
+		}
 		if((bitCounter & 1) && (bitCounter > 0)){
 			rxBuffer[rxByte] |= (timeTaken > DHT_SIGNAL_DATA_HIGH_1_LENGTH? 1 : 0) << --rxBit;
 			if(rxBit == 0){
@@ -111,10 +114,10 @@ enum Dht22Status GetDht22Reading(float *temp, float *relativeHumidity, const uin
 	//we passed the checksum, now we can parse the rx buffer into output values.
 	uint16_t rawHumidity =		(rxBuffer[0] << 8) + rxBuffer[1];
 	uint16_t rawTemperature =	(rxBuffer[2] << 8) + rxBuffer[3];
-	*relativeHumidity = (double)rawHumidity / 10.0f;
+	*relativeHumidity = (float)rawHumidity / 10.0f;
 	bool negativeTemp = (rawTemperature & 0x8000) != 0;
 	rawTemperature &= 0x7FFF;	//AND away the sign bit
-	*temp = (double)rawTemperature / 10.0f;
+	*temp = (float)rawTemperature / 10.0f;
 	if(negativeTemp){
 		*temp *= -1;
 	}

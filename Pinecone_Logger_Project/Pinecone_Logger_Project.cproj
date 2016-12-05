@@ -1134,7 +1134,7 @@
     <Compile Include="src\SDI12\SDI12.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\SDI12\SDI_12.c">
+    <Compile Include="src\SDI12\SDI12.c">
       <SubType>compile</SubType>
     </Compile>
     <None Include="src\asf.h">
