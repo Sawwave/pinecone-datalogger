@@ -159,12 +159,8 @@ void SDI12_RequestSensorReading(struct SDI_transactionPacket *transactionPacket)
 			//get time from response. only if it parsed successfully do we consider this a successful transaction
 			if( SDI12_GetTimeFromResponse(response, &(transactionPacket->waitTime)) ){
 				transactionPacket->numberOfValuesToReturn = SDI12_ParseNumValuesFromResult(response, responseLength);
+				return;
 			}
-			else
-			transactionPacket->transactionStatus = SDI12_BAD_RESPONSE;
-		}
-		else{
-			transactionPacket->transactionStatus = SDI12_BAD_RESPONSE;
 		}
 	}
 }
@@ -184,14 +180,14 @@ bool SDI12_GetSensedValues(struct SDI_transactionPacket *transactionPacket, floa
 		CharAddParity(dNumberChar),
 		'!'
 	};
-	char response[36];
 	const uint8_t responseLen = 36;
+	char response[36];
 	
 	//load in NANs into all the outvalues,
 	for(uint8_t counter = 0; counter < transactionPacket->numberOfValuesToReturn; counter++){
 		outValues[counter] = NAN;
 	}
-	
+	//TODO: make the num tries actually work, and exit out when needed.
 	while(numValuesReceived < transactionPacket->numberOfValuesToReturn){
 		uint8_t tries = SDI12_MAX_NUMBER_TRANSACTION_ATTEMPTS;
 		while(tries--){
@@ -200,19 +196,17 @@ bool SDI12_GetSensedValues(struct SDI_transactionPacket *transactionPacket, floa
 				//star the float parsing after the address character
 				char *floatParsePointer = &response[1];
 				
-				//first check that the query will actually get a value. if it won't, we should return false
-				//instead of potentially looping forever trying to get values that don't exist
-				if((*floatParsePointer != '-') && (*floatParsePointer != '+')){
-					return false;
+				//first check that the query actually starts with a value.
+				//if it doesn't, just try again. otherwise, let's parse them.
+				if((*floatParsePointer == '-') || (*floatParsePointer == '+')){
+					while((*floatParsePointer == '-') || (*floatParsePointer == '+')){
+						//convert next value to float, save it in the outvalues, and move the pointer
+						float parsedValue = strtof(floatParsePointer, &floatParsePointer);
+						outValues[numValuesReceived++]  = parsedValue;
+					}
+					//stop trying for this D_! command, we succeeded.
+					break;
 				}
-				
-				while((*floatParsePointer == '-') || (*floatParsePointer == '+')){
-					//convert next value to float, save it in the outvalues, and move the pointer
-					float parsedValue = strtof(floatParsePointer, &floatParsePointer);
-					outValues[numValuesReceived++]  = parsedValue;
-				}
-				//stop trying for this D_! command, we succeeded.
-				break;
 			}
 			//on failure
 		}
@@ -220,7 +214,7 @@ bool SDI12_GetSensedValues(struct SDI_transactionPacket *transactionPacket, floa
 			//these values couldn't be gathered in the give number of tries, so we'll call this sensor gathering a failure.
 			return false;
 		}
-		message[1] = CharAddParity(message[1] +1 );	//increment the index of the D_! command, thus asking for the next values on the next transaction.
+		message[1] = CharAddParity(message[1] +1);	//increment the index of the D_! command, thus asking for the next values on the next transaction.
 	}
 	return true;
 }
@@ -232,8 +226,7 @@ static char CharAddParity(char address){
 	address &= 0x7F;	//make sure that the MSB starts cleared
 	for(uint8_t bitmask = 1; bitmask != 0x80; bitmask <<= 1){
 		if(address & bitmask){
-			//flip the parity bit
-			address ^= 0x80;
+			address ^= 0x80; //flip the parity bit
 		}
 	}
 	return address;

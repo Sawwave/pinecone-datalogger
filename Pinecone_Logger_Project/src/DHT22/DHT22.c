@@ -54,7 +54,6 @@ enum Dht22Status GetDht22Reading(float *temp, float *relativeHumidity, const uin
 	*relativeHumidity = 0;
 	uint8_t rxBuffer[5];
 	memset(rxBuffer, 0, 5);
-	uint8_t timings[83];
 	
 	//set pin for output
 	PORTA.DIRSET.reg = dhtPinmask;
@@ -87,9 +86,7 @@ enum Dht22Status GetDht22Reading(float *temp, float *relativeHumidity, const uin
 				return DHT_STATUS_TIMEOUT;
 			}
 		}while(!!(PORTA.IN.reg & dhtPinmask) == (bitCounter & 1));
-		if((bitCounter >= 0) && (bitCounter & 1)){
-			timings[bitCounter/2] = timeTaken;
-		}
+		
 		if((bitCounter & 1) && (bitCounter > 0)){
 			rxBuffer[rxByte] |= (timeTaken > DHT_SIGNAL_DATA_HIGH_1_LENGTH? 1 : 0) << --rxBit;
 			if(rxBit == 0){
