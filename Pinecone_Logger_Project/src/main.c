@@ -134,14 +134,17 @@ static inline void RecordDateTime(FIL *dataFile){
 }
 
 static inline void RecordNonSdiValues(FIL *dataFile){
+	char parseBuffer[24];
 	//write all non-SDI12 values
 	for(uint8_t logValueIndex = 0; logValueIndex < NUM_LOG_VALUES; logValueIndex++){
-		f_printf(dataFile, commaFloatFormatStr, LogValues[logValueIndex]);
+		snprintf(parseBuffer, 24, commaFloatFormatStr, LogValues[logValueIndex]);
+		f_puts(parseBuffer, dataFile);
 	}
 	f_sync(dataFile);
 }
 
 static inline void QueryAndRecordSdiValues(FIL *dataFile){
+	char parseBuffer[24];
 	for(uint8_t sdiIndex = 0; sdiIndex < loggerConfig.numSdiSensors; sdiIndex++){
 		bool success = false;
 		float sdiValuesForSensor[loggerConfig.SDI12_SensorNumValues[sdiIndex]];
@@ -157,7 +160,8 @@ static inline void QueryAndRecordSdiValues(FIL *dataFile){
 			success = SDI12_GetSensedValues(&transactionPacket, sdiValuesForSensor);
 		}
 		for(uint8_t i=0; i< loggerConfig.SDI12_SensorNumValues[sdiIndex];i++){
-			f_printf(dataFile, commaFloatFormatStr, (success ? sdiValuesForSensor[i] : NAN));
+			snprintf(parseBuffer, 24, commaFloatFormatStr, success ? sdiValuesForSensor[i] : NAN);
+			f_puts(parseBuffer, dataFile);
 		}
 		f_sync(dataFile);
 	}

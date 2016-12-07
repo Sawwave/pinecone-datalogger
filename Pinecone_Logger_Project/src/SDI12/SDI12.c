@@ -17,7 +17,7 @@
 #define BIT_TIMING_HALF_DELAY_CYCLES				400		//416.5us to get halfway into reading a bit
 
 static char CharAddParity(char address);
-static uint8_t SDI12_ParseNumValuesFromResult(char outBuffer[], uint8_t outBufferLen);
+static uint8_t SDI12_ParseNumValuesFromResponse(char outBuffer[], uint8_t outBufferLen);
 static bool SDI12_GetTimeFromResponse(const char *response, uint16_t *outTime);
 static bool SDI12_TIME_FORMAT_UNIT_TEST(void);
 
@@ -157,8 +157,8 @@ void SDI12_RequestSensorReading(struct SDI_transactionPacket *transactionPacket)
 		
 		if(transactionPacket->transactionStatus == SDI12_STATUS_OK){
 			//get time from response. only if it parsed successfully do we consider this a successful transaction
-			if( SDI12_GetTimeFromResponse(response, &(transactionPacket->waitTime)) ){
-				transactionPacket->numberOfValuesToReturn = SDI12_ParseNumValuesFromResult(response, responseLength);
+			if(SDI12_GetTimeFromResponse(response, &(transactionPacket->waitTime)) ){
+				transactionPacket->numberOfValuesToReturn = SDI12_ParseNumValuesFromResponse(response, responseLength);
 				return;
 			}
 		}
@@ -256,7 +256,7 @@ static bool SDI12_GetTimeFromResponse(const char response[], uint16_t *outTime){
 reads the result from a aM or an aIM transaction,
 and returns the number of values the sensor can return.
 returns 0 in event of failure.*/
-static uint8_t SDI12_ParseNumValuesFromResult(char responseBuffer[], uint8_t responseBufferLen){
+static uint8_t SDI12_ParseNumValuesFromResponse(char responseBuffer[], uint8_t responseBufferLen){
 	uint8_t numValuesSensed = 0;
 	uint8_t valuesIndex = 4;
 	
