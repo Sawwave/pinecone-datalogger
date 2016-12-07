@@ -181,6 +181,9 @@ static inline void RunSapFluxSystem(void){
 }
 
 static inline void ReadThermocouples(float *tcValuesOut){
+	
+	//enable the spi module
+	spi_enable(&spiMasterModule);
 	//start by configuring the registers to the required values.
 	Max31856ConfigureRegisters(&spiMasterModule, &spiSlaveInstance, MAX31856_THERMOCOUPLE_TYPE_USED);
 	
@@ -198,6 +201,7 @@ static inline void ReadThermocouples(float *tcValuesOut){
 		}
 		PORTA.OUTTGL.reg = ((index & 1) != 0)? TC_MUX_SELECT_ALL_PINMASK : TC_MUX_SELECT_A_PINMASK;
 	}
+	spi_disable(&spiMasterModule);
 }
 
 static inline void ReadDendrometers(void){
