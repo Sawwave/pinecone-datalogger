@@ -12,6 +12,8 @@
 #include <math.h>
 
 #define ADC_MAX_VALUE 0x1000
+#define DENDROMETER_TRAVEL_DISTANCE_MICROMETERS		12700.0	//12.7 millimeters
+#define DENDROMETER_DISTANCE_PER_TICK	DENDROMETER_TRAVEL_DISTANCE_MICROMETERS / ADC_MAX_VALUE
 
 /*ConfigureDendroADC
 Configure the system ADC to read the dendrometer potentiometers.
@@ -40,6 +42,5 @@ double ReadDendro(struct adc_module *const adcModule, const enum adc_positive_in
 	//read until the result is finished
 	while(adc_read(adcModule, &adcReadingValue) == STATUS_BUSY)
 	{	;	}
-	double ratioTraveled = ((double)adcReadingValue / (double)(ADC_MAX_VALUE));
-	return ratioTraveled * DENDROMETER_TRAVEL_DISTANCE_MICROMETERS;
+	return adcReadingValue * DENDROMETER_DISTANCE_PER_TICK;
 }
