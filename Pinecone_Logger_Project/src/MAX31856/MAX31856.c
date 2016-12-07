@@ -9,8 +9,8 @@
 #include "conf_board.h"
 #include <math.h>
 
-#define MAX31856_REG0_REQUEST_READING	0x40
-#define MAX31856_REG0_VAL				0x00
+#define MAX31856_REG0_REQUEST_READING	0x50	//request reading, enable open-circuit detection 
+#define MAX31856_REG0_VAL				0x10	//enabled open-circuit detection
 #define MAX31856_REG1_VAL				0x40
 #define MAX31856_WRITE_REGISTER_MASK	0x80
 #define MAX31856_TEMP_START_REG			0x0C
@@ -118,7 +118,7 @@ enum Max31856_Status Max31856GetTemp(struct spi_module *spiMasterModule, struct 
 		//mask away the highest byte, and the sign bit
 		intTemp >>= 5;
 
-		*outTemp = (double) intTemp;
+		*outTemp = (float) intTemp;
 		*outTemp /= 128;
 		if(sign){
 			*outTemp *= -1;
@@ -154,10 +154,9 @@ function will write bytes equal to xferBufferLen from xferBuffer to the SPI bus.
 returns MAX31856_OKAY on success, MAX31856_CONNECTION_ERROR on spi error.
 */
 static enum Max31856_Status Max31856WriteSpi(struct spi_module *spiMasterModule, struct spi_slave_inst *slaveInst, uint8_t xferBuffer[], const uint8_t xferBufferLen){
-	while(spi_is_syncing(spiMasterModule));
 	uint16_t spiLockAttempts = 50000;
 	while(spi_lock(spiMasterModule) == STATUS_BUSY){
-		if(spiLockAttempts-- == 0){
+		if((spiLockAttempts--) == 0){
 			return MAX31856_CONNECTION_ERROR;
 		}
 	}
@@ -167,7 +166,7 @@ static enum Max31856_Status Max31856WriteSpi(struct spi_module *spiMasterModule,
 	
 	spi_select_slave(spiMasterModule, slaveInst, true);
 	//write the default values to the first 2 registers to the amplifier
-	status = spi_write_buffer_wait(spiMasterModule, xferBuffer, xferBufferLen);
+	enum status_code status = spi_write_buffer_wait(spiMasterModule, xferBuffer, xferBufferLen);
 	while(!spi_is_write_complete(spiMasterModule));
 	spi_select_slave(spiMasterModule, slaveInst, false);
 	spi_unlock(spiMasterModule);
