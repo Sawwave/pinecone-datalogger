@@ -93,7 +93,9 @@ struct LoggerConfig{
 #define SDI_PIN_PINMASK								1 << 10
 
 #define DEND_ANALOG_PIN_1							ADC_POSITIVE_INPUT_PIN0			//PIN_PA02
+#define DEND_PORT_PIN_1								PIN_PA02
 #define DEND_ANALOG_PIN_2							ADC_POSITIVE_INPUT_PIN1			//PIN_PA03
+#define DEND_PORT_PIN_2								PIN_PA03
 
 #define DS1302_DATA_PIN_INDEX						11
 #define DS1302_CLOCK_PIN_INDEX						12
