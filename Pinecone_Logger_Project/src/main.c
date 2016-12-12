@@ -69,6 +69,7 @@ static float LogValues[NUM_LOG_VALUES];
 
 int main (void)
 {
+	
 	//Initialize SAM D20 on-chip hardware
 	system_init();
 	delay_init();
@@ -76,6 +77,7 @@ int main (void)
 	cpu_irq_enable();
 
 	InitSleepTimerCounter(&tcInstance);
+	
 	Max31856ConfigureSPI(&spiMasterModule, &spiSlaveInstance);
 	ConfigureDendroADC(&adcModule);
 
@@ -118,6 +120,7 @@ static inline void MainLoop(void){
 		PORTA.OUTSET.reg = SD_CARD_MOSFET_PINMASK;
 		FIL dataFile;
 		f_open(&dataFile, SD_DATALOG_FILENAME, FA_WRITE);
+		f_lseek(&dataFile, f_size(&dataFile));	//append to the end of the file.
 		RecordDateTime(&dataFile);
 		RecordNonSdiValues(&dataFile);
 		QueryAndRecordSdiValues(&dataFile);
@@ -145,6 +148,7 @@ static inline void RecordNonSdiValues(FIL *dataFile){
 
 static inline void QueryAndRecordSdiValues(FIL *dataFile){
 	char parseBuffer[24];
+	
 	for(uint8_t sdiIndex = 0; sdiIndex < loggerConfig.numSdiSensors; sdiIndex++){
 		bool success = false;
 		float sdiValuesForSensor[loggerConfig.SDI12_SensorNumValues[sdiIndex]];

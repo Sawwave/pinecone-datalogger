@@ -27,6 +27,7 @@ second argument, fileResult, will show the result state of the attempted mount.
 */
 void SdCardInit(FATFS *fatFileSys)
 {
+	//TODO: add checking for replugging card
 	FRESULT res;
 	sd_mmc_init();
 	Ctrl_status checkStatus;

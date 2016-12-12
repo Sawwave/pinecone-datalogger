@@ -36,7 +36,6 @@ uses the adc module defined to read a specific analog pin, and uses the value an
 use adc_enable and disable before and after reading form the dendros.*/
 double ReadDendro(struct adc_module *const adcModule, const enum adc_positive_input dendAnalogPin)
 {
-	adc_flush(adcModule);
 	uint16_t adcReadingValue;
 	adc_set_positive_input(adcModule, dendAnalogPin);
 	adc_start_conversion(adcModule);

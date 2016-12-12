@@ -9,9 +9,8 @@
 #include <math.h>
 #include "SDI12/SDI12.h"
 
-#define SDI12_MAX_NUMBER_TRANSACTION_ATTEMPTS		3
-#define MARKING_DELAY_CYCLES						14000	// >= 12ms marking length
-#define PARITY_I									201		//'I' is 73, 73+128= 201
+#define SDI12_MAX_NUMBER_TRANSACTION_ATTEMPTS		5
+#define MARKING_DELAY_CYCLES						13000	// >= 12ms marking length
 #define SPACING_8330_DELAY_CYCLES					9520 	//8330us spacing delay
 #define BIT_TIMING_DELAY_CYCLES						928		//833us bit timing
 #define BIT_TIMING_HALF_DELAY_CYCLES				400		//416.5us to get halfway into reading a bit
@@ -41,26 +40,30 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction(const char *message, const uint8
 	//clear for 8330 micros
 	PORTA.OUTCLR.reg = SDI_PIN_PINMASK;
 	portable_delay_cycles(SPACING_8330_DELAY_CYCLES);
+	
 	for(uint8_t byteNumber = 0; byteNumber < messageLen; byteNumber++){
-		//start bit (always high)
+		//send the start bit (always HIGH)
 		PORTA.OUTSET.reg = SDI_PIN_PINMASK;
 		portable_delay_cycles(BIT_TIMING_DELAY_CYCLES);
-		for(uint8_t bitmask = 1; bitmask != 0; bitmask <<= 1){
-			if((message[byteNumber] & bitmask) != 0){
-				//0 on this bit, so send HIGH
-				PORTA.OUTCLR.reg = SDI_PIN_PINMASK;
-			}
-			else{
+		
+		//send the data byte, with parity bit already included
+		uint8_t bitmask = 0x1;
+		while(bitmask){
+			if( (message[byteNumber] & bitmask) == 0 ){
 				PORTA.OUTSET.reg = SDI_PIN_PINMASK;
 			}
+			else{
+				PORTA.OUTCLR.reg = SDI_PIN_PINMASK;
+			}
 			portable_delay_cycles(BIT_TIMING_DELAY_CYCLES);
+			bitmask <<= 1;
 		}
 		
-		//end bit (always low)
+		//send stop bit (always LOW);
 		PORTA.OUTCLR.reg = SDI_PIN_PINMASK;
 		portable_delay_cycles(BIT_TIMING_DELAY_CYCLES);
 	}
-	
+
 	//set SDI pin to input by changing DIR and setting INEN in WRCONFIG
 	PORTA.DIRCLR.reg = SDI_PIN_PINMASK;
 	#if SDI_PIN_PINMASK < (1 << 16)
@@ -68,16 +71,15 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction(const char *message, const uint8
 	#else
 	PORTA.WRCONFIG.reg = PORT_WRCONFIG_WRPINCFG | PORT_WRCONFIG_INEN | (SDI_PIN_PINMASK >> 16) | PORT_WRCONFIG_HWSEL;
 	#endif
-	
-	//wait for the timeout or for the data line to go LOW. A timeout value of 8000 gives us roughly >20ms until timeout
-	uint16_t timeout = 8000;
+
+	//wait for the timeout or for the data line to go HIGH on the start bit response. A timeout value of 10000 gives us roughly 50ms until timeout
+	uint16_t timeout = 10000;
 	do{
 		portable_delay_cycles(5);
-	} while( (timeout--) && ((PORTA.IN.reg & SDI_PIN_PINMASK) != 0) );
+	} while( (timeout--) && ((PORTA.IN.reg & SDI_PIN_PINMASK)  == 0) );
 	if(timeout == 0){
 		//turn pin back into OUTPUT, and disable INEN
 		PORTA.DIRSET.reg = SDI_PIN_PINMASK;
-		PORTA.OUTCLR.reg = SDI_PIN_PINMASK;
 		#if SDI_PIN_PINMASK < (1 << 16)
 		PORTA.WRCONFIG.reg = PORT_WRCONFIG_WRPINCFG |  SDI_PIN_PINMASK;
 		#else
@@ -85,38 +87,40 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction(const char *message, const uint8
 		#endif
 		return SDI12_TRANSACTION_TIMEOUT;
 	}
-	//delay for a full byte frame
-	for(uint8_t c=0;c<10;c++){
-		portable_delay_cycles(BIT_TIMING_DELAY_CYCLES);
-	}
+	
+	//if we got here, we just started the start bit (HIGH).
 	uint8_t byteNumber = 0;
 	do{
-		//we've received the signal, now delay partway into the bits to read them
-		portable_delay_cycles(BIT_TIMING_HALF_DELAY_CYCLES);
+		//delay through start bit, and halfway into first data bit.
+		portable_delay_cycles(BIT_TIMING_HALF_DELAY_CYCLES + BIT_TIMING_DELAY_CYCLES);
 		
-		portable_delay_cycles(BIT_TIMING_DELAY_CYCLES);
-		for(uint8_t bitmask = 1; bitmask != 0x80; bitmask <<= 1){
+		uint8_t bitmask = 0x1;
+		while(bitmask < 0x80){
 			if((PORTA.IN.reg & SDI_PIN_PINMASK) == 0){
 				outBuffer[byteNumber] |= bitmask;
 			}
 			portable_delay_cycles(BIT_TIMING_DELAY_CYCLES);
+			bitmask <<= 1;
 		}
-		//delay through the parity bit and end bit
+		//delay through parity bit
 		portable_delay_cycles(BIT_TIMING_DELAY_CYCLES);
+		
 		timeout = 255;
-		//loop-delay through the end bit (LOW) to realign with the byte frame
+		//loop-delay through the stop bit (LOW) to realign with the byte frame
 		do{
 			portable_delay_cycles(5);
 		}while( ( (PORTA.IN.reg & SDI_PIN_PINMASK) == 0) && (timeout--) != 0);
+		
 		byteNumber++;
-	} while(((PORTA.IN.reg & SDI_PIN_PINMASK) != 0)		//we got the start bit!
+		
+	} while( (timeout)											//we got the start bit!
 	&& (byteNumber < (outBufferLen - 1))						//the buffer overflowed (overflew?)
 	&& (outBuffer[byteNumber-1] != 10));						// the last byte was Line Feed
 
 	//we're done receiving the message, so we can leave the interrupt critical section.
 	//while we're at it, we can set the pin back to output, and put it in powersave mode
 	system_interrupt_leave_critical_section();
-	
+
 	//turn pin back into OUTPUT, and disable INEN
 	PORTA.DIRSET.reg = SDI_PIN_PINMASK;
 	PORTA.OUTCLR.reg = SDI_PIN_PINMASK;
@@ -125,10 +129,10 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction(const char *message, const uint8
 	#else
 	PORTA.WRCONFIG.reg = PORT_WRCONFIG_WRPINCFG | (SDI_PIN_PINMASK >> 16) | PORT_WRCONFIG_HWSEL;
 	#endif
-	
+
 	//null terminate the rxMessage.
 	outBuffer[byteNumber]= 0;
-	
+
 	//the transaction was successful if the message starts with the address, and ends with a Line Feed (ascii value 10)
 	if( (outBuffer[0] == (message[0] & 0x7F )) && (outBuffer[byteNumber - 1] == 10) ){
 		return SDI12_STATUS_OK;
