@@ -54,6 +54,7 @@ static inline void ReadDendrometers(void);
 static inline void RecordDateTime(FIL *dataFile);
 static inline void RecordNonSdiValues(FIL *dataFile);
 static inline void QueryAndRecordSdiValues(FIL *dataFile);
+static inline void InitBodDetection(void);
 
 static struct spi_module spiMasterModule;
 static struct spi_slave_inst spiSlaveInstance;
@@ -75,9 +76,9 @@ int main (void)
 	delay_init();
 	irq_initialize_vectors();
 	cpu_irq_enable();
-
-	InitSleepTimerCounter(&tcInstance);
 	
+	InitBodDetection();
+	InitSleepTimerCounter(&tcInstance);
 	Max31856ConfigureSPI(&spiMasterModule, &spiSlaveInstance);
 	ConfigureDendroADC(&adcModule);
 
@@ -119,11 +120,16 @@ static inline void MainLoop(void){
 		
 		PORTA.OUTSET.reg = SD_CARD_MOSFET_PINMASK;
 		FIL dataFile;
+		bod_enable(BOD_BOD33);
 		f_open(&dataFile, SD_DATALOG_FILENAME, FA_WRITE);
 		f_lseek(&dataFile, f_size(&dataFile));	//append to the end of the file.
+		
 		RecordDateTime(&dataFile);
 		RecordNonSdiValues(&dataFile);
 		QueryAndRecordSdiValues(&dataFile);
+		
+		bod_clear_detected(BOD_BOD33);
+		
 		f_close(&dataFile);
 		PORTA.OUTCLR.reg = ALL_MOSFET_PINMASK;
 		
@@ -133,15 +139,27 @@ static inline void MainLoop(void){
 
 static inline void RecordDateTime(FIL *dataFile){
 	UINT bytesWritten;
-	f_write(dataFile, dateTimeBuffer, dateTimeBufferLen, &bytesWritten);
+	if(!bod_is_detected(BOD_BOD33){
+		f_write(dataFile, dateTimeBuffer, dateTimeBufferLen, &bytesWritten);
+	}
+	else{
+		f_close(dataFile);
+	}
 }
 
 static inline void RecordNonSdiValues(FIL *dataFile){
 	char parseBuffer[24];
 	//write all non-SDI12 values
 	for(uint8_t logValueIndex = 0; logValueIndex < NUM_LOG_VALUES; logValueIndex++){
-		snprintf(parseBuffer, 24, commaFloatFormatStr, LogValues[logValueIndex]);
-		f_puts(parseBuffer, dataFile);
+		//at each log value, check for brown out. if it's found, close the file, and leave the function.
+		if(!bod_is_detected(BOD_BOD33)){
+			snprintf(parseBuffer, 24, commaFloatFormatStr, LogValues[logValueIndex]);
+			f_puts(parseBuffer, dataFile);
+		}
+		else{
+			f_close(dataFile);
+			return;
+		}
 	}
 	f_sync(dataFile);
 }
@@ -154,7 +172,11 @@ static inline void QueryAndRecordSdiValues(FIL *dataFile){
 		float sdiValuesForSensor[loggerConfig.SDI12_SensorNumValues[sdiIndex]];
 		struct SDI_transactionPacket transactionPacket;
 		transactionPacket.address = loggerConfig.SDI12_SensorAddresses[sdiIndex];
-
+		//only request reading if we're not in a brown out state
+		if(bod_is_detected(BOD_BOD33)){
+			f_close(dataFile);
+			return;
+		}
 		SDI12_RequestSensorReading(&transactionPacket);
 		if(transactionPacket.transactionStatus == SDI12_STATUS_OK){
 			//if the sensor asked us to wait for some time before reading, let's go into sleep mode for it.
@@ -165,7 +187,14 @@ static inline void QueryAndRecordSdiValues(FIL *dataFile){
 		}
 		for(uint8_t i=0; i< loggerConfig.SDI12_SensorNumValues[sdiIndex];i++){
 			snprintf(parseBuffer, 24, commaFloatFormatStr, success ? sdiValuesForSensor[i] : NAN);
+			
+			if(!bod_is_detected(BOD_BOD33)){
 			f_puts(parseBuffer, dataFile);
+			}
+			else{
+				f_close(dataFile);
+				return;
+			}
 		}
 		f_sync(dataFile);
 	}
@@ -212,4 +241,14 @@ static inline void ReadDendrometers(void){
 	LogValues[LOG_VALUES_DEND_INDEX]		= ReadDendro(&adcModule, DEND_ANALOG_PIN_1);
 	adc_flush(&adcModule);
 	LogValues[LOG_VALUES_DEND_INDEX + 1]	= ReadDendro(&adcModule, DEND_ANALOG_PIN_2);
+}
+
+static inline void InitBodDetection(void){
+	struct bod_config bodConfig;
+	bod_get_config_defaults(&bodConfig);
+	//level is set to 39, sampling is continuous, and hysteresis to true by default
+	bodConfig.action = BOD_ACTION_NONE;
+	bodConfig.run_in_standby = false;
+	bod_set_config(BOD_BOD33, &bodConfig);
+	bod_disable(BOD_BOD33);
 }

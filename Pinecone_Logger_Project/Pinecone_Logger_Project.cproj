@@ -43,6 +43,7 @@
           <option id="sam0.drivers.tc" value="Add" config="callback" content-id="Atmel.ASF" />
           <option id="sam0.drivers.wdt" value="Add" config="callback" content-id="Atmel.ASF" />
           <option id="common.services.fs.fatfs" value="Add" config="" content-id="Atmel.ASF" />
+          <option id="sam0.drivers.bod" value="Add" config="" content-id="Atmel.ASF" />
           <option id="sam0.utils.linker_scripts" value="Add" config="" content-id="Atmel.ASF" />
         </options>
         <configurations>
@@ -310,6 +311,9 @@
           <file path="src/ASF/sam0/drivers/sercom/spi/spi_interrupt.h" framework="" version="3.29.0" source="sam0\drivers\sercom\spi\spi_interrupt.h" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/sam0/drivers/sercom/spi/quick_start_master_callback/qs_spi_master_callback.h" framework="" version="3.29.0" source="sam0\drivers\sercom\spi\quick_start_master_callback\qs_spi_master_callback.h" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/sam0/drivers/sercom/spi/quick_start_slave_callback/qs_spi_slave_callback.h" framework="" version="3.29.0" source="sam0\drivers\sercom\spi\quick_start_slave_callback\qs_spi_slave_callback.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam0/drivers/bod/bod_sam_d_r/bod.c" framework="" version="3.29.0" source="sam0\drivers\bod\bod_sam_d_r\bod.c" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam0/drivers/bod/bod.h" framework="" version="3.29.0" source="sam0\drivers\bod\bod.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam0/drivers/bod/bod_sam_d_r/bod_feature.h" framework="" version="3.29.0" source="sam0\drivers\bod\bod_sam_d_r\bod_feature.h" changed="False" content-id="Atmel.ASF" />
         </files>
         <documentation help="http://asf.atmel.com/docs/3.29.0/common.applications.user_application.sam0_system.user_board.atsamd20j18/html/index.html" />
         <offline-documentation help="" />
@@ -401,6 +405,7 @@
       <Value>../src/ASF/sam0/drivers/wdt</Value>
       <Value>../src/ASF/thirdparty/fatfs/fatfs-port-r0.09/sam0</Value>
       <Value>../src/ASF/sam0/drivers/tc</Value>
+      <Value>../src/ASF/sam0/drivers/bod</Value>
     </ListValues>
   </armgcc.compiler.directories.IncludePaths>
   <armgcc.compiler.optimization.level>Optimize for size (-Os)</armgcc.compiler.optimization.level>
@@ -468,6 +473,7 @@
       <Value>../src/ASF/sam0/drivers/wdt</Value>
       <Value>../src/ASF/thirdparty/fatfs/fatfs-port-r0.09/sam0</Value>
       <Value>../src/ASF/sam0/drivers/tc</Value>
+      <Value>../src/ASF/sam0/drivers/bod</Value>
     </ListValues>
   </armgcc.preprocessingassembler.general.IncludePaths>
 </ArmGcc>
@@ -540,6 +546,7 @@
       <Value>../src/ASF/sam0/drivers/wdt</Value>
       <Value>../src/ASF/thirdparty/fatfs/fatfs-port-r0.09/sam0</Value>
       <Value>../src/ASF/sam0/drivers/tc</Value>
+      <Value>../src/ASF/sam0/drivers/bod</Value>
     </ListValues>
   </armgcc.compiler.directories.IncludePaths>
   <armgcc.compiler.optimization.OtherFlags>-fdata-sections</armgcc.compiler.optimization.OtherFlags>
@@ -610,6 +617,7 @@
       <Value>../src/ASF/sam0/drivers/wdt</Value>
       <Value>../src/ASF/thirdparty/fatfs/fatfs-port-r0.09/sam0</Value>
       <Value>../src/ASF/sam0/drivers/tc</Value>
+      <Value>../src/ASF/sam0/drivers/bod</Value>
     </ListValues>
   </armgcc.preprocessingassembler.general.IncludePaths>
   <armgcc.preprocessingassembler.debugging.DebugLevel>Default (-Wa,-g)</armgcc.preprocessingassembler.debugging.DebugLevel>
@@ -641,6 +649,8 @@
     <Folder Include="src\ASF\sam0\drivers\" />
     <Folder Include="src\ASF\sam0\drivers\adc\" />
     <Folder Include="src\ASF\sam0\drivers\adc\adc_sam_d_r\" />
+    <Folder Include="src\ASF\sam0\drivers\bod\" />
+    <Folder Include="src\ASF\sam0\drivers\bod\bod_sam_d_r\" />
     <Folder Include="src\ASF\sam0\drivers\extint\" />
     <Folder Include="src\ASF\sam0\drivers\extint\extint_sam_d_r\" />
     <Folder Include="src\ASF\sam0\drivers\port\" />
@@ -735,6 +745,15 @@
     <Compile Include="src\ASF\sam0\drivers\adc\adc_sam_d_r\adc.c">
       <SubType>compile</SubType>
     </Compile>
+    <None Include="src\ASF\sam0\drivers\bod\bod.h">
+      <SubType>compile</SubType>
+    </None>
+    <Compile Include="src\ASF\sam0\drivers\bod\bod_sam_d_r\bod.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <None Include="src\ASF\sam0\drivers\bod\bod_sam_d_r\bod_feature.h">
+      <SubType>compile</SubType>
+    </None>
     <Compile Include="src\ASF\sam0\drivers\extint\extint_sam_d_r\extint.c">
       <SubType>compile</SubType>
     </Compile>

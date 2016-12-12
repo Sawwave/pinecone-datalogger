@@ -95,6 +95,15 @@ void SD_CreateWithHeaderIfMissing(const struct LoggerConfig *loggerConfig)
 
 static void SD_FileCreateWithHeader(const struct LoggerConfig *loggerConf)
 {
+	//enable the bod. if we're in a brown out state currently, don't even try to create the header,
+	//it would risk SD card corruption.
+	bod_enable(BOD_BOD33);
+	bool brownoutState = bod_is_detected(BOD_BOD33);
+	bod_disable(BOD_BOD33);
+	if(brownoutState){
+		f_close();
+		return;
+	}
 	FIL file;
 	f_open(&file, SD_DATALOG_FILENAME, FA_OPEN_ALWAYS | FA_WRITE);
 	//create the header for the data file
