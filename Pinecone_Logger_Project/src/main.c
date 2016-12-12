@@ -77,25 +77,27 @@ int main (void)
 	irq_initialize_vectors();
 	cpu_irq_enable();
 	
-	InitBodDetection();
 	InitSleepTimerCounter(&tcInstance);
-	Max31856ConfigureSPI(&spiMasterModule, &spiSlaveInstance);
-	ConfigureDendroADC(&adcModule);
 
 	//wake up the SD card
 	PORTA.OUTSET.reg = SD_CARD_MOSFET_PINMASK;
 	SdCardInit(&fatFileSys);
 	TryReadTimeFile();
 	ReadConfigFile(&loggerConfig);
+	
+	/*If the configuration is set to defer logging for one sleep cycle, accomplish that sleep here.*/
+	if(!loggerConfig.logImmediately){
+		TimedSleepSeconds(&tcInstance, loggerConfig.loggingInterval);
+	}
+	
+	InitBodDetection();
+	Max31856ConfigureSPI(&spiMasterModule, &spiSlaveInstance);
+	ConfigureDendroADC(&adcModule);
 	SD_CreateWithHeaderIfMissing(&loggerConfig);
 	
 	/*remove power to the SD/MMC card, we'll re enable it when it's time to write the reading.*/
 	PORTA.OUTCLR.reg = ALL_MOSFET_PINMASK;
 
-	/*If the configuration is set to defer logging for one sleep cycle, accomplish that sleep here.*/
-	if(!loggerConfig.logImmediately){
-		TimedSleepSeconds(&tcInstance, loggerConfig.loggingInterval);
-	}
 
 	MainLoop();
 }
@@ -189,7 +191,7 @@ static inline void QueryAndRecordSdiValues(FIL *dataFile){
 			snprintf(parseBuffer, 24, commaFloatFormatStr, success ? sdiValuesForSensor[i] : NAN);
 			
 			if(!bod_is_detected(BOD_BOD33)){
-			f_puts(parseBuffer, dataFile);
+				f_puts(parseBuffer, dataFile);
 			}
 			else{
 				f_close(dataFile);
