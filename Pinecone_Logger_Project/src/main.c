@@ -70,7 +70,6 @@ static float LogValues[NUM_LOG_VALUES];
 
 int main (void)
 {
-	
 	//Initialize SAM D20 on-chip hardware
 	system_init();
 	delay_init();
@@ -78,7 +77,9 @@ int main (void)
 	cpu_irq_enable();
 	
 	InitSleepTimerCounter(&tcInstance);
-
+	InitBodDetection();
+	ConfigureDendroADC(&adcModule);
+	
 	//wake up the SD card
 	PORTA.OUTSET.reg = SD_CARD_MOSFET_PINMASK;
 	SdCardInit(&fatFileSys);
@@ -91,9 +92,9 @@ int main (void)
 		TimedSleepSeconds(&tcInstance, loggerConfig.loggingInterval);
 	}
 	
-	InitBodDetection();
+	
 	Max31856ConfigureSPI(&spiMasterModule, &spiSlaveInstance);
-	ConfigureDendroADC(&adcModule);
+	
 	
 	PORTA.OUTSET.reg = SD_CARD_MOSFET_PINMASK;
 	SD_CreateWithHeaderIfMissing(&loggerConfig);

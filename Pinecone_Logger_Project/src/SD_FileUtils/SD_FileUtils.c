@@ -152,6 +152,11 @@ fouth line:
 i may be letter i or d specifies if the sensor takes the reading immediately on waking up(i), or defers logging until after the sleep interval(d).
 */
 void ReadConfigFile(struct LoggerConfig *config){
+	//set config defaults
+	
+	config->loggingInterval = 3600; //1 hour
+	config->logImmediately = false;
+	config->numSdiSensors = 0;
 	FIL fileObj;
 	char intervalBuffer[5];
 	char flagBuffer[4];
