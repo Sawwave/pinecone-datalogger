@@ -63,7 +63,7 @@ static struct tc_module tcInstance;
 static struct LoggerConfig loggerConfig;
 static FATFS fatFileSys;
 
-#define dateTimeBufferLen  21			//defined as to not variably modify length at file scope.
+#define dateTimeBufferLen  20			//defined as to not variably modify length at file scope.
 static char dateTimeBuffer[dateTimeBufferLen] = "\n00/00/2000,00:00:00";	//buffer starts with \n since this always starts a measurement.
 static const char *commaFloatFormatStr = ",%f";
 static float LogValues[NUM_LOG_VALUES];
@@ -133,11 +133,11 @@ static inline void MainLoop(void){
 		RecordDateTime(&dataFile);
 		RecordNonSdiValues(&dataFile);
 		QueryAndRecordSdiValues(&dataFile);
+		f_close(&dataFile);
 		
 		bod_disable(BOD_BOD33);
 		bod_clear_detected(BOD_BOD33);
 		
-		f_close(&dataFile);
 		PORTA.OUTCLR.reg = ALL_MOSFET_PINMASK;
 		
 		TimedSleepSeconds(&tcInstance, loggerConfig.loggingInterval);
@@ -220,7 +220,7 @@ static inline void ReadThermocouples(float *tcValuesOut){
 	//enable the spi module
 	spi_enable(&spiMasterModule);
 	//start by configuring the registers to the required values.
-	Max31856ConfigureRegisters(&spiMasterModule, &spiSlaveInstance, MAX31856_THERMOCOUPLE_TYPE_USED);
+	Max31856ConfigureRegisters(&spiMasterModule, &spiSlaveInstance, loggerConfig.thermocoupleType);
 	
 	for(uint8_t index = 0; index < 4; index++){
 		//request the reading.

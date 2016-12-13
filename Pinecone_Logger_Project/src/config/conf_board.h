@@ -67,6 +67,7 @@ struct LoggerConfig{
 	uint8_t numSdiSensors;
 	uint16_t loggingInterval;
 	bool logImmediately;
+	uint8_t thermocoupleType;
 };
 
 

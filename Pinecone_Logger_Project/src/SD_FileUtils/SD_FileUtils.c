@@ -149,14 +149,19 @@ second line:
 third line:
 0000 is the number of minutes between readings that the sensor will sleep
 fouth line:
-i may be letter i or d specifies if the sensor takes the reading immediately on waking up(i), or defers logging until after the sleep interval(d).
+DT
+first character may be letter i or d, and specifies if the sensor takes the reading immediately on waking up(i), or defers logging until after the sleep interval(d).
+this character is not case sensitive.
+second character specifies the type of thermocouples used. Acceptable characters are any of the following: BEJKNRST . 
+This character is not case sensitive.
 */
 void ReadConfigFile(struct LoggerConfig *config){
 	//set config defaults
-	
 	config->loggingInterval = 3600; //1 hour
 	config->logImmediately = false;
 	config->numSdiSensors = 0;
+	config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_K;
+	
 	FIL fileObj;
 	char intervalBuffer[5];
 	char flagBuffer[4];
@@ -185,11 +190,30 @@ void ReadConfigFile(struct LoggerConfig *config){
 		char *ptrToIntervalBuffer = &(intervalBuffer[0]);
 		config->loggingInterval = strtol(ptrToIntervalBuffer, &ptrToIntervalBuffer, 10);
 		
-		if(flagBuffer[0] == 'd'){
+		if(flagBuffer[0] == 'd' || flagBuffer[0] == 'D'){
 			config->logImmediately = false;
 		}
 		else{
 			config->logImmediately = true;
+		}
+		switch(flagBuffer[1]){
+			case 'b': case 'B':
+			config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_B; break;
+			case 'e': case 'E':
+			config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_E; break;
+			case 'j': case 'J':
+			config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_J; break;
+			case 'k': case 'K':
+			config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_K; break;
+			case 'n': case 'N':
+			config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_N; break;
+			case 'r': case 'R':
+			config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_R; break;
+			case 's': case 'S':
+			config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_S; break;
+			//T is the only one left, so set that as default
+			default: 
+			config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_T;
 		}
 	}
 }
