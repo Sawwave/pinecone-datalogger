@@ -9,7 +9,6 @@
 #ifndef MAX31856_H_
 #define MAX31856_H_
 
-#include <stdint.h>
 #include "spi/spi.h"
 
 

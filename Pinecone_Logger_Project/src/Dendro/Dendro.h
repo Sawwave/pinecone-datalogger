@@ -8,7 +8,7 @@
 #ifndef DENDRO_H_
 #define DENDRO_H_
 
-#include<stdint.h>
+#include <stdint.h>
 
 /*ConfigureDendroADC
 Configure the system ADC to read the dendrometer potentiometers.

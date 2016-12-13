@@ -17,7 +17,6 @@
 #include "Dht22/Dht22.h"
 #include <math.h>
 #include <asf.h>
-#include <stdbool.h>
 
 //timing values for the interface. All times are in microseconds
 #define HOST_SIGNAL_INIT_LOW_CYCLES			1143
