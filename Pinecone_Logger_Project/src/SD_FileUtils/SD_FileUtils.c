@@ -101,7 +101,6 @@ static void SD_FileCreateWithHeader(const struct LoggerConfig *loggerConf)
 	bool brownoutState = bod_is_detected(BOD_BOD33);
 	bod_disable(BOD_BOD33);
 	if(brownoutState){
-		f_close();
 		return;
 	}
 	FIL file;

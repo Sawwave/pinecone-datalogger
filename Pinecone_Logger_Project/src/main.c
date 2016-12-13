@@ -87,18 +87,20 @@ int main (void)
 	
 	/*If the configuration is set to defer logging for one sleep cycle, accomplish that sleep here.*/
 	if(!loggerConfig.logImmediately){
+		PORTA.OUTCLR.reg = ALL_MOSFET_PINMASK;
 		TimedSleepSeconds(&tcInstance, loggerConfig.loggingInterval);
 	}
 	
 	InitBodDetection();
 	Max31856ConfigureSPI(&spiMasterModule, &spiSlaveInstance);
 	ConfigureDendroADC(&adcModule);
+	
+	PORTA.OUTSET.reg = SD_CARD_MOSFET_PINMASK;
 	SD_CreateWithHeaderIfMissing(&loggerConfig);
 	
 	/*remove power to the SD/MMC card, we'll re enable it when it's time to write the reading.*/
 	PORTA.OUTCLR.reg = ALL_MOSFET_PINMASK;
-
-
+	
 	MainLoop();
 }
 
@@ -122,14 +124,16 @@ static inline void MainLoop(void){
 		
 		PORTA.OUTSET.reg = SD_CARD_MOSFET_PINMASK;
 		FIL dataFile;
-		bod_enable(BOD_BOD33);
 		f_open(&dataFile, SD_DATALOG_FILENAME, FA_WRITE);
 		f_lseek(&dataFile, f_size(&dataFile));	//append to the end of the file.
+		
+		bod_enable(BOD_BOD33);
 		
 		RecordDateTime(&dataFile);
 		RecordNonSdiValues(&dataFile);
 		QueryAndRecordSdiValues(&dataFile);
 		
+		bod_disable(BOD_BOD33);
 		bod_clear_detected(BOD_BOD33);
 		
 		f_close(&dataFile);
@@ -141,12 +145,9 @@ static inline void MainLoop(void){
 
 static inline void RecordDateTime(FIL *dataFile){
 	UINT bytesWritten;
-	if(!bod_is_detected(BOD_BOD33){
-		f_write(dataFile, dateTimeBuffer, dateTimeBufferLen, &bytesWritten);
-	}
-	else{
-		f_close(dataFile);
-	}
+	
+	if(bod_is_detected(BOD_BOD33)) f_close(dataFile);
+	else f_write(dataFile, dateTimeBuffer, dateTimeBufferLen, &bytesWritten);
 }
 
 static inline void RecordNonSdiValues(FIL *dataFile){
@@ -154,14 +155,13 @@ static inline void RecordNonSdiValues(FIL *dataFile){
 	//write all non-SDI12 values
 	for(uint8_t logValueIndex = 0; logValueIndex < NUM_LOG_VALUES; logValueIndex++){
 		//at each log value, check for brown out. if it's found, close the file, and leave the function.
-		if(!bod_is_detected(BOD_BOD33)){
-			snprintf(parseBuffer, 24, commaFloatFormatStr, LogValues[logValueIndex]);
-			f_puts(parseBuffer, dataFile);
-		}
-		else{
+		if(bod_is_detected(BOD_BOD33)){
 			f_close(dataFile);
 			return;
 		}
+		
+		snprintf(parseBuffer, 24, commaFloatFormatStr, LogValues[logValueIndex]);
+		f_puts(parseBuffer, dataFile);
 	}
 	f_sync(dataFile);
 }
@@ -190,13 +190,12 @@ static inline void QueryAndRecordSdiValues(FIL *dataFile){
 		for(uint8_t i=0; i< loggerConfig.SDI12_SensorNumValues[sdiIndex];i++){
 			snprintf(parseBuffer, 24, commaFloatFormatStr, success ? sdiValuesForSensor[i] : NAN);
 			
-			if(!bod_is_detected(BOD_BOD33)){
-				f_puts(parseBuffer, dataFile);
-			}
-			else{
+			//check for brownout before writing to SD card.
+			if(bod_is_detected(BOD_BOD33)){
 				f_close(dataFile);
 				return;
 			}
+			f_puts(parseBuffer, dataFile);
 		}
 		f_sync(dataFile);
 	}
