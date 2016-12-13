@@ -18,7 +18,11 @@
 static char CharAddParity(char address);
 static uint8_t SDI12_ParseNumValuesFromResponse(char outBuffer[], uint8_t outBufferLen);
 static bool SDI12_GetTimeFromResponse(const char *response, uint16_t *outTime);
+
+
+#ifdef SDI12_UNIT_TESTING
 static bool SDI12_TIME_FORMAT_UNIT_TEST(void);
+#endif
 
 /*SDI12 PerformTransaction
 The major workhorse of the SDI-12 library. performs a full transaction with an SDI-12 sensor.
@@ -272,6 +276,7 @@ static uint8_t SDI12_ParseNumValuesFromResponse(char responseBuffer[], uint8_t r
 	return numValuesSensed;
 }
 
+#ifdef SDI12_UNIT_TESTING
 static bool SDI12_TIME_FORMAT_UNIT_TEST(void){
 	//success conditions
 	uint16_t time;
@@ -323,3 +328,4 @@ static bool SDI12_TIME_FORMAT_UNIT_TEST(void){
 	test[41] = (! SDI12_GetTimeFromResponse("AB00:", &time));
 	return true;
 }
+#endif
