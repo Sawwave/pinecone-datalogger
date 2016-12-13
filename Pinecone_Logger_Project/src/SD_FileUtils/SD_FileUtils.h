@@ -59,6 +59,9 @@ void ReadConfigFile(struct LoggerConfig *config);
 
 bool SD_CheckIntegrity(const struct LoggerConfig *loggerConfig);
 
+
+#ifdef SD_FILE_UTILS_UNIT_TEST
 int8_t SD_UnitTest(void);
+#endif
 
 #endif /* SD_FILEUTILS_H_ */

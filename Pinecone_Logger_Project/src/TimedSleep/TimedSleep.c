@@ -7,10 +7,10 @@
 
 #include <asf.h>
 #include "TimedSleep/TimedSleep.h"
-#include "tc.h"
-#include "tc_interrupt.h"
-#include "sleepmgr.h"
-#include "power.h"
+#include <tc.h>
+#include <tc_interrupt.h>
+#include <sleepmgr.h>
+#include <power.h>
 
 #define TIMED_SLEEP_TC_HARDWARE TC2
 static void SleepEndFunction(struct tc_module *const module);

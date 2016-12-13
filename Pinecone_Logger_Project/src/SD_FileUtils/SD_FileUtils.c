@@ -6,19 +6,21 @@
 */
 #include "SD_FileUtils/SD_FileUtils.h"
 #include "DS1302/DS1302.h"
-#include <asf.h>
-#include "ff.h"
 
-#define SD_DEBUG_FILE "0:debug.txt"
 
 static void SD_FileCreateWithHeader(const struct LoggerConfig *loggerConf);
 static bool CheckAndFixLastFileLineIntegrity(const uint16_t expectedValues);
+
+
+#ifdef SD_FILE_UTILS_UNIT_TEST
+#define SD_DEBUG_FILE "0:debug.txt"
 static FRESULT SD_UnitTestRemoveFile(void);
 static FRESULT SD_UnitTestCreateDebugFile(FIL *file);
 static FRESULT SD_UnitTestReadFile(FIL *file);
 static int SD_UnitTestLoadAndCheckDebugFile(const char *addresses, uint8_t numAddresses, const char *interval, bool defer);
 static void SD_UnitTestHeaderCreate(struct LoggerConfig *config, const char *headerFileName);
 static bool SD_UnitDataFileIntegrityCheck(void);
+#endif
 
 /*SdCardInit
 Initializes the sd mmc connection, and attempts to mount the fileSystem.
@@ -248,7 +250,7 @@ static bool CheckAndFixLastFileLineIntegrity(const uint16_t expectedValues)
 	return true;
 }
 
-
+#ifdef SD_FILE_UTILS_UNIT_TEST
 int8_t SD_UnitTest(void)
 {
 	FATFS fatfs;
@@ -423,3 +425,4 @@ static bool SD_UnitDataFileIntegrityCheck(void){
 	f_close(&file);
 	return success;
 }
+#endif
