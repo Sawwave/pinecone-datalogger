@@ -136,24 +136,27 @@ static void SD_FileCreateWithHeader(const struct LoggerConfig *loggerConf)
 Reads the Configuration file, and stores the configuration in the given struct.
 Config file is formated as defined below:
 
+0000
+DT
 ABC...
 9,9,9...
-0000
-i
 
 first line:
-ABC.. specifies the SDI12 addresses of the sensors. Thus, if logger is connected to 3 sensors, with addresses 0,7, and B, line 2 may read
-07B
-second line:
-9,9,9,... specifies the SDI12 number of values for each of the sdi sensors addressed in the first line.
-third line:
 0000 is the number of minutes between readings that the sensor will sleep
-fouth line:
+
+second line:
 DT
 first character may be letter i or d, and specifies if the sensor takes the reading immediately on waking up(i), or defers logging until after the sleep interval(d).
 this character is not case sensitive.
 second character specifies the type of thermocouples used. Acceptable characters are any of the following: BEJKNRST . 
 This character is not case sensitive.
+
+Third Line
+ABC.. specifies the SDI12 addresses of the sensors. Thus, if logger is connected to 3 sensors, with addresses 0,7, and B, line 2 may read
+07B
+
+Fourth line:
+9,9,9,... specifies the SDI12 number of values for each of the sdi sensors addressed in the Third line.
 */
 void ReadConfigFile(struct LoggerConfig *config){
 	//set config defaults
@@ -183,6 +186,7 @@ void ReadConfigFile(struct LoggerConfig *config){
 		config->numSdiSensors = 0;
 		while(config->SDI12_SensorAddresses[config->numSdiSensors] >= '0'){//the only way the sdi sensor can be valid is if it's ASCII value is over '0'
 			config->SDI12_SensorNumValues[config->numSdiSensors] =  strtol(ptrToNumValuesBuffer, &ptrToNumValuesBuffer, 10);
+			ptrToNumValuesBuffer++;	//go past the comma, or into  the line feed (value 10)
 			config->numSdiSensors++;
 		}
 		
