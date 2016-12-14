@@ -144,6 +144,7 @@ enum Max31856_Status Max31856GetTemp(struct spi_module *spiMasterModule, struct 
 		}
 		else return MAX31856_OKAY;
 	}
+	//error condition if spi transfer status was not OK.
 	*outTemp = NAN;
 	return MAX31856_SPI_ERROR;
 }
