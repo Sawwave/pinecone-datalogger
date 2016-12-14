@@ -110,8 +110,8 @@ static void SD_FileCreateWithHeader(const struct LoggerConfig *loggerConf)
 	//create the header for the data file
 	f_puts("Date,Time,TcBefore1,TcBefore2,TcBefore3,TcBefore4,TcAfter1,TcAfter2,TcAfter3,TcAfter4,Dht1Temp,Dht1Rh,Dht2Temp,Dht2Rh,Dend1,Dend2", &file);
 	char sdiColumnHeader[11] = ",SDI12_A.00";
-	const uint8_t sdiHeaderAddressIndex = 5;
-	const uint8_t sdiHeaderOnesValueIndex = 8;
+	const uint8_t sdiHeaderAddressIndex = 7;
+	const uint8_t sdiHeaderOnesValueIndex = 10;
 	
 	for(uint8_t sdiCounter = 0; sdiCounter < loggerConf->numSdiSensors; sdiCounter++){
 		//reset the value index in the header
