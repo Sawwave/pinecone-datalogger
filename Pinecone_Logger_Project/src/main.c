@@ -256,7 +256,7 @@ static inline void WriteDataFileNanOrFloat(float value, FIL *datafile){
 			//parse buffer is static so we don't have to realloc every time. It's gonna get overwritten by gcvtf anyway.
 			static char parseBuffer[24];
 			gcvtf(value, FLOAT_TO_STR_PRECISION, parseBuffer);
-			f_puts(parseBuffer,datafile);
+			f_puts(parseBuffer, datafile);
 		}
 	}
 	else{

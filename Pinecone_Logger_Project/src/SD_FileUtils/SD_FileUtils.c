@@ -60,7 +60,7 @@ void TryReadTimeFile(void){
 	if(status == FR_OK){
 		//reads until \n in found, or until buff is filled
 		UINT numBytesRead;
-		const uint8_t timeBufferLen = 19;
+		const uint8_t timeBufferLen = 17;
 		char buf[timeBufferLen];
 		f_read(&fileObj, buf, timeBufferLen, &numBytesRead);
 		f_close(&fileObj);
@@ -72,7 +72,7 @@ void TryReadTimeFile(void){
 			dateTime.seconds = (buf[7]- '0') + ((buf[6]- '0')*10);
 			dateTime.month = (buf[10]- '0') + ((buf[9]- '0')*10);
 			dateTime.date = (buf[13]- '0') + ((buf[12]- '0')*10);
-			dateTime.year = (buf[18]- '0') + ((buf[17]- '0')*10);
+			dateTime.year = (buf[16]- '0') + ((buf[15]- '0')*10);
 			
 			//set the time
 			Ds1302SetDateTime(&dateTime);
