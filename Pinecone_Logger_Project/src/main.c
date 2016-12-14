@@ -47,7 +47,7 @@
 #define LOG_VALUES_DHT_INDEX				8
 #define LOG_VALUES_DEND_INDEX				12
 
-#define FLOAT_TO_STR_PRECISION				5
+#define FLOAT_TO_STR_PRECISION				9
 
 static inline void MainLoop(void);
 static inline void RunSapFluxSystem(void);
@@ -255,8 +255,8 @@ static inline void WriteDataFileNanOrFloat(float value, FIL *datafile){
 		else{
 			//parse buffer is static so we don't have to realloc every time. It's gonna get overwritten by gcvtf anyway.
 			static char parseBuffer[24];
-			gcvtf(value, FLOAT_TO_STR_PRECISION,parseBuffer);
-			f_puts(datafile,parseBuffer);
+			gcvtf(value, FLOAT_TO_STR_PRECISION, parseBuffer);
+			f_puts(parseBuffer,datafile);
 		}
 	}
 	else{
