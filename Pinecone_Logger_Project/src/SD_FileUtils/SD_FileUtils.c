@@ -122,9 +122,11 @@ static void SD_FileCreateWithHeader(const struct LoggerConfig *loggerConf)
 		
 		//set the value indexes, and write to the data file.
 		for(uint8_t valueCounter = 0;valueCounter < loggerConf->SDI12_SensorNumValues[sdiCounter]; valueCounter++){
+			//we want to show the values on the header 1 indexed.
+			uint8_t oneIndexedValueCounter = valueCounter + 1;
 			//set the ones, then the tens.
-			sdiColumnHeader[sdiHeaderOnesValueIndex] = '0' + (valueCounter % 10);
-			sdiColumnHeader[sdiHeaderOnesValueIndex - 1] = '0' + (valueCounter / 10);
+			sdiColumnHeader[sdiHeaderOnesValueIndex] = '0' + (oneIndexedValueCounter % 10);
+			sdiColumnHeader[sdiHeaderOnesValueIndex - 1] = '0' + (oneIndexedValueCounter / 10);
 			f_puts(sdiColumnHeader, &file);
 		}
 	}
@@ -132,7 +134,6 @@ static void SD_FileCreateWithHeader(const struct LoggerConfig *loggerConf)
 }
 
 /*readConfigFile
-
 Reads the Configuration file, and stores the configuration in the given struct.
 Config file is formated as defined below:
 
@@ -148,7 +149,7 @@ second line:
 DT
 first character may be letter i or d, and specifies if the sensor takes the reading immediately on waking up(i), or defers logging until after the sleep interval(d).
 this character is not case sensitive.
-second character specifies the type of thermocouples used. Acceptable characters are any of the following: BEJKNRST . 
+second character specifies the type of thermocouples used. Acceptable characters are any of the following: BEJKNRST .
 This character is not case sensitive.
 
 Third Line
@@ -216,7 +217,7 @@ void ReadConfigFile(struct LoggerConfig *config){
 			case 's': case 'S':
 			config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_S; break;
 			//T is the only one left, so set that as default
-			default: 
+			default:
 			config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_T;
 		}
 	}
