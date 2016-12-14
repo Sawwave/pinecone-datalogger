@@ -47,6 +47,8 @@
 #define LOG_VALUES_DHT_INDEX				8
 #define LOG_VALUES_DEND_INDEX				12
 
+#define FLOAT_TO_STR_PRECISION				5
+
 static inline void MainLoop(void);
 static inline void RunSapFluxSystem(void);
 static inline void ReadThermocouples(float *tcValuesOut);
@@ -55,6 +57,7 @@ static inline void RecordDateTime(FIL *dataFile);
 static inline void RecordNonSdiValues(FIL *dataFile);
 static inline void QueryAndRecordSdiValues(FIL *dataFile);
 static inline void InitBodDetection(void);
+static inline void WriteDataFileNanOrFloat(float value, FIL *datafile);
 
 static struct spi_module spiMasterModule;
 static struct spi_slave_inst spiSlaveInstance;
@@ -63,10 +66,10 @@ static struct tc_module tcInstance;
 static struct LoggerConfig loggerConfig;
 static FATFS fatFileSys;
 
-#define dateTimeBufferLen  20			//defined as to not variably modify length at file scope.
+#define dateTimeBufferLen  20	//defined as to not variably modify length at file scope.
 static char dateTimeBuffer[dateTimeBufferLen] = "\n00/00/2000,00:00:00";	//buffer starts with \n since this always starts a measurement.
-static const char *commaFloatFormatStr = ",%f";
 static float LogValues[NUM_LOG_VALUES];
+
 
 int main (void)
 {
@@ -106,7 +109,7 @@ int main (void)
 }
 
 static inline void MainLoop(void){
-	while(1){
+	while(1){		
 		PORTA.OUTSET.reg = DENDRO_TC_AMP_MOSFET_PINMASK;
 		RunSapFluxSystem();
 		ReadDendrometers();
@@ -120,15 +123,13 @@ static inline void MainLoop(void){
 
 		//turn off the power to the SDI12 bus, the DHT22s, and stop sending HIGH on the DHT22 data lines.
 		PORTA.OUTCLR.reg = DHT22_ALL_PINMASK;
-		
 		Ds1302GetDateTime(dateTimeBuffer);
-		
 		PORTA.OUTSET.reg = SD_CARD_MOSFET_PINMASK;
+		
 		FIL dataFile;
+		bod_enable(BOD_BOD33);
 		f_open(&dataFile, SD_DATALOG_FILENAME, FA_WRITE);
 		f_lseek(&dataFile, f_size(&dataFile));	//append to the end of the file.
-		
-		bod_enable(BOD_BOD33);
 		
 		RecordDateTime(&dataFile);
 		RecordNonSdiValues(&dataFile);
@@ -147,56 +148,46 @@ static inline void MainLoop(void){
 static inline void RecordDateTime(FIL *dataFile){
 	UINT bytesWritten;
 	
-	if(bod_is_detected(BOD_BOD33)) f_close(dataFile);
-	else f_write(dataFile, dateTimeBuffer, dateTimeBufferLen, &bytesWritten);
+	if(bod_is_detected(BOD_BOD33)) {
+		f_close(dataFile);
+	}
+	else {
+		f_write(dataFile, dateTimeBuffer, dateTimeBufferLen, &bytesWritten);
+	}
 }
 
 static inline void RecordNonSdiValues(FIL *dataFile){
-	char parseBuffer[24];
-	//write all non-SDI12 values
 	for(uint8_t logValueIndex = 0; logValueIndex < NUM_LOG_VALUES; logValueIndex++){
 		//at each log value, check for brown out. if it's found, close the file, and leave the function.
-		if(bod_is_detected(BOD_BOD33)){
-			f_close(dataFile);
-			return;
-		}
-		
-		snprintf(parseBuffer, 24, commaFloatFormatStr, LogValues[logValueIndex]);
-		f_puts(parseBuffer, dataFile);
+		WriteDataFileNanOrFloat(LogValues[logValueIndex], dataFile);
 	}
 	f_sync(dataFile);
 }
 
 static inline void QueryAndRecordSdiValues(FIL *dataFile){
-	char parseBuffer[24];
-	
 	for(uint8_t sdiIndex = 0; sdiIndex < loggerConfig.numSdiSensors; sdiIndex++){
-		bool success = false;
+		
+		//create the array for the values, and initialize the values to NAN.
 		float sdiValuesForSensor[loggerConfig.SDI12_SensorNumValues[sdiIndex]];
+		for(uint8_t i = 0; i< loggerConfig.SDI12_SensorNumValues[sdiIndex];i++){
+			sdiValuesForSensor[i] = NAN;
+		}
+		
 		struct SDI_transactionPacket transactionPacket;
 		transactionPacket.address = loggerConfig.SDI12_SensorAddresses[sdiIndex];
-		//only request reading if we're not in a brown out state
-		if(bod_is_detected(BOD_BOD33)){
-			f_close(dataFile);
-			return;
-		}
+
 		SDI12_RequestSensorReading(&transactionPacket);
 		if(transactionPacket.transactionStatus == SDI12_STATUS_OK){
 			//if the sensor asked us to wait for some time before reading, let's go into sleep mode for it.
 			if(transactionPacket.waitTime > 0){
 				TimedSleepSeconds(&tcInstance, transactionPacket.waitTime);
 			}
-			success = SDI12_GetSensedValues(&transactionPacket, sdiValuesForSensor);
+			SDI12_GetSensedValues(&transactionPacket, sdiValuesForSensor);
 		}
+		
 		for(uint8_t i=0; i< loggerConfig.SDI12_SensorNumValues[sdiIndex];i++){
-			snprintf(parseBuffer, 24, commaFloatFormatStr, success ? sdiValuesForSensor[i] : NAN);
-			
 			//check for brownout before writing to SD card.
-			if(bod_is_detected(BOD_BOD33)){
-				f_close(dataFile);
-				return;
-			}
-			f_puts(parseBuffer, dataFile);
+			WriteDataFileNanOrFloat(sdiValuesForSensor[i], dataFile);
 		}
 		f_sync(dataFile);
 	}
@@ -253,4 +244,23 @@ static inline void InitBodDetection(void){
 	bodConfig.run_in_standby = false;
 	bod_set_config(BOD_BOD33, &bodConfig);
 	bod_disable(BOD_BOD33);
+}
+
+static inline void WriteDataFileNanOrFloat(float value, FIL *datafile){
+	if(!bod_is_detected(BOD_BOD33)){
+		f_putc(',', datafile);
+		if(isnan(value)){
+			f_puts("NAN",datafile);
+		}
+		else{
+			//parse buffer is static so we don't have to realloc every time. It's gonna get overwritten by gcvtf anyway.
+			static char parseBuffer[24];
+			gcvtf(value, FLOAT_TO_STR_PRECISION,parseBuffer);
+			UINT bytesWritten;
+			f_write(datafile,parseBuffer, 24, &bytesWritten);
+		}
+	}
+	else{
+		f_close(datafile);
+	}
 }
