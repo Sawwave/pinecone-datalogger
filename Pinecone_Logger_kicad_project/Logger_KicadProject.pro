@@ -1,4 +1,4 @@
-update=12/14/2016 4:37:06 PM
+update=12/15/2016 1:43:36 PM
 version=1
 last_client=kicad
 [pcbnew]
@@ -23,9 +23,11 @@ ModuleOutlineThickness=0.150000000000
 [cvpcb]
 version=1
 NetIExt=net
+[general]
+version=1
 [eeschema]
 version=1
-LibDir=
+LibDir=../../../../LubrechtLogger KiCad Project
 [eeschema/libraries]
 LibName1=power
 LibName2=device
@@ -56,5 +58,8 @@ LibName26=opto
 LibName27=atmel
 LibName28=contrib
 LibName29=valves
-[general]
-version=1
+LibName30=C:/Users/tim.anderson/Documents/LubrechtLogger KiCad Project/atmel with samd21
+LibName31=C:/Users/tim.anderson/Documents/LubrechtLogger KiCad Project/connectors
+LibName32=C:/Users/tim.anderson/Documents/LubrechtLogger KiCad Project/LubrechtLogger KiCad Project-cache
+LibName33=C:/Users/tim.anderson/Documents/LubrechtLogger KiCad Project/max31856
+LibName34=C:/Users/tim.anderson/Documents/LubrechtLogger KiCad Project/max31856lib
