@@ -1086,7 +1086,7 @@ U 1 1 5864FF3F
 P 7400 2200
 F 0 "J5" H 7300 1250 60  0000 C CNN
 F 1 "OSTVN06A150" H 7500 2100 60  0000 C CNN
-F 2 "Lubrecht_Pcb_footprints:6_pin_junction_term" H 7400 2200 60  0001 C CNN
+F 2 "Lubrecht_Pcb_footprints:6_pin_2.54mm_term" H 7400 2200 60  0001 C CNN
 F 3 "" H 7400 2200 60  0000 C CNN
 	1    7400 2200
 	1    0    0    -1  
