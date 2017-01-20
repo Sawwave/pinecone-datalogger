@@ -1,4 +1,4 @@
-update=12/28/2016 3:49:03 PM
+update=1/9/2017 2:25:42 PM
 version=1
 last_client=kicad
 [pcbnew]
@@ -27,7 +27,7 @@ NetIExt=net
 version=1
 [eeschema]
 version=1
-LibDir=../../../../LubrechtLogger KiCad Project
+LibDir=../Pinecone_Logger_kicad_project
 [eeschema/libraries]
 LibName1=Logger_KicadProject-rescue
 LibName2=power
@@ -59,8 +59,4 @@ LibName27=opto
 LibName28=atmel
 LibName29=contrib
 LibName30=valves
-LibName31=C:/Users/tim.anderson/Documents/LubrechtLogger KiCad Project/atmel with samd21
-LibName32=C:/Users/tim.anderson/Documents/LubrechtLogger KiCad Project/connectors
-LibName33=C:/Users/tim.anderson/Documents/LubrechtLogger KiCad Project/LubrechtLogger KiCad Project-cache
-LibName34=C:/Users/tim.anderson/Documents/LubrechtLogger KiCad Project/max31856
-LibName35=C:/Users/tim.anderson/Documents/LubrechtLogger KiCad Project/max31856lib
+LibName31=Logger_KicadProject-cache
