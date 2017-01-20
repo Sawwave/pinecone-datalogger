@@ -1,4 +1,4 @@
-update=1/20/2017 1:48:50 PM
+update=1/20/2017 2:28:29 PM
 version=1
 last_client=kicad
 [pcbnew]
@@ -27,7 +27,7 @@ NetIExt=net
 version=1
 [eeschema]
 version=1
-LibDir=../Pinecone_Logger_kicad_project
+LibDir=../Pinecone_Logger_kicad_project;../Pinecone_Logger_kicad_project
 [eeschema/libraries]
 LibName1=Logger_KicadProject-rescue
 LibName2=power
