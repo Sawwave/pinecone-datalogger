@@ -49,13 +49,10 @@
 #define CONF_BOARD_H
 
 
-#define USING_SAMD20XPLAINED
-
-
 
 #define SDI12_MAX_SUPPORTED_SENSORS 25
 
-//Also avoid PA30 and PA31, these are for SWCLK and SWDIO respectively
+// avoid PA30 and PA31, these are for SWCLK and SWDIO respectively
 //Put all IN and OUT data GPIOs on the lower 16 pins to make WRCONFIG access easier.
 //pins that are only OUT can be on the top 16
 
@@ -76,13 +73,7 @@ struct LoggerConfig{
 #define SD_DATALOG_FILENAME							"0:data.csv"
 #define SD_CONFIG_FILENAME							"0:lgr.cfg"
 
-#define DEBUG_HEATER_OFF
-
-#ifdef DEBUG_HEATER_OFF
-#define HEATER_TIMED_SLEEP_SECONDS					1
-#else
 #define HEATER_TIMED_SLEEP_SECONDS					60
-#endif
 
 #ifdef USING_SAMD20XPLAINED
 
@@ -117,14 +108,15 @@ struct LoggerConfig{
 #define MAX31856_CS_PIN								PIN_PA17
 
 #define SD_SERCOM_MODULE							SERCOM0
-#define SD_PINMUX_SETTING							SPI_SIGNAL_MUX_SETTING_E
-#define SD_SPI_PIN0									PINMUX_PA04D_SERCOM0_PAD0
-#define SD_SPI_PIN1									PINMUX_PA05D_SERCOM0_PAD1
-#define SD_SPI_PIN2									PINMUX_PA06D_SERCOM0_PAD2
-#define SD_SPI_PIN3									PINMUX_PA07D_SERCOM0_PAD3
-#define SD_CS_PIN									PIN_PA05
+#define SD_PINMUX_SETTING							SPI_SIGNAL_MUX_SETTING_K	//chip detect on unused PA08, SCK, MISO, MOSI, and CD on PA0
+#define SD_SPI_PIN0									PINMUX_PA04D_SERCOM0_PAD0	//chip detect
+#define SD_SPI_PIN1									PINMUX_PA05D_SERCOM0_PAD1	//SCK
+#define SD_SPI_PIN2									PINMUX_PA06D_SERCOM0_PAD2	//MISO
+#define SD_SPI_PIN3									PINMUX_PA07D_SERCOM0_PAD3	//MOSI
+#define SD_CS_PIN									PIN_PA14
 #define SD_PIN_DETECT_LEVEL							0
-#define SD_PIN_DETECT								PIN_PB05
+#define SD_PIN_DETECT								PIN_PA11
+#define SD_PIN_DETECT								PIN_PA11
 
 //Mosfet PINS
 #define SDI_DHT22_POWER_MOSFET_PINMASK				1 << 27	//PIN_PA24
@@ -164,23 +156,23 @@ struct LoggerConfig{
 
 
 #define MAX31856_SPI_SERCOM_MODULE					SERCOM1
-#define MAX31856_SPI_PINMUX_SETTING					SPI_SIGNAL_MUX_SETTING_E
-#define MAX31856_SPI_PAD0							PINMUX_PA16C_SERCOM1_PAD0
-#define MAX31856_SPI_PAD1							PINMUX_PA17C_SERCOM1_PAD1
-#define MAX31856_SPI_PAD2							PINMUX_PA18C_SERCOM1_PAD2
-#define MAX31856_SPI_PAD3							PINMUX_PA19C_SERCOM1_PAD3
+#define MAX31856_SPI_PINMUX_SETTING					SPI_SIGNAL_MUX_SETTING_K
+#define MAX31856_SPI_PAD0							PINMUX_PA16C_SERCOM1_PAD0	//CD
+#define MAX31856_SPI_PAD1							PINMUX_PA17C_SERCOM1_PAD1	//SCK
+#define MAX31856_SPI_PAD2							PINMUX_PA18C_SERCOM1_PAD2	//MISO
+#define MAX31856_SPI_PAD3							PINMUX_PA19C_SERCOM1_PAD3	//MOSI
 #define MAX31856_CS_PIN								PIN_PA17
 
 #define SD_SERCOM_MODULE							SERCOM0
-#define SD_PINMUX_SETTING							SPI_SIGNAL_MUX_SETTING_E
-#define SD_SPI_PIN0									PINMUX_PA04D_SERCOM0_PAD0
-#define SD_SPI_PIN1									PINMUX_PA05D_SERCOM0_PAD1
-#define SD_SPI_PIN2									PINMUX_PA06D_SERCOM0_PAD2
-#define SD_SPI_PIN3									PINMUX_PA07D_SERCOM0_PAD3
-#define SD_CS_PIN									PIN_PA05
+#define SD_PINMUX_SETTING							SPI_SIGNAL_MUX_SETTING_K	//chip detect on unused PA08, SCK, MISO, MOSI, and CD on PA0
+#define SD_SPI_PIN0									PINMUX_PA04D_SERCOM0_PAD0	//chip detect
+#define SD_SPI_PIN1									PINMUX_PA05D_SERCOM0_PAD1	//SCK
+#define SD_SPI_PIN2									PINMUX_PA06D_SERCOM0_PAD2	//MISO
+#define SD_SPI_PIN3									PINMUX_PA07D_SERCOM0_PAD3	//MOSI
+#define SD_CS_PIN									PIN_PA14
 #define SD_PIN_DETECT_LEVEL							0
-
-#define SD_PIN_DETECT								PIN_PA15
+#define SD_PIN_DETECT								PIN_PA11
+#define SD_PIN_DETECT								PIN_PA11
 
 //Mosfet PINS
 #define SDI_DHT22_POWER_MOSFET_PINMASK				1 << 24	//PIN_PA24
