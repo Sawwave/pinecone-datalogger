@@ -62,11 +62,11 @@ Text GLabel 13350 2450 2    39   BiDi ~ 0
 DHT22_1
 Text GLabel 13350 2550 2    39   BiDi ~ 0
 DHT22_2
-Text GLabel 13350 2050 2    39   Output ~ 0
-DS1302_SCLK
-Text GLabel 13350 2150 2    39   BiDi ~ 0
-DS1302_IO
 Text GLabel 13350 1950 2    39   Output ~ 0
+DS1302_SCLK
+Text GLabel 13350 2050 2    39   BiDi ~ 0
+DS1302_IO
+Text GLabel 13350 2150 2    39   Output ~ 0
 DS1302_CE
 Text GLabel 8850 5950 2    39   Output ~ 0
 MAX31856_SERCOM_PAD0_MISO

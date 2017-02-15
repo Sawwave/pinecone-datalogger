@@ -1,8 +1,8 @@
-(module hirose-dm3at (layer F.Cu) (tedit 586D8058)
-  (fp_text reference J3 (at -5.842 10.668) (layer F.SilkS)
-    (effects (font (size 2.80416 2.10312) (thickness 0.35052)))
+(module hirose-dm3at (layer F.Cu) (tedit 5891110C)
+  (fp_text reference J3 (at 0 -2.4) (layer F.SilkS)
+    (effects (font (size 1 1) (thickness 0.15)))
   )
-  (fp_text value DM3AT-SF-PEJM5 (at -5.277104 14.049502) (layer F.SilkS)
+  (fp_text value "" (at -5.277104 14.049502) (layer Cmts.User) hide
     (effects (font (size 2.80416 2.10312) (thickness 0.35052)))
   )
   (fp_line (start 0.200152 5.999988) (end 0.200152 4.400042) (layer F.SilkS) (width 0.0508))
