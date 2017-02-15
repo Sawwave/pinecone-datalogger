@@ -110,21 +110,19 @@ int main (void)
 
 static inline void MainLoop(void){
 	while(1){		
-		PORTA.OUTSET.reg = DENDRO_TC_AMP_MOSFET_PINMASK;
+		PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;
 		RunSapFluxSystem();
 		ReadDendrometers();
-		
-		//turn of dendro/tc, and turn on SDI-12 bus and DHT22s. mark the DHT22 data pins as HIGH to start, too.
-		PORTA.OUTTGL.reg = DENDRO_TC_AMP_MOSFET_PINMASK | SDI_DHT22_POWER_MOSFET_PINMASK | DHT22_ALL_PINMASK;
+		PORTA.OUTTGL.reg = PWR_3V3_POWER_ENABLE | PWR_5V_POWER_ENABLE;
 		//sleep 2s, required for the DHT22 to function properly.
 		TimedSleepSeconds(&tcInstance, 2);
 		GetDht22Reading(&(LogValues[LOG_VALUES_DHT_INDEX]), &(LogValues[LOG_VALUES_DHT_INDEX + 1]), DHT22_1_PINMASK);
 		GetDht22Reading(&(LogValues[LOG_VALUES_DHT_INDEX + 2] ), &(LogValues[LOG_VALUES_DHT_INDEX + 3]), DHT22_2_PINMASK);
 
 		//turn off the power to the SDI12 bus, the DHT22s, and stop sending HIGH on the DHT22 data lines.
-		PORTA.OUTCLR.reg = DHT22_ALL_PINMASK;
+		PORTA.OUTCLR.reg = ALL_POWER_ENALBE;
 		Ds1302GetDateTime(dateTimeBuffer);
-		PORTA.OUTSET.reg = SD_CARD_MOSFET_PINMASK;
+		PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;
 		
 		FIL dataFile;
 		bod_enable(BOD_BOD33);
@@ -139,7 +137,7 @@ static inline void MainLoop(void){
 		bod_disable(BOD_BOD33);
 		bod_clear_detected(BOD_BOD33);
 		
-		PORTA.OUTCLR.reg = ALL_MOSFET_PINMASK;
+		PORTA.OUTCLR.reg = ALL_POWER_ENALBE;
 		
 		TimedSleepSeconds(&tcInstance, loggerConfig.loggingInterval);
 	}
@@ -198,10 +196,10 @@ static inline void RunSapFluxSystem(void){
 	ReadThermocouples(&(LogValues[LOG_VALUES_TC_BEFORE_INDEX]));
 	
 	//turn on heater, and turn off dendro/tc. Then, sleep for the heater duration.
-	PORTA.OUTTGL.reg = HEATER_MOSFET_PINMASK | DENDRO_TC_AMP_MOSFET_PINMASK;
+	PORTA.OUTSET.reg = HEATER_MOSFET_PINMASK;
 	TimedSleepSeconds(&tcInstance, HEATER_TIMED_SLEEP_SECONDS);
 	//turn heater off, and dendro/tc back on.
-	PORTA.OUTTGL.reg = HEATER_MOSFET_PINMASK | DENDRO_TC_AMP_MOSFET_PINMASK;
+	PORTA.OUTCLR.reg = HEATER_MOSFET_PINMASK;
 	
 	ReadThermocouples(&(LogValues[LOG_VALUES_TC_AFTER_INDEX]));
 }
