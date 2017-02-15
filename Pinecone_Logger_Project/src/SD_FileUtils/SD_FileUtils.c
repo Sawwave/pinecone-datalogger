@@ -7,10 +7,8 @@
 #include "SD_FileUtils/SD_FileUtils.h"
 #include "DS1302/DS1302.h"
 
-
 static void SD_FileCreateWithHeader(const struct LoggerConfig *loggerConf);
 static bool CheckAndFixLastFileLineIntegrity(const uint16_t expectedValues);
-
 
 #ifdef SD_FILE_UTILS_UNIT_TEST
 #define SD_DEBUG_FILE "0:debug.txt"
@@ -29,18 +27,20 @@ second argument, fileResult, will show the result state of the attempted mount.
 */
 void SdCardInit(FATFS *fatFileSys)
 {
-	//TODO: add checking for replugging card
 	FRESULT res;
-	sd_mmc_init();
-	Ctrl_status checkStatus;
-	do{
-		checkStatus = sd_mmc_test_unit_ready(0);
-	} while (checkStatus != CTRL_GOOD);
-	
-	memset(fatFileSys, 0, sizeof(FATFS));
-	res = f_mount(SD_VOLUME_NUMBER, fatFileSys);
-	if(res !=  FR_OK){
-		checkStatus = CTRL_FAIL;
+	while(res != FR_OK){
+		//TODO: add checking for replugging card
+		sd_mmc_init();
+		Ctrl_status checkStatus;
+		do{
+			checkStatus = sd_mmc_test_unit_ready(0);
+		} while (checkStatus != CTRL_GOOD);
+		
+		memset(fatFileSys, 0, sizeof(FATFS));
+		res = f_mount(SD_VOLUME_NUMBER, fatFileSys);
+		if(res !=  FR_OK){
+			checkStatus = CTRL_FAIL;
+		}
 	}
 }
 
@@ -146,10 +146,8 @@ first line:
 0000 is the number of minutes between readings that the sensor will sleep
 
 second line:
-DT
-first character may be letter i or d, and specifies if the sensor takes the reading immediately on waking up(i), or defers logging until after the sleep interval(d).
-this character is not case sensitive.
-second character specifies the type of thermocouples used. Acceptable characters are any of the following: BEJKNRST .
+T
+First character specifies the type of thermocouples used. Acceptable characters are any of the following: BEJKNRST .
 This character is not case sensitive.
 
 Third Line
@@ -162,7 +160,6 @@ Fourth line:
 void ReadConfigFile(struct LoggerConfig *config){
 	//set config defaults
 	config->loggingInterval = 3600; //1 hour
-	config->logImmediately = false;
 	config->numSdiSensors = 0;
 	config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_K;
 	
@@ -195,27 +192,28 @@ void ReadConfigFile(struct LoggerConfig *config){
 		char *ptrToIntervalBuffer = &(intervalBuffer[0]);
 		config->loggingInterval = strtol(ptrToIntervalBuffer, &ptrToIntervalBuffer, 10);
 		
-		if(flagBuffer[0] == 'd' || flagBuffer[0] == 'D'){
-			config->logImmediately = false;
-		}
-		else{
-			config->logImmediately = true;
-		}
 		switch(flagBuffer[1]){
 			case 'b': case 'B':
-			config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_B; break;
+			config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_B;
+			break;
 			case 'e': case 'E':
-			config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_E; break;
+			config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_E;
+			break;
 			case 'j': case 'J':
-			config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_J; break;
+			config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_J;
+			break;
 			case 'k': case 'K':
-			config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_K; break;
+			config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_K;
+			break;
 			case 'n': case 'N':
-			config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_N; break;
+			config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_N;
+			break;
 			case 'r': case 'R':
-			config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_R; break;
+			config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_R;
+			break;
 			case 's': case 'S':
-			config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_S; break;
+			config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_S;
+			break;
 			//T is the only one left, so set that as default
 			default:
 			config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_T;

@@ -87,7 +87,7 @@
 /* To enable string functions, set _USE_STRFUNC to 1 or 2. */
 
 
-#define    _USE_MKFS        1    /* 0:Disable or 1:Enable */
+#define    _USE_MKFS        0    /* 0:Disable or 1:Enable */
 /* To enable f_mkfs function, set _USE_MKFS to 1 and set _FS_READONLY to 0 */
 
 
@@ -136,7 +136,7 @@
 */
 
 #define    _USE_LFN    1        /* 0 to 3 */
-#define    _MAX_LFN    255        /* Maximum LFN length to handle (12 to 255) */
+#define    _MAX_LFN    32        /* Maximum LFN length to handle (12 to 255) */
 /* The _USE_LFN option switches the LFN support.
 /
 /   0: Disable LFN feature. _MAX_LFN and _LFN_UNICODE have no effect.

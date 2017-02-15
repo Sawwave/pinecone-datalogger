@@ -42,7 +42,7 @@
 
 //number of loggable values, outside of datetime and sdi-12 values
 #define NUM_LOG_VALUES						14
-#define LOG_VALUES_TC_BEFORE_INDEX			0
+#define LOG_VALUES_TC_BEFORE_INDEX 			0
 #define LOG_VALUES_TC_AFTER_INDEX			4
 #define LOG_VALUES_DHT_INDEX				8
 #define LOG_VALUES_DEND_INDEX				12
@@ -80,37 +80,32 @@ int main (void)
 	irq_initialize_vectors();
 	cpu_irq_enable();
 	
+	InitSleepTimerCounter(&tcInstance);
+	InitBodDetection();
 	//if we just woke up, and we're in brownout, wait 10 minutes until we try to start. This allows
 	//a solar panel to gather some energy
 	while(bod_is_detected(BOD_BOD33)){
-		TimedSleepSeconds(600);
+		bod_clear_detected(BOD_BOD33);
+		TimedSleepSeconds(&tcInstance,600);
 	}
+	bod_disable(BOD_BOD33);
 	
-	InitSleepTimerCounter(&tcInstance);
-	InitBodDetection();
 	ConfigureDendroADC(&adcModule);
 	
 	//wake up the SD card
-	PORTA.OUTSET.reg = SD_CARD_MOSFET_PINMASK;
+	PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;
 	SdCardInit(&fatFileSys);
 	TryReadTimeFile();
 	ReadConfigFile(&loggerConfig);
 	
-	/*If the configuration is set to defer logging for one sleep cycle, accomplish that sleep here.*/
-	if(!loggerConfig.logImmediately){
-		PORTA.OUTCLR.reg = ALL_MOSFET_PINMASK;
-		TimedSleepSeconds(&tcInstance, loggerConfig.loggingInterval);
-	}
-	
-	
 	Max31856ConfigureSPI(&spiMasterModule, &spiSlaveInstance);
 	
 	
-	PORTA.OUTSET.reg = SD_CARD_MOSFET_PINMASK;
+	PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;
 	SD_CreateWithHeaderIfMissing(&loggerConfig);
 	
 	/*remove power to the SD/MMC card, we'll re enable it when it's time to write the reading.*/
-	PORTA.OUTCLR.reg = ALL_MOSFET_PINMASK;
+	PORTA.OUTCLR.reg = ALL_POWER_ENALBE;
 	
 	MainLoop();
 }

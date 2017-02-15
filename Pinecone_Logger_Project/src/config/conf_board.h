@@ -50,7 +50,7 @@
 
 
 
-#define SDI12_MAX_SUPPORTED_SENSORS 25
+#define SDI12_MAX_SUPPORTED_SENSORS 16
 
 // avoid PA30 and PA31, these are for SWCLK and SWDIO respectively
 //Put all IN and OUT data GPIOs on the lower 16 pins to make WRCONFIG access easier.
@@ -63,7 +63,6 @@ struct LoggerConfig{
 	uint8_t SDI12_SensorNumValues[SDI12_MAX_SUPPORTED_SENSORS];
 	uint8_t numSdiSensors;
 	uint16_t loggingInterval;
-	bool logImmediately;
 	uint8_t thermocoupleType;
 };
 
