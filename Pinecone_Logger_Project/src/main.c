@@ -75,9 +75,16 @@ int main (void)
 {
 	//Initialize SAM D20 on-chip hardware
 	system_init();
+	bod_enable(BOD_BOD33);
 	delay_init();
 	irq_initialize_vectors();
 	cpu_irq_enable();
+	
+	//if we just woke up, and we're in brownout, wait 10 minutes until we try to start. This allows
+	//a solar panel to gather some energy
+	while(bod_is_detected(BOD_BOD33)){
+		TimedSleepSeconds(600);
+	}
 	
 	InitSleepTimerCounter(&tcInstance);
 	InitBodDetection();
