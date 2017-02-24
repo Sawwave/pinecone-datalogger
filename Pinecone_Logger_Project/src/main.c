@@ -90,11 +90,12 @@ int main (void)
 	}
 	bod_disable(BOD_BOD33);
 	
-	ConfigureDendroADC(&adcModule);
-	
 	//wake up the SD card
 	PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;
-	SdCardInit(&fatFileSys);
+	while(1);
+	ConfigureDendroADC(&adcModule);
+	PORTA.OUTCLR.reg = PWR_3V3_POWER_ENABLE;
+	SdCardInit(&fatFileSys;)
 	TryReadTimeFile();
 	ReadConfigFile(&loggerConfig);
 	
@@ -105,7 +106,7 @@ int main (void)
 	SD_CreateWithHeaderIfMissing(&loggerConfig);
 	
 	/*remove power to the SD/MMC card, we'll re enable it when it's time to write the reading.*/
-	PORTA.OUTCLR.reg = ALL_POWER_ENALBE;
+	PORTA.OUTCLR.reg = ALL_POWER_ENABLE;
 	
 	MainLoop();
 }
@@ -122,7 +123,7 @@ static inline void MainLoop(void){
 		GetDht22Reading(&(LogValues[LOG_VALUES_DHT_INDEX + 2] ), &(LogValues[LOG_VALUES_DHT_INDEX + 3]), DHT22_2_PINMASK);
 
 		//turn off the power to the SDI12 bus, the DHT22s, and stop sending HIGH on the DHT22 data lines.
-		PORTA.OUTCLR.reg = ALL_POWER_ENALBE;
+		PORTA.OUTCLR.reg = ALL_POWER_ENABLE;
 		Ds1302GetDateTime(dateTimeBuffer);
 		PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;
 		
@@ -139,7 +140,7 @@ static inline void MainLoop(void){
 		bod_disable(BOD_BOD33);
 		bod_clear_detected(BOD_BOD33);
 		
-		PORTA.OUTCLR.reg = ALL_POWER_ENALBE;
+		PORTA.OUTCLR.reg = ALL_POWER_ENABLE;
 		
 		TimedSleepSeconds(&tcInstance, loggerConfig.loggingInterval);
 	}

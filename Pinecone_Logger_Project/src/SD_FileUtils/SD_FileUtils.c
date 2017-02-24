@@ -28,8 +28,7 @@ second argument, fileResult, will show the result state of the attempted mount.
 void SdCardInit(FATFS *fatFileSys)
 {
 	FRESULT res;
-	while(res != FR_OK){
-		//TODO: add checking for replugging card
+	do{
 		sd_mmc_init();
 		Ctrl_status checkStatus;
 		do{
@@ -37,11 +36,12 @@ void SdCardInit(FATFS *fatFileSys)
 		} while (checkStatus != CTRL_GOOD);
 		
 		memset(fatFileSys, 0, sizeof(FATFS));
+		
 		res = f_mount(SD_VOLUME_NUMBER, fatFileSys);
 		if(res !=  FR_OK){
 			checkStatus = CTRL_FAIL;
 		}
-	}
+	}while(res != FR_OK);
 }
 
 /* tryReadTimeFile
@@ -52,7 +52,7 @@ comma is suggested, but any non-numeric, non +- non \n, character should work as
 returns false if file didn't exist, or there was an error.
 */
 void TryReadTimeFile(void){
-	struct Ds1302DateTime dateTime;
+	
 
 	FIL fileObj;
 	//see if we can talk to the SD card
@@ -65,7 +65,7 @@ void TryReadTimeFile(void){
 		f_read(&fileObj, buf, timeBufferLen, &numBytesRead);
 		f_close(&fileObj);
 		if(numBytesRead >= timeBufferLen){
-			
+			struct Ds1302DateTime dateTime;
 			//convert two digit strings to values.
 			dateTime.hours = (buf[1]- '0') + ((buf[0]- '0')*10);
 			dateTime.minutes = (buf[4]- '0') + ((buf[3]- '0')*10);

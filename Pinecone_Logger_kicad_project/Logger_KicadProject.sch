@@ -847,7 +847,7 @@ F 3 "" H 10000 2450 50  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L BS170 Q2
+L BS170-RESCUE-Logger_KicadProject Q2
 U 1 1 586F1125
 P 3600 3700
 F 0 "Q2" H 3800 3775 50  0000 L CNN
@@ -858,7 +858,7 @@ F 3 "" H 3600 3700 50  0000 L CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L BS170 Q3
+L BS170-RESCUE-Logger_KicadProject Q3
 U 1 1 586F13C8
 P 6500 3300
 F 0 "Q3" H 6700 3375 50  0000 L CNN
@@ -869,7 +869,7 @@ F 3 "" H 6500 3300 50  0000 L CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L BS170 Q1
+L BS170-RESCUE-Logger_KicadProject Q1
 U 1 1 586F152B
 P 11250 8800
 F 0 "Q1" H 11450 8875 50  0000 L CNN
@@ -880,7 +880,7 @@ F 3 "" H 11250 8800 50  0000 L CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L BS170 Q4
+L BS170-RESCUE-Logger_KicadProject Q4
 U 1 1 586F15E8
 P 6500 4000
 F 0 "Q4" H 6700 4075 50  0000 L CNN

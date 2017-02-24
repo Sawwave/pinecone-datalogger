@@ -23,7 +23,6 @@ typedef struct Ds1302DateTime{
 	uint8_t date;
 	uint8_t month;
 	uint8_t year;
-	uint8_t dayOfWeek;
 } Ds1302DateTime;
 
 

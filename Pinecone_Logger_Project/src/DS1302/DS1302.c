@@ -49,7 +49,7 @@ void Ds1302SetDateTime(const Ds1302DateTime *dateTime){
 	Ds1302WriteByte(Ds1302ByteEncode(dateTime->hours | (1 << 7)));	//makes sure to set clock to 24 hr mode
 	Ds1302WriteByte(Ds1302ByteEncode(dateTime->date));
 	Ds1302WriteByte(Ds1302ByteEncode(dateTime->month));
-	Ds1302WriteByte(Ds1302ByteEncode(dateTime->dayOfWeek));
+	Ds1302WriteByte(Ds1302ByteEncode(0));//we don't care about day of week
 	Ds1302WriteByte(Ds1302ByteEncode(dateTime->year));
 	//re-enable write protect
 	Ds1302WriteByte(DS1302_ENABLE_WRITE_PROTECT_VALUE);
