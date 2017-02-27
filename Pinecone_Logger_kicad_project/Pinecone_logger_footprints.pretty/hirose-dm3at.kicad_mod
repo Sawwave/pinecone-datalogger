@@ -1,8 +1,8 @@
-(module hirose-dm3at (layer F.Cu) (tedit 5891110C)
+(module hirose-dm3at (layer F.Cu) (tedit 58B475ED)
   (fp_text reference J3 (at 0 -2.4) (layer F.SilkS)
     (effects (font (size 1 1) (thickness 0.15)))
   )
-  (fp_text value "" (at -5.277104 14.049502) (layer Cmts.User) hide
+  (fp_text value DM3AT-SF-PEJM5 (at -5.277104 14.049502) (layer Cmts.User) hide
     (effects (font (size 2.80416 2.10312) (thickness 0.35052)))
   )
   (fp_line (start 0.200152 5.999988) (end 0.200152 4.400042) (layer F.SilkS) (width 0.0508))
@@ -208,7 +208,7 @@
     (solder_mask_margin 0.127) (clearance 0.254))
   (pad 10 smd rect (at -9.59993 14.049756 270) (size 2.80035 0.999998) (layers F.Cu F.Paste F.Mask)
     (solder_mask_margin 0.127) (clearance 0.254))
-  (pad M1 smd rect (at 3.899916 14.500225 270) (size 1.900174 1.299972) (layers F.Cu F.Paste F.Mask)
+  (pad M2 smd rect (at 3.899916 14.500225 270) (size 1.900174 1.299972) (layers F.Cu F.Paste F.Mask)
     (solder_mask_margin 0.127) (clearance 0.254))
   (pad M1 smd rect (at 1.549654 -0.600202 270) (size 1.20015 0.999998) (layers F.Cu F.Paste F.Mask)
     (solder_mask_margin 0.127) (clearance 0.254))
