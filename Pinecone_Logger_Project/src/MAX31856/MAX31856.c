@@ -114,7 +114,7 @@ enum Max31856_Status Max31856GetTemp(struct spi_module *spiMasterModule, struct 
 	if(status == STATUS_OK){
 		uint32_t intTemp = ((uint32_t)receiveBuffer[1] << 16) | ((uint32_t)receiveBuffer[2] << 8) | ((uint32_t)receiveBuffer[3]);
 		//get the temp sign, and cast it away.
-		register uint32_t sign = receiveBuffer[1] >> 7;
+		uint32_t sign = receiveBuffer[1] >> 7;
 		//mask away the highest byte, and the sign bit
 		intTemp >>= 5;
 
@@ -126,7 +126,7 @@ enum Max31856_Status Max31856GetTemp(struct spi_module *spiMasterModule, struct 
 		
 		//check the fault byte
 		uint8_t faultByte = receiveBuffer[4];
-		if(faultByte & 0x01){
+		if(faultByte & 0x01){ 
 			*outTemp = NAN;
 			return MAX31856_TC_NOT_CONNECTED;
 		}

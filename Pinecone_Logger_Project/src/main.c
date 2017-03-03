@@ -59,6 +59,8 @@ static inline void QueryAndRecordSdiValues(FIL *dataFile);
 static inline void InitBodDetection(void);
 static inline void WriteDataFileNanOrFloat(float value, FIL *datafile);
 
+static inline void DEBUG_LOOP(void);
+
 static struct spi_module spiMasterModule;
 static struct spi_slave_inst spiSlaveInstance;
 static struct adc_module adcModule;
@@ -92,27 +94,23 @@ int main (void)
 	
 	//wake up the SD card
 	PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;
-	while(1);
 	ConfigureDendroADC(&adcModule);
-	PORTA.OUTCLR.reg = PWR_3V3_POWER_ENABLE;
-	SdCardInit(&fatFileSys;)
-	TryReadTimeFile();
+	SdCardInit(&fatFileSys);
+	//TryReadTimeFile();
 	ReadConfigFile(&loggerConfig);
+	//SD_CreateWithHeaderIfMissing(&loggerConfig);
 	
 	Max31856ConfigureSPI(&spiMasterModule, &spiSlaveInstance);
-	
-	
-	PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;
-	SD_CreateWithHeaderIfMissing(&loggerConfig);
 	
 	/*remove power to the SD/MMC card, we'll re enable it when it's time to write the reading.*/
 	PORTA.OUTCLR.reg = ALL_POWER_ENABLE;
 	
-	MainLoop();
+	//MainLoop();
+	DEBUG_LOOP();
 }
 
 static inline void MainLoop(void){
-	while(1){		
+	while(1){
 		PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;
 		RunSapFluxSystem();
 		ReadDendrometers();
@@ -221,12 +219,14 @@ static inline void ReadThermocouples(float *tcValuesOut){
 			//enter standby mode until the reading has been prepared (a bit under 1s)
 			TimedSleepSeconds(&tcInstance, 1);
 			//if successful, Max31856GetTemp will set the out value to the temperature. Otherwise, it will be NAN.
-			Max31856GetTemp(&spiMasterModule, &spiSlaveInstance, &(tcValuesOut[index]));
+			float tempValue;
+			Max31856GetTemp(&spiMasterModule, &spiSlaveInstance, &tempValue);
+			tcValuesOut[index] = tempValue;
 		}
 		else{
 			tcValuesOut[index] = NAN;
 		}
-		PORTA.OUTTGL.reg = ((index & 1) != 0)? TC_MUX_SELECT_ALL_PINMASK : TC_MUX_SELECT_A_PINMASK;
+		PORTA.OUTTGL.reg = (index & 1)? TC_MUX_SELECT_ALL_PINMASK : TC_MUX_SELECT_A_PINMASK;
 	}
 	spi_disable(&spiMasterModule);
 }
@@ -254,8 +254,7 @@ static inline void WriteDataFileNanOrFloat(float value, FIL *datafile){
 			f_puts("NAN",datafile);
 		}
 		else{
-			//parse buffer is static so we don't have to realloc every time. It's gonna get overwritten by gcvtf anyway.
-			static char parseBuffer[24];
+			char parseBuffer[24];
 			gcvtf(value, FLOAT_TO_STR_PRECISION, parseBuffer);
 			f_puts(parseBuffer, datafile);
 		}
@@ -263,4 +262,33 @@ static inline void WriteDataFileNanOrFloat(float value, FIL *datafile){
 	else{
 		f_close(datafile);
 	}
+}
+
+static inline void DEBUG_LOOP(void){
+	
+	PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;
+	while(1){
+		ReadThermocouples(LogValues);
+		FIL datafile;
+		FRESULT status = f_open(&datafile, "tcvals.txt",  FA_OPEN_ALWAYS | FA_WRITE);
+		f_lseek(&datafile, f_size(&datafile));	//append to the end of the file.
+		static char parseBuffer[24];
+		if(status == FR_OK){
+			for(uint8_t i = 0;i<4;i++){
+				if(isnan(LogValues[i])){
+					f_puts("NAN, ",&datafile);
+				}
+				else{
+					gcvtf(LogValues[i], FLOAT_TO_STR_PRECISION, parseBuffer);
+					f_puts(parseBuffer, &datafile);
+					f_puts(", ", &datafile);
+				}
+			}
+			f_puts("\n", &datafile);
+			f_close(&datafile);
+		}
+		delay_s(1);
+	}
+	PORTA.OUTCLR.reg = PWR_3V3_POWER_ENABLE;
+	
 }
