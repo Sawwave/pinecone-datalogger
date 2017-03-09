@@ -1,0 +1,44 @@
+EESchema-LIBRARY Version 2.3
+#encoding utf-8
+#
+# BARREL_JACK-RESCUE-Logger_KicadProject
+#
+DEF BARREL_JACK-RESCUE-Logger_KicadProject CON 0 40 Y Y 1 F N
+F0 "CON" 0 250 50 H V C CNN
+F1 "BARREL_JACK-RESCUE-Logger_KicadProject" 0 -200 50 H V C CNN
+F2 "" 0 0 50 H V C CNN
+F3 "" 0 0 50 H V C CNN
+DRAW
+A -300 99 49 -900 1788 0 1 0 N -300 50 -350 100
+A -300 101 49 900 -1788 0 1 0 N -300 150 -350 100
+S 100 150 0 50 0 1 0 N
+P 2 0 1 0  -300 50  0 50 N
+P 2 0 1 0  0 150  -300 150 N
+P 3 0 1 0  100 0  -50 0  -50 -100 N
+P 5 0 1 0  100 -100  -150 -100  -200 -50  -250 -100  -350 -100 N
+X ~ 1 300 100 200 L 50 50 1 1 w
+X ~ 2 300 -100 200 L 50 50 1 1 w
+X ~ 3 300 0 200 L 50 50 1 1 w
+ENDDRAW
+ENDDEF
+#
+# Battery-RESCUE-Logger_KicadProject
+#
+DEF Battery-RESCUE-Logger_KicadProject BT 0 0 N Y 1 F N
+F0 "BT" 100 50 50 H V L CNN
+F1 "Battery-RESCUE-Logger_KicadProject" 100 -50 50 H V L CNN
+F2 "" 0 40 50 V V C CNN
+F3 "" 0 40 50 V V C CNN
+DRAW
+S -90 -7 90 -17 0 1 0 F
+S -90 50 90 40 0 1 0 F
+S -62 -30 58 -50 0 1 0 F
+S -62 27 58 7 0 1 0 F
+P 2 0 1 10  20 95  60 95 N
+P 2 0 1 10  40 115  40 75 N
+X ~ 1 0 150 100 D 50 50 1 1 w
+X ~ 2 0 -150 100 U 50 50 1 1 W
+ENDDRAW
+ENDDEF
+#
+#End Library
