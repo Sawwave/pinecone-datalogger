@@ -48,7 +48,6 @@
 #ifndef CONF_BOARD_H
 #define CONF_BOARD_H
 
-#define FIRST_PRINT_PINSET
 
 #define SDI12_MAX_SUPPORTED_SENSORS 16
 
@@ -193,6 +192,9 @@ struct LoggerConfig{
 
 
 #else
+#define DS3231_SERCOM_MODULE						SERCOM3
+#define DS3231_SERCOM_SDA_PIN						PINMUX_PA22C_SERCOM3_PAD0
+#define DS3231_SERCOM_SCL_PIN						PINMUX_PA23C_SERCOM3_PAD1
 
 #define DHT22_1_PINMASK								1 << 6							// PIN_PA07
 #define DHT22_2_PINMASK								1 << 7							// PIN_PA08
