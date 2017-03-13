@@ -75,6 +75,13 @@ static float LogValues[NUM_LOG_VALUES];
 
 int main (void)
 {
+	
+	rawData = {...}
+	filteredData = {0...}
+		filtereddata = rawData + shiftedFilteredData*scalar
+		rawData += shiftedFilteredData * scalar;
+		
+	
 	//Initialize SAM D20 on-chip hardware
 	system_init();
 	bod_enable(BOD_BOD33);
