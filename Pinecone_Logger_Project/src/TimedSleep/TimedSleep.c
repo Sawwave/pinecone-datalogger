@@ -11,9 +11,10 @@
 #include <tc_interrupt.h>
 #include <sleepmgr.h>
 #include <power.h>
+#include <extint.h>
 
 #define TIMED_SLEEP_TC_HARDWARE TC2
-static void SleepEndFunction(struct tc_module *const module);
+static void TimerCounterSleepEndFunc(struct tc_module *const module);
 
 /*initSleepTimerCounter
 Sets up TimerCounters 4 and 5 to work together as a 32-bit timer.
@@ -29,7 +30,7 @@ void InitSleepTimerCounter(struct tc_module *tc_instance){
 	tcConfig.oneshot = true;
 	tcConfig.run_in_standby = true;
 	tc_init(tc_instance, TIMED_SLEEP_TC_HARDWARE, &tcConfig);
-	tc_register_callback(tc_instance, SleepEndFunction, TC_CALLBACK_CC_CHANNEL0);
+	tc_register_callback(tc_instance, TimerCounterSleepEndFunc, TC_CALLBACK_CC_CHANNEL0);
 	tc_enable_callback(tc_instance, TC_CALLBACK_CC_CHANNEL0);
 }
 
@@ -37,7 +38,7 @@ void InitSleepTimerCounter(struct tc_module *tc_instance){
 Function that will be run as a callback when the sleep TimerCounter finishes.
 Implicitly, by running this as a callback, the device will leave whatever low power mode it was in.
 Function will disable the TimerCounter.*/
-static void SleepEndFunction(struct tc_module *const module){
+static void TimerCounterSleepEndFunc(struct tc_module *const module){
 	tc_disable(module);
 }
 
