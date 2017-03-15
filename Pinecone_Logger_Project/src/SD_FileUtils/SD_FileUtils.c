@@ -46,38 +46,27 @@ void SdCardInit(FATFS *fatFileSys)
 
 /* tryReadTimeFile
 attempts to read the time file, whose filename is defined in boardconf.h.
-File should be in format hh,mm,ss,mm,dd,yyyy
+File should be in format mm/dd/yyyy,hh:mm:ss
 comma is suggested, but any non-numeric, non +- non \n, character should work as a separator.
 
 returns false if file didn't exist, or there was an error.
 */
-void TryReadTimeFile(void){
+bool TryReadTimeFile(char timeBuffer[19]){
 	
-
 	FIL fileObj;
 	//see if we can talk to the SD card
 	FRESULT status = f_open(&fileObj, SD_TIME_FILENAME, FA_READ | FA_OPEN_EXISTING);
 	if(status == FR_OK){
 		//reads until \n in found, or until buff is filled
 		UINT numBytesRead;
-		const uint8_t timeBufferLen = 17;
-		char buf[timeBufferLen];
-		f_read(&fileObj, buf, timeBufferLen, &numBytesRead);
+		const uint8_t timeBufferLen = 19;
+		f_read(&fileObj, timeBuffer, timeBufferLen, &numBytesRead);
 		f_close(&fileObj);
-		if(numBytesRead >= timeBufferLen){
-			struct Ds1302DateTime dateTime;
-			//convert two digit strings to values.
-			dateTime.hours = (buf[1]- '0') + ((buf[0]- '0')*10);
-			dateTime.minutes = (buf[4]- '0') + ((buf[3]- '0')*10);
-			dateTime.seconds = (buf[7]- '0') + ((buf[6]- '0')*10);
-			dateTime.month = (buf[10]- '0') + ((buf[9]- '0')*10);
-			dateTime.date = (buf[13]- '0') + ((buf[12]- '0')*10);
-			dateTime.year = (buf[16]- '0') + ((buf[15]- '0')*10);
-			
-			//set the time
-			Ds1302SetDateTime(&dateTime);
-		}
+		//return true if we read enough bytes to fill the buffer
+		return numBytesRead >= timeBufferLen;
 	}
+	//if we didn't find the file, or couldn't access it, return false to show failure
+	return false;
 }
 
 /* SD_CreateWithHeaderIfMissing

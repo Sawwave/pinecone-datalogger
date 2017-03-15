@@ -32,7 +32,7 @@
 
 #include <asf.h>
 #include <math.h>
-#include "DS1302/DS1302.h"
+#include "DS3231/DS3231.h"
 #include "DHT22/DHT22.h"
 #include "MAX31856/MAX31856.h"
 #include "TimedSleep/TimedSleep.h"
@@ -63,6 +63,7 @@ static inline void DEBUG_LOOP(void);
 
 static struct spi_module spiMasterModule;
 static struct spi_slave_inst spiSlaveInstance;
+static struct i2c_master_module i2cMasterModule;
 static struct adc_module adcModule;
 static struct tc_module tcInstance;
 static struct LoggerConfig loggerConfig;
@@ -75,11 +76,6 @@ static float LogValues[NUM_LOG_VALUES];
 
 int main (void)
 {
-	
-	rawData = {...}
-	filteredData = {0...}
-		filtereddata = rawData + shiftedFilteredData*scalar
-		rawData += shiftedFilteredData * scalar;
 		
 	
 	//Initialize SAM D20 on-chip hardware
@@ -95,15 +91,21 @@ int main (void)
 	//a solar panel to gather some energy
 	while(bod_is_detected(BOD_BOD33)){
 		bod_clear_detected(BOD_BOD33);
-		TimedSleepSeconds(&tcInstance,600);
+		TimedSleepSeconds(&tcInstance, 600);
 	}
 	bod_disable(BOD_BOD33);
 	
-	//wake up the SD card
-	PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;
+	DS3231_init_i2c(&i2cMasterModule);
 	ConfigureDendroADC(&adcModule);
+	
+	PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;
 	SdCardInit(&fatFileSys);
-	//TryReadTimeFile();
+	
+	//if we can read the time file, set the DS3231 time.
+	if(TryReadTimeFile(&dateTimeBuffer[1])){
+		DS3231_setTimeFromString(&i2cMasterModule, &dateTimeBuffer[1]);
+	}
+	
 	ReadConfigFile(&loggerConfig);
 	//SD_CreateWithHeaderIfMissing(&loggerConfig);
 	
@@ -111,6 +113,11 @@ int main (void)
 	
 	/*remove power to the SD/MMC card, we'll re enable it when it's time to write the reading.*/
 	PORTA.OUTCLR.reg = ALL_POWER_ENABLE;
+	
+	if(loggerConfig.configFlags & CONFIG_FLAGS_START_ON_HOUR){
+		DS3231_setAlarm(&i2cMasterModule, NULL);
+		//TODO: add external interrupt timed sleep here!
+	}
 	
 	//MainLoop();
 	DEBUG_LOOP();
@@ -129,7 +136,8 @@ static inline void MainLoop(void){
 
 		//turn off the power to the SDI12 bus, the DHT22s, and stop sending HIGH on the DHT22 data lines.
 		PORTA.OUTCLR.reg = ALL_POWER_ENABLE;
-		Ds1302GetDateTime(dateTimeBuffer);
+		//get the time string from the DS3231. Load it into the buffer, starting at the second index to ignore the starting newline.
+		DS3231_getTimeToString(&i2cMasterModule, &dateTimeBuffer[1]);
 		PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;
 		
 		FIL dataFile;

@@ -1,9 +1,9 @@
 /*
- * TimedSleep.c
- *
- * Created: 10/19/2016 3:49:42 PM
- *  Author: tim.anderson
- */ 
+* TimedSleep.c
+*
+* Created: 10/19/2016 3:49:42 PM
+*  Author: tim.anderson
+*/
 
 #include <asf.h>
 #include "TimedSleep/TimedSleep.h"
@@ -16,10 +16,10 @@
 static void SleepEndFunction(struct tc_module *const module);
 
 /*initSleepTimerCounter
-	Sets up TimerCounters 4 and 5 to work together as a 32-bit timer.
-	Timer will be set to only run once once enabled, and run through standby to wake device up when needed.
-	Upon finishing, the TimerCounter will be disabled as device leaves sleep mode.
-	*/
+Sets up TimerCounters 4 and 5 to work together as a 32-bit timer.
+Timer will be set to only run once once enabled, and run through standby to wake device up when needed.
+Upon finishing, the TimerCounter will be disabled as device leaves sleep mode.
+*/
 void InitSleepTimerCounter(struct tc_module *tc_instance){
 	struct tc_config tcConfig;
 	tc_get_config_defaults(&tcConfig);
@@ -34,9 +34,9 @@ void InitSleepTimerCounter(struct tc_module *tc_instance){
 }
 
 /*sleepEndFunction
-	Function that will be run as a callback when the sleep TimerCounter finishes.
-	Implicitly, by running this as a callback, the device will leave whatever low power mode it was in.
-	Function will disable the TimerCounter.*/
+Function that will be run as a callback when the sleep TimerCounter finishes.
+Implicitly, by running this as a callback, the device will leave whatever low power mode it was in.
+Function will disable the TimerCounter.*/
 static void SleepEndFunction(struct tc_module *const module){
 	tc_disable(module);
 }
@@ -56,3 +56,4 @@ void TimedSleepSeconds(struct tc_module *tc_instance, const uint32_t seconds){
 	system_set_sleepmode(SYSTEM_SLEEPMODE_STANDBY);
 	system_sleep();
 }
+

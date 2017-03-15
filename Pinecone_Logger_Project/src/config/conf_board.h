@@ -49,13 +49,19 @@
 #define CONF_BOARD_H
 
 
-#define SDI12_MAX_SUPPORTED_SENSORS 16
+#define SDI12_MAX_SUPPORTED_SENSORS 24
 
 // avoid PA30 and PA31, these are for SWCLK and SWDIO respectively
 //Put all IN and OUT data GPIOs on the lower 16 pins to make WRCONFIG access easier.
 //pins that are only OUT can be on the top 16
 
-//On the SAM D20E, there are no pins PA12,13,20,21,26,29
+#define CONFIG_FLAGS_START_ON_HOUR	1 << 0
+#define CONFIG_FLAGS_ENABLE_DEND_1	1 << 1
+#define CONFIG_FLAGS_ENABLE_DEND_2	1 << 2
+#define CONFIG_FLAGS_ENABLE_DHT_1	1 << 3
+#define CONFIG_FLAGS_ENABLE_DHT_2	1 << 4
+#define CONFIG_FLAGS_ENABLE_SDI		1 << 5
+#define CONFIG_FLAGS_SAP_FLUX		1 << 6
 
 struct LoggerConfig{
 	char SDI12_SensorAddresses[SDI12_MAX_SUPPORTED_SENSORS + 1];	//extra char on the end for ease of f_gets function.
@@ -63,6 +69,7 @@ struct LoggerConfig{
 	uint8_t numSdiSensors;
 	uint16_t loggingInterval;
 	uint8_t thermocoupleType;
+	uint8_t configFlags;
 };
 
 
