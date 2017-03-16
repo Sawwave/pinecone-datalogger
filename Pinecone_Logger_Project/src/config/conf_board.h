@@ -55,13 +55,13 @@
 //Put all IN and OUT data GPIOs on the lower 16 pins to make WRCONFIG access easier.
 //pins that are only OUT can be on the top 16
 
-#define CONFIG_FLAGS_START_ON_HOUR	1 << 0
-#define CONFIG_FLAGS_ENABLE_DEND_1	1 << 1
-#define CONFIG_FLAGS_ENABLE_DEND_2	1 << 2
-#define CONFIG_FLAGS_ENABLE_DHT_1	1 << 3
-#define CONFIG_FLAGS_ENABLE_DHT_2	1 << 4
-#define CONFIG_FLAGS_ENABLE_SDI		1 << 5
-#define CONFIG_FLAGS_SAP_FLUX		1 << 6
+#define CONFIG_FLAGS_START_ON_HOUR		1 << 0
+#define CONFIG_FLAGS_ENABLE_DEND_1		1 << 1
+#define CONFIG_FLAGS_ENABLE_DEND_2		1 << 2
+#define CONFIG_FLAGS_ENABLE_DHT_1		1 << 3
+#define CONFIG_FLAGS_ENABLE_DHT_2		1 << 4
+#define CONFIG_FLAGS_ENABLE_SDI			1 << 5
+#define CONFIG_FLAGS_ENABLE_SAP_FLUX	1 << 6
 #define CONFIG_FLAGS_DEFAULT		0xFF	//all flags on
 
 struct LoggerConfig{
