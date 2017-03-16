@@ -53,6 +53,7 @@
 
 static inline void MainLoop(void);
 static inline void RunSapFluxSystem(void);
+static inline void runDht22System(void);
 static inline void ReadThermocouples(float *tcValuesOut);
 static inline void ReadDendrometers(void);
 static inline void RecordDateTime(FIL *dataFile);
@@ -132,22 +133,7 @@ static inline void MainLoop(void){
 		RunSapFluxSystem();
 		ReadDendrometers();
 		
-		//DHT22 requires at least 2 seconds of power before reading, so sleep here to give them time to think.
-		if(loggerConfig.configFlags & (CONFIG_FLAGS_ENABLE_DHT_1 | CONFIG_FLAGS_ENABLE_DHT_2)){
-			TimedSleepSeconds(&tcInstance, 2);
-		}
-		if(loggerConfig.configFlags & (CONFIG_FLAGS_ENABLE_DHT_1)){
-			GetDht22Reading(&(LogValues[LOG_VALUES_DHT1_INDEX]), &(LogValues[LOG_VALUES_DHT1_INDEX + 1]), DHT22_1_PINMASK);
-		}
-		else{
-			LogValues[LOG_VALUES_DHT1_INDEX] = NAN;
-		}
-		if(loggerConfig.configFlags & (CONFIG_FLAGS_ENABLE_DHT_2)){
-			GetDht22Reading(&(LogValues[LOG_VALUES_DHT2_INDEX]), &(LogValues[LOG_VALUES_DHT2_INDEX + 1]), DHT22_2_PINMASK);
-		}
-		else{
-			LogValues[LOG_VALUES_DHT2_INDEX] = NAN;
-		}
+		runDht22System();
 		
 		//SD card requires 3v3, and SDI-12 requires 3v3 and 5v.
 		PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE | PWR_5V_POWER_ENABLE;
@@ -171,6 +157,25 @@ static inline void MainLoop(void){
 		DS3231_createAlarmTime(&dateTimeBuffer[1], loggerConfig.loggingInterval, &alarm);
 		DS3231_setAlarm(&i2cMasterModule, &alarm);
 		ExternalInterruptSleep();
+	}
+}
+
+static inline void runDht22System(void){
+	//DHT22 requires at least 2 seconds of power before reading, so sleep here to give them time to think.
+	if(loggerConfig.configFlags & (CONFIG_FLAGS_ENABLE_DHT_1 | CONFIG_FLAGS_ENABLE_DHT_2)){
+		TimedSleepSeconds(&tcInstance, 2);
+	}
+	if(loggerConfig.configFlags & (CONFIG_FLAGS_ENABLE_DHT_1)){
+		GetDht22Reading(&(LogValues[LOG_VALUES_DHT1_INDEX]), &(LogValues[LOG_VALUES_DHT1_INDEX + 1]), DHT22_1_PINMASK);
+	}
+	else{
+		LogValues[LOG_VALUES_DHT1_INDEX] = NAN;
+	}
+	if(loggerConfig.configFlags & (CONFIG_FLAGS_ENABLE_DHT_2)){
+		GetDht22Reading(&(LogValues[LOG_VALUES_DHT2_INDEX]), &(LogValues[LOG_VALUES_DHT2_INDEX + 1]), DHT22_2_PINMASK);
+	}
+	else{
+		LogValues[LOG_VALUES_DHT2_INDEX] = NAN;
 	}
 }
 
