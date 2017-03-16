@@ -38,6 +38,7 @@ double ReadDendro(struct adc_module *const adcModule, const enum adc_positive_in
 {
 	uint16_t adcReadingValue;
 	adc_set_positive_input(adcModule, dendAnalogPin);
+	adc_flush(adcModule);
 	adc_start_conversion(adcModule);
 	//read until the result is finished
 	while(adc_read(adcModule, &adcReadingValue) != STATUS_OK) {;}

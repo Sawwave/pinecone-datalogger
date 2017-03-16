@@ -44,8 +44,10 @@
 #define NUM_LOG_VALUES						14
 #define LOG_VALUES_TC_BEFORE_INDEX 			0
 #define LOG_VALUES_TC_AFTER_INDEX			4
-#define LOG_VALUES_DHT_INDEX				8
-#define LOG_VALUES_DEND_INDEX				12
+#define LOG_VALUES_DHT1_INDEX				8
+#define LOG_VALUES_DHT2_INDEX				10
+#define LOG_VALUES_DEND1_INDEX				12
+#define LOG_VALUES_DEND2_INDEX				13
 
 #define FLOAT_TO_STR_PRECISION				9
 
@@ -76,8 +78,6 @@ static float LogValues[NUM_LOG_VALUES];
 
 int main (void)
 {
-		
-	
 	//Initialize SAM D20 on-chip hardware
 	system_init();
 	bod_enable(BOD_BOD33);
@@ -116,29 +116,29 @@ int main (void)
 	
 	if(loggerConfig.configFlags & CONFIG_FLAGS_START_ON_HOUR){
 		DS3231_setAlarm(&i2cMasterModule, NULL);
-		//TODO: add external interrupt timed sleep here!
+		ExternalInterruptSleep();
 	}
 	
-	//MainLoop();
-	DEBUG_LOOP();
+	MainLoop();
 }
 
 static inline void MainLoop(void){
 	while(1){
+		//get the time string from the DS3231. Load it into the buffer, starting at the second index to ignore the starting newline.
+		DS3231_getTimeToString(&i2cMasterModule, &dateTimeBuffer[1]);
+		
+		// run sap flux system, dendrometers, and DHT22
 		PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;
 		RunSapFluxSystem();
 		ReadDendrometers();
-		PORTA.OUTTGL.reg = PWR_3V3_POWER_ENABLE | PWR_5V_POWER_ENABLE;
-		//sleep 2s, required for the DHT22 to function properly.
+		
+		//DHT22 requires at least 2 seconds of power before reading, so sleep here to give them time to think.
 		TimedSleepSeconds(&tcInstance, 2);
-		GetDht22Reading(&(LogValues[LOG_VALUES_DHT_INDEX]), &(LogValues[LOG_VALUES_DHT_INDEX + 1]), DHT22_1_PINMASK);
-		GetDht22Reading(&(LogValues[LOG_VALUES_DHT_INDEX + 2] ), &(LogValues[LOG_VALUES_DHT_INDEX + 3]), DHT22_2_PINMASK);
-
-		//turn off the power to the SDI12 bus, the DHT22s, and stop sending HIGH on the DHT22 data lines.
-		PORTA.OUTCLR.reg = ALL_POWER_ENABLE;
-		//get the time string from the DS3231. Load it into the buffer, starting at the second index to ignore the starting newline.
-		DS3231_getTimeToString(&i2cMasterModule, &dateTimeBuffer[1]);
-		PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;
+		GetDht22Reading(&(LogValues[LOG_VALUES_DHT1_INDEX]), &(LogValues[LOG_VALUES_DHT1_INDEX + 1]), DHT22_1_PINMASK);
+		GetDht22Reading(&(LogValues[LOG_VALUES_DHT2_INDEX]), &(LogValues[LOG_VALUES_DHT2_INDEX + 1]), DHT22_2_PINMASK);
+		
+		//SD card requires 3v3, and SDI-12 requires 3v3 and 5v.
+		PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE | PWR_5V_POWER_ENABLE;
 		
 		FIL dataFile;
 		bod_enable(BOD_BOD33);
@@ -150,11 +150,13 @@ static inline void MainLoop(void){
 		QueryAndRecordSdiValues(&dataFile);
 		f_close(&dataFile);
 		
+		//close everything down, and get ready to sleep.
+		PORTA.OUTCLR.reg = ALL_POWER_ENABLE;
 		bod_disable(BOD_BOD33);
 		bod_clear_detected(BOD_BOD33);
+	
 		
-		PORTA.OUTCLR.reg = ALL_POWER_ENABLE;
-		
+		DS3231_createAlarmTime(&dateTimeBuffer[1], loggerConfig.loggingInterval);
 		TimedSleepSeconds(&tcInstance, loggerConfig.loggingInterval);
 	}
 }
@@ -211,11 +213,11 @@ static inline void RunSapFluxSystem(void){
 	//read the starting values for the thermocouples
 	ReadThermocouples(&(LogValues[LOG_VALUES_TC_BEFORE_INDEX]));
 	
-	//turn on heater, and turn off dendro/tc. Then, sleep for the heater duration.
-	PORTA.OUTSET.reg = HEATER_MOSFET_PINMASK;
+	//turn on heater, and turn off dendro/tc/dht. Then, sleep for the heater duration.
+	PORTA.OUTTGL.reg = HEATER_MOSFET_PINMASK | PWR_3V3_POWER_ENABLE;
 	TimedSleepSeconds(&tcInstance, HEATER_TIMED_SLEEP_SECONDS);
 	//turn heater off, and dendro/tc back on.
-	PORTA.OUTCLR.reg = HEATER_MOSFET_PINMASK;
+	PORTA.OUTTGL.reg = HEATER_MOSFET_PINMASK | PWR_3V3_POWER_ENABLE;
 	
 	ReadThermocouples(&(LogValues[LOG_VALUES_TC_AFTER_INDEX]));
 }
@@ -247,9 +249,8 @@ static inline void ReadThermocouples(float *tcValuesOut){
 }
 
 static inline void ReadDendrometers(void){
-	LogValues[LOG_VALUES_DEND_INDEX]		= ReadDendro(&adcModule, DEND_ANALOG_PIN_1);
-	adc_flush(&adcModule);
-	LogValues[LOG_VALUES_DEND_INDEX + 1]	= ReadDendro(&adcModule, DEND_ANALOG_PIN_2);
+	LogValues[LOG_VALUES_DEND1_INDEX]	= ReadDendro(&adcModule, DEND_ANALOG_PIN_1);
+	LogValues[LOG_VALUES_DEND2_INDEX]	= ReadDendro(&adcModule, DEND_ANALOG_PIN_2);
 }
 
 static inline void InitBodDetection(void){

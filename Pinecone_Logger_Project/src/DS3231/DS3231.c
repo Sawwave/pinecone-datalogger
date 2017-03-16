@@ -48,11 +48,11 @@
 #define DS3231_TIME_BUFFER_CENTURY_INDEX	7
 
 
-static uint8_t intToBCD(uint8_t intValue){
+static uint8_t intToBCD(const uint8_t intValue){
 	return (intValue % 10) | ((intValue / 10) << 4);
 }
 
-static void writeBCD_regToString(char stringPtr[2], uint8_t regValue){
+static void writeBCD_regToString(char stringPtr[2], const uint8_t regValue){
 	stringPtr[0] = (regValue & 0x0F) + '0';
 	stringPtr[1] = (regValue >> 4) + '0';
 }
@@ -61,6 +61,10 @@ static uint8_t charArrayToBCD(const char tensDigitPtr[2]){
 	uint8_t tensChar = tensDigitPtr[0];
 	uint8_t onesChar = tensDigitPtr[1];
 	return (onesChar -'0') | ((tensChar - '0') << 4);
+}
+
+void uint8_t parseTwoDigitInt(const char *str){
+	return ((str[0]-'0') * 10) +(str[1] - '0'); 
 }
 
 void DS3231_init_i2c(struct i2c_master_module *i2cMasterModule){
@@ -133,7 +137,7 @@ void DS3231_getTimeToString(struct i2c_master_module *i2cMasterModule, char time
 	writeBCD_regToString(&timeBuffer[DS3231_TIME_BUFFER_MONTH_INDEX], data[5]);
 	//write the century Char
 	timeBuffer[DS3231_TIME_BUFFER_CENTURY_INDEX] = centuryChar;
-	writeBCD_regToString(&timeBuffer[DS3231_TIME_BUFFER_YEAR_INDEX], data[6]);
+	writeBCD_regToString(&timeBuffer[DS3231_TIME_BUFFER_YEAR_INDEX], data[6]);	
 }
 
 void DS3231_setAlarm(struct i2c_master_module *i2cMasterModule, const struct Ds3231_alarmTime *alarmTime){
@@ -182,4 +186,13 @@ void DS3231_disableAlarm(struct i2c_master_module *i2cMasterModule){
 	i2c_master_write_packet_wait(i2cMasterModule, &packet);
 	
 	i2c_master_disable(i2cMasterModule);
+}
+
+
+inline void DS3231_createAlarmTime(const char *dateTimeString, const uint16_t alarmTimeInMinutes, struct Ds3231_alarmTime *alarmTime){
+	uint8_t hour = parseTwoDigitInt(&dateTimeString[DS3231_TIME_BUFFER_HOUR_INDEX]);
+	uint8_t minute = parseTwoDigitInt(&dateTimeString[DS3231_TIME_BUFFER_MINUTE_INDEX]);
+	alarmTime->hours = (hour + (alarmTimeInMinutes / 60 )) % 24;
+	alarmTime->minutes = (minute + alarmTimeInMinutes) % 60;
+	
 }

@@ -111,6 +111,7 @@ struct LoggerConfig{
 #define MAX31856_SPI_PAD2							PINMUX_PA18C_SERCOM1_PAD2	//mosi
 #define MAX31856_SPI_PAD3							PINMUX_PA19C_SERCOM1_PAD3	//sck
 #define MAX31856_CS_PIN								PIN_PA17
+
 #define SD_SERCOM_MODULE							SERCOM0
 #define SD_PINMUX_SETTING							SPI_SIGNAL_MUX_SETTING_K	//chip detect on unused PA08, SCK, MISO, MOSI, and CD on PA0
 #define SD_SPI_PIN0									PINMUX_PA04D_SERCOM0_PAD0	//chip detect
@@ -202,9 +203,13 @@ struct LoggerConfig{
 #define DS3231_SERCOM_MODULE						SERCOM3
 #define DS3231_SERCOM_SDA_PIN						PINMUX_PA22C_SERCOM3_PAD0
 #define DS3231_SERCOM_SCL_PIN						PINMUX_PA23C_SERCOM3_PAD1
+#define DS3231_EXTINT_PIN							1 << 28	//PIN_PA28
+#define DS3231_EXTINT_PIN							PIN_PA28A_EIC_EXTINT8
+#define DS3231_EXTINT_MUX							MUX_PA28A_EIC_EXTINT8
+#define DS3231_EIC_LINE								8
 
-#define DHT22_1_PINMASK								1 << 6							// PIN_PA07
-#define DHT22_2_PINMASK								1 << 7							// PIN_PA08
+#define DHT22_1_PINMASK								1 << 6							// PIN_PA06
+#define DHT22_2_PINMASK								1 << 7							// PIN_PA07
 #define DHT22_ALL_PINMASK							DHT22_1_PINMASK | DHT22_2_PINMASK
 
 #define SDI_PIN										PIN_PA00

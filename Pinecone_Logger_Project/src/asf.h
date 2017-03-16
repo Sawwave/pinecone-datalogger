@@ -68,9 +68,8 @@
 // From module: Delay routines
 #include <delay.h>
 
-// From module: EXTINT - External Interrupt (Callback APIs)
+// From module: EXTINT - External Interrupt (Polled APIs)
 #include <extint.h>
-#include <extint_callback.h>
 
 // From module: FatFS file system
 #include <diskio.h>

@@ -48,6 +48,9 @@ The timer-counter should wake the device from sleep mode upon completion.
 NOTE: Generic Clock Generator 1 should be enabled, allowed to run in standby,
 use the internal 32KHz oscillator, and have an internal prescaler of 512.
 Internal 32KHz oscillator should also be enabled, and able to run in standby
+
+This function should also be used to sleep when wake on external interrupt is expected.
+Set the time to be greater than extint wakeup timer, so that internal timer is a backup.
 */
 void TimedSleepSeconds(struct tc_module *tc_instance, const uint32_t seconds){
 	tc_set_count_value(tc_instance, 0);
@@ -58,3 +61,19 @@ void TimedSleepSeconds(struct tc_module *tc_instance, const uint32_t seconds){
 	system_sleep();
 }
 
+void ExternalInterruptInit(){
+	struct extint_chan_conf extintConfig;
+	extint_chan_get_config_defaults(&extintConfig);
+	extintConfig.gpio_pin_pull = EXTINT_PULL_NONE;
+	extintConfig.gpio_pin = PIN_PA28A_EIC_EXTINT8;
+	extintConfig.gpio_pin_mux = MUX_PA28A_EIC_EXTINT8;
+	extintConfig.detection_criteria = EXTINT_DETECT_LOW;
+	extint_chan_set_config(DS3231_EIC_LINE, &extintConfig);
+}
+
+void ExternalInterruptSleep(void){
+	system_interrupt_enable_global();
+	system_set_sleepmode(SYSTEM_SLEEPMODE_STANDBY);
+	system_sleep();
+	system_interrupt_disable_global();
+}
