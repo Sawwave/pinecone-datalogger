@@ -227,7 +227,7 @@ static inline void RunSapFluxSystem(void){
 	
 	else{
 		//if sap flux is disabled, just write NANs into the values
-		for(uint8_t index = 0; index < 8, index++){
+		for(uint8_t index = 0; index < 8; index++){
 			LogValues[index] = NAN;
 		}
 	}
@@ -260,8 +260,19 @@ static inline void ReadThermocouples(float *tcValuesOut){
 }
 
 static inline void ReadDendrometers(void){
-	LogValues[LOG_VALUES_DEND1_INDEX]	= ReadDendro(&adcModule, DEND_ANALOG_PIN_1);
-	LogValues[LOG_VALUES_DEND2_INDEX]	= ReadDendro(&adcModule, DEND_ANALOG_PIN_2);
+	if(loggerConfig.configFlags & CONFIG_FLAGS_ENABLE_DEND_1){
+		LogValues[LOG_VALUES_DEND1_INDEX]	= ReadDendro(&adcModule, DEND_ANALOG_PIN_1);
+	}
+	else {
+		LogValues[LOG_VALUES_DEND1_INDEX] = NAN;
+	}
+	
+	if(loggerConfig.configFlags & CONFIG_FLAGS_ENABLE_DEND_2){
+		LogValues[LOG_VALUES_DEND2_INDEX]	= ReadDendro(&adcModule, DEND_ANALOG_PIN_2);
+	}
+	else{
+		LogValues[LOG_VALUES_DEND2_INDEX] = NAN;
+	}
 }
 
 static inline void InitBodDetection(void){
