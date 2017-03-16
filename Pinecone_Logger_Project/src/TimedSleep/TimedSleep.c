@@ -61,7 +61,7 @@ void TimedSleepSeconds(struct tc_module *tc_instance, const uint32_t seconds){
 	system_sleep();
 }
 
-void ExternalInterruptInit(){
+void ExternalInterruptInit(void){
 	struct extint_chan_conf extintConfig;
 	extint_chan_get_config_defaults(&extintConfig);
 	extintConfig.gpio_pin_pull = EXTINT_PULL_NONE;

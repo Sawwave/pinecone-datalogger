@@ -155,9 +155,10 @@ static inline void MainLoop(void){
 		bod_disable(BOD_BOD33);
 		bod_clear_detected(BOD_BOD33);
 	
-		
-		DS3231_createAlarmTime(&dateTimeBuffer[1], loggerConfig.loggingInterval);
-		TimedSleepSeconds(&tcInstance, loggerConfig.loggingInterval);
+		struct Ds3231_alarmTime alarm;
+		DS3231_createAlarmTime(&dateTimeBuffer[1], loggerConfig.loggingInterval, &alarm);
+		DS3231_setAlarm(&i2cMasterModule, &alarm);
+		ExternalInterruptSleep();
 	}
 }
 

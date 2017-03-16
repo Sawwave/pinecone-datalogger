@@ -28,7 +28,7 @@ void DS3231_setAlarm(struct i2c_master_module *i2cMasterModule, const struct Ds3
 
 void DS3231_disableAlarm(struct i2c_master_module *i2cMasterModule);
 
-inline void DS3231_createAlarmTime(const char *dateTimeString, const uint16_t alarmTimeInMinutes, struct Ds3231_alarmTime *alarmTime);
+void DS3231_createAlarmTime(const char *dateTimeString, const uint16_t alarmTimeInMinutes, struct Ds3231_alarmTime *alarmTime);
 
 
 #endif /* DS3231_H_ */

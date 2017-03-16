@@ -127,17 +127,33 @@ Reads the Configuration file, and stores the configuration in the given struct.
 Config file is formated as defined below:
 
 0000
-DT
+EEEEEEET
 ABC...
 9,9,9...
 
 first line:
 0000 is the number of minutes between readings that the sensor will sleep
 
-second line:
-T
-First character specifies the type of thermocouples used. Acceptable characters are any of the following: BEJKNRST .
-This character is not case sensitive.
+Second line:
+specifies a series of boolean configuration flags:
+
+Flag 1: Start On Hour, values (E = wait for top of hour, D = log immediately)
+	Determines if the logger should attempt to log immediately when waking up, or if it should wait until the top of the next hour.
+Flag 2: Enable Dendrometer 1, values (E = enable, D = disable)
+	Determines if dendrometer 1 should be logged, or skipped
+Flag 3: Enable Dendrometer 2, values (E = enable, D = disable)
+	Determines if dendrometer 2 should be logged, or skipped
+Flag 4: Enable DHT 1, values (E = enable, D = disable)
+	Determines if DHT-22 1 should be logged, or skipped
+Flag 5: Enable DHT 2, values (E = enable, D = disable)
+	Determines if DHt-22 2 should be logged, or skipped
+Flag 6: Enable SDI, values (E = enable, D = disable)
+	Determines if SDI-sensors should be logged, or skipped
+Flag 7: Enable Sap flux, values (E = enable, D = disable)
+	Determines if sap flux system should be logged, or skipped
+Flag 8	Thermocouple Type:
+	specifies the type of thermocouples used. Acceptable characters are any of the following: BEJKNRST .
+	This character is not case sensitive.
 
 Third Line
 ABC.. specifies the SDI12 addresses of the sensors. Thus, if logger is connected to 3 sensors, with addresses 0,7, and B, line 2 may read
@@ -148,24 +164,25 @@ Fourth line:
 */
 void ReadConfigFile(struct LoggerConfig *config){
 	//set config defaults
-	config->loggingInterval = 3600; //1 hour
+	config->loggingInterval = 60; //1 hour
 	config->numSdiSensors = 0;
 	config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_K;
+	config->configFlags = CONFIG_FLAGS_DEFAULT;
 	
 	FIL fileObj;
 	char intervalBuffer[5];
-	char flagBuffer[4];
+	char flagBuffer[9];
 	const uint16_t numValuesBufferSize = SDI12_MAX_SUPPORTED_SENSORS * 4;
 	char numValuesBuffer[numValuesBufferSize];
 	memset(intervalBuffer, 0, 5 * sizeof(char));
-	memset(flagBuffer, 0, 4 * sizeof(char));
-	memset(config->SDI12_SensorAddresses, 0, sizeof(char) * (SDI12_MAX_SUPPORTED_SENSORS + 1));
+	memset(flagBuffer, 'X', 9 * sizeof(char));
+	memset(config->SDI12_SensorAddresses, 0, (SDI12_MAX_SUPPORTED_SENSORS + 1) * sizeof(char));
 	
 	if(f_open(&fileObj, SD_CONFIG_FILENAME, FA_READ) == FR_OK){
+		f_gets(intervalBuffer, 6, &fileObj);
+		f_gets(flagBuffer, 9, &fileObj);
 		f_gets(config->SDI12_SensorAddresses, SDI12_MAX_SUPPORTED_SENSORS, &fileObj);
 		f_gets(numValuesBuffer, numValuesBufferSize, &fileObj);
-		f_gets(intervalBuffer, 6, &fileObj);
-		f_gets(flagBuffer, 4, &fileObj);
 		f_close(&fileObj);
 		
 		char *ptrToNumValuesBuffer = &(numValuesBuffer[0]);
@@ -177,11 +194,23 @@ void ReadConfigFile(struct LoggerConfig *config){
 			config->numSdiSensors++;
 		}
 		
-		//convert the interval to an integer to store in our config struct.
-		char *ptrToIntervalBuffer = &(intervalBuffer[0]);
-		config->loggingInterval = strtol(ptrToIntervalBuffer, &ptrToIntervalBuffer, 10);
+		char *ptrToIntervalBuffer = intervalBuffer;
+		//parse out the interval.
+		while(*ptrToIntervalBuffer){
+			config->loggingInterval *= 10;
+			config->loggingInterval += (*ptrToIntervalBuffer)- '0';
+			ptrToIntervalBuffer++;
+		}
+
+		//parse the enable characters of the flag buffer
+		for(uint8_t bit = 0; bit < 7; bit++){
+			if(flagBuffer[bit] == 'D'){
+				config->configFlags &= ~ (1 << bit);
+			}
+		}
 		
-		switch(flagBuffer[1]){
+		//read the last char of the flag buffer as the thermocouple type.
+		switch(flagBuffer[7]){
 			case 'b': case 'B':
 			config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_B;
 			break;
@@ -207,6 +236,7 @@ void ReadConfigFile(struct LoggerConfig *config){
 			default:
 			config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_T;
 		}
+		
 	}
 }
 

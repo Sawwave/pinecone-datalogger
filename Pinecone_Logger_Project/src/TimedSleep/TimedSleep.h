@@ -26,6 +26,8 @@ Internal 32KHz oscillator should also be enabled, and able to run in standby
 */
 void TimedSleepSeconds(struct tc_module *tc_instance, const uint32_t seconds);
 
+void ExternalInterruptInit(void);
+
 void ExternalInterruptSleep(void);
 
 #endif /* TIMEDSLEEP_H_ */

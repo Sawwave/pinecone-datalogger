@@ -62,6 +62,7 @@
 #define CONFIG_FLAGS_ENABLE_DHT_2	1 << 4
 #define CONFIG_FLAGS_ENABLE_SDI		1 << 5
 #define CONFIG_FLAGS_SAP_FLUX		1 << 6
+#define CONFIG_FLAGS_DEFAULT		0xFF	//all flags on
 
 struct LoggerConfig{
 	char SDI12_SensorAddresses[SDI12_MAX_SUPPORTED_SENSORS + 1];	//extra char on the end for ease of f_gets function.
@@ -203,7 +204,6 @@ struct LoggerConfig{
 #define DS3231_SERCOM_MODULE						SERCOM3
 #define DS3231_SERCOM_SDA_PIN						PINMUX_PA22C_SERCOM3_PAD0
 #define DS3231_SERCOM_SCL_PIN						PINMUX_PA23C_SERCOM3_PAD1
-#define DS3231_EXTINT_PIN							1 << 28	//PIN_PA28
 #define DS3231_EXTINT_PIN							PIN_PA28A_EIC_EXTINT8
 #define DS3231_EXTINT_MUX							MUX_PA28A_EIC_EXTINT8
 #define DS3231_EIC_LINE								8

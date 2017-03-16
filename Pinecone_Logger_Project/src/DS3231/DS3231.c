@@ -63,8 +63,8 @@ static uint8_t charArrayToBCD(const char tensDigitPtr[2]){
 	return (onesChar -'0') | ((tensChar - '0') << 4);
 }
 
-void uint8_t parseTwoDigitInt(const char *str){
-	return ((str[0]-'0') * 10) +(str[1] - '0'); 
+static uint8_t parseTwoDigitInt(const char *str){
+	return ((str[0] - '0') * 10) + (str[1] - '0');
 }
 
 void DS3231_init_i2c(struct i2c_master_module *i2cMasterModule){
@@ -189,7 +189,7 @@ void DS3231_disableAlarm(struct i2c_master_module *i2cMasterModule){
 }
 
 
-inline void DS3231_createAlarmTime(const char *dateTimeString, const uint16_t alarmTimeInMinutes, struct Ds3231_alarmTime *alarmTime){
+void DS3231_createAlarmTime(const char *dateTimeString, const uint16_t alarmTimeInMinutes, struct Ds3231_alarmTime *alarmTime){
 	uint8_t hour = parseTwoDigitInt(&dateTimeString[DS3231_TIME_BUFFER_HOUR_INDEX]);
 	uint8_t minute = parseTwoDigitInt(&dateTimeString[DS3231_TIME_BUFFER_MINUTE_INDEX]);
 	alarmTime->hours = (hour + (alarmTimeInMinutes / 60 )) % 24;
