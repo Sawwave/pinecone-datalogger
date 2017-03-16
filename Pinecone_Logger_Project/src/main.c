@@ -53,7 +53,7 @@
 
 static inline void MainLoop(void);
 static inline void RunSapFluxSystem(void);
-static inline void runDht22System(void);
+static inline void RunDht22System(void);
 static inline void ReadThermocouples(float *tcValuesOut);
 static inline void ReadDendrometers(void);
 static inline void RecordDateTime(FIL *dataFile);
@@ -132,8 +132,7 @@ static inline void MainLoop(void){
 		PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;
 		RunSapFluxSystem();
 		ReadDendrometers();
-		
-		runDht22System();
+		RunDht22System();
 		
 		//SD card requires 3v3, and SDI-12 requires 3v3 and 5v.
 		PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE | PWR_5V_POWER_ENABLE;
@@ -160,7 +159,7 @@ static inline void MainLoop(void){
 	}
 }
 
-static inline void runDht22System(void){
+static inline void RunDht22System(void){
 	//DHT22 requires at least 2 seconds of power before reading, so sleep here to give them time to think.
 	if(loggerConfig.configFlags & (CONFIG_FLAGS_ENABLE_DHT_1 | CONFIG_FLAGS_ENABLE_DHT_2)){
 		TimedSleepSeconds(&tcInstance, 2);
@@ -199,31 +198,39 @@ static inline void RecordNonSdiValues(FIL *dataFile){
 }
 
 static inline void QueryAndRecordSdiValues(FIL *dataFile){
-	for(uint8_t sdiIndex = 0; sdiIndex < loggerConfig.numSdiSensors; sdiIndex++){
-		
-		//create the array for the values, and initialize the values to NAN.
-		float sdiValuesForSensor[loggerConfig.SDI12_SensorNumValues[sdiIndex]];
-		for(uint8_t i = 0; i< loggerConfig.SDI12_SensorNumValues[sdiIndex];i++){
-			sdiValuesForSensor[i] = NAN;
-		}
-		
-		struct SDI_transactionPacket transactionPacket;
-		transactionPacket.address = loggerConfig.SDI12_SensorAddresses[sdiIndex];
-
-		SDI12_RequestSensorReading(&transactionPacket);
-		if(transactionPacket.transactionStatus == SDI12_STATUS_OK){
-			//if the sensor asked us to wait for some time before reading, let's go into sleep mode for it.
-			if(transactionPacket.waitTime > 0){
-				TimedSleepSeconds(&tcInstance, transactionPacket.waitTime);
+	if(loggerConfig.configFlags & CONFIG_FLAGS_ENABLE_SDI){
+		for(uint8_t sdiIndex = 0; sdiIndex < loggerConfig.numSdiSensors; sdiIndex++){
+			
+			//create the array for the values, and initialize the values to NAN.
+			float sdiValuesForSensor[loggerConfig.SDI12_SensorNumValues[sdiIndex]];
+			for(uint8_t i = 0; i< loggerConfig.SDI12_SensorNumValues[sdiIndex];i++){
+				sdiValuesForSensor[i] = NAN;
 			}
-			SDI12_GetSensedValues(&transactionPacket, sdiValuesForSensor);
+			
+			struct SDI_transactionPacket transactionPacket;
+			transactionPacket.address = loggerConfig.SDI12_SensorAddresses[sdiIndex];
+
+			SDI12_RequestSensorReading(&transactionPacket);
+			if(transactionPacket.transactionStatus == SDI12_STATUS_OK){
+				//if the sensor asked us to wait for some time before reading, let's go into sleep mode for it.
+				if(transactionPacket.waitTime > 0){
+					TimedSleepSeconds(&tcInstance, transactionPacket.waitTime);
+				}
+				SDI12_GetSensedValues(&transactionPacket, sdiValuesForSensor);
+			}
+			
+			for(uint8_t i=0; i< loggerConfig.SDI12_SensorNumValues[sdiIndex];i++){
+				//check for brownout before writing to SD card.
+				WriteDataFileNanOrFloat(sdiValuesForSensor[i], dataFile);
+			}
+			f_sync(dataFile);
 		}
-		
-		for(uint8_t i=0; i< loggerConfig.SDI12_SensorNumValues[sdiIndex];i++){
-			//check for brownout before writing to SD card.
-			WriteDataFileNanOrFloat(sdiValuesForSensor[i], dataFile);
+	}
+	
+	else{
+		for(uint8_t sdiIndex = 0; sdiIndex < loggerConfig.numSdiSensors; sdiIndex++){
+			f_puts(",NAN");
 		}
-		f_sync(dataFile);
 	}
 }
 
