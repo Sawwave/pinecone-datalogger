@@ -154,7 +154,7 @@ static inline void MainLoop(void){
 		PORTA.OUTCLR.reg = ALL_POWER_ENABLE;
 		bod_disable(BOD_BOD33);
 		bod_clear_detected(BOD_BOD33);
-	
+		
 		struct Ds3231_alarmTime alarm;
 		DS3231_createAlarmTime(&dateTimeBuffer[1], loggerConfig.loggingInterval, &alarm);
 		DS3231_setAlarm(&i2cMasterModule, &alarm);
@@ -211,16 +211,26 @@ static inline void QueryAndRecordSdiValues(FIL *dataFile){
 }
 
 static inline void RunSapFluxSystem(void){
-	//read the starting values for the thermocouples
-	ReadThermocouples(&(LogValues[LOG_VALUES_TC_BEFORE_INDEX]));
 	
-	//turn on heater, and turn off dendro/tc/dht. Then, sleep for the heater duration.
-	PORTA.OUTTGL.reg = HEATER_MOSFET_PINMASK | PWR_3V3_POWER_ENABLE;
-	TimedSleepSeconds(&tcInstance, HEATER_TIMED_SLEEP_SECONDS);
-	//turn heater off, and dendro/tc back on.
-	PORTA.OUTTGL.reg = HEATER_MOSFET_PINMASK | PWR_3V3_POWER_ENABLE;
+	if(loggerConfig.configFlags & CONFIG_FLAGS_ENABLE_SAP_FLUX){
+		//read the starting values for the thermocouples
+		ReadThermocouples(&(LogValues[LOG_VALUES_TC_BEFORE_INDEX]));
+		
+		//turn on heater, and turn off dendro/tc/dht. Then, sleep for the heater duration.
+		PORTA.OUTTGL.reg = HEATER_MOSFET_PINMASK | PWR_3V3_POWER_ENABLE;
+		TimedSleepSeconds(&tcInstance, HEATER_TIMED_SLEEP_SECONDS);
+		//turn heater off, and dendro/tc back on.
+		PORTA.OUTTGL.reg = HEATER_MOSFET_PINMASK | PWR_3V3_POWER_ENABLE;
+		
+		ReadThermocouples(&(LogValues[LOG_VALUES_TC_AFTER_INDEX]));
+	}
 	
-	ReadThermocouples(&(LogValues[LOG_VALUES_TC_AFTER_INDEX]));
+	else{
+		//if sap flux is disabled, just write NANs into the values
+		for(uint8_t index = 0; index < 8, index++){
+			LogValues[index] = NAN;
+		}
+	}
 }
 
 static inline void ReadThermocouples(float *tcValuesOut){
