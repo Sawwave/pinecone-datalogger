@@ -229,7 +229,7 @@ static inline void QueryAndRecordSdiValues(FIL *dataFile){
 	
 	else{
 		for(uint8_t sdiIndex = 0; sdiIndex < loggerConfig.numSdiSensors; sdiIndex++){
-			f_puts(",NAN");
+			f_puts(",NAN", &dataFile);
 		}
 	}
 }
