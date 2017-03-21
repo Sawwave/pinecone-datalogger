@@ -17,8 +17,10 @@
 Initializes the sd mmc connection, and attempts to mount the fileSystem.
 system will be mounted into first arg, fatFilesys.
 second argument, fileResult, will show the result state of the attempted mount.
+
+Returns true on success, false if sd card setup failed (Is there a card in the slot?).
 */
-void SdCardInit(FATFS *fatFileSys);
+bool SdCardInit(FATFS *fatFileSys);
 
 /* tryReadTimeFile
 attempts to read the time file, whose filename is defined in boardconf.h.

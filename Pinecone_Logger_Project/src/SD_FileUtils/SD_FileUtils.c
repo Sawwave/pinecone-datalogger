@@ -25,23 +25,37 @@ Initializes the sd mmc connection, and attempts to mount the fileSystem.
 system will be mounted into first arg, fatFilesys.
 second argument, fileResult, will show the result state of the attempted mount.
 */
-void SdCardInit(FATFS *fatFileSys)
+bool SdCardInit(FATFS *fatFileSys)
 {
+	uint8_t numMountAttempts = 100;
 	FRESULT res;
 	do{
-		sd_mmc_init();
-		Ctrl_status checkStatus;
-		do{
-			checkStatus = sd_mmc_test_unit_ready(0);
-		} while (checkStatus != CTRL_GOOD);
-		
-		memset(fatFileSys, 0, sizeof(FATFS));
-		
-		res = f_mount(SD_VOLUME_NUMBER, fatFileSys);
-		if(res !=  FR_OK){
-			checkStatus = CTRL_FAIL;
+		if(numMountAttempts--)
+		{
+			uint8_t numStatusAttempts = 255;
+			sd_mmc_init();
+			Ctrl_status checkStatus;
+			do{
+				checkStatus = sd_mmc_test_unit_ready(0);
+			} while (checkStatus != CTRL_GOOD && numStatusAttempts--);
+			
+			if(numStatusAttempts == 0){
+				break;
+			}
+			memset(fatFileSys, 0, sizeof(FATFS));
+			
+			res = f_mount(SD_VOLUME_NUMBER, fatFileSys);
+			if(res !=  FR_OK){
+				checkStatus = CTRL_FAIL;
+			}
 		}
-	}while(res != FR_OK);
+		else{
+			return false;
+		}
+		
+	}while(res != FR_OK && (numMountAttempts));
+
+	return true;
 }
 
 /* tryReadTimeFile
@@ -138,22 +152,22 @@ Second line:
 specifies a series of boolean configuration flags:
 
 Flag 1: Start On Hour, values (E = wait for top of hour, D = log immediately)
-	Determines if the logger should attempt to log immediately when waking up, or if it should wait until the top of the next hour.
+Determines if the logger should attempt to log immediately when waking up, or if it should wait until the top of the next hour.
 Flag 2: Enable Dendrometer 1, values (E = enable, D = disable)
-	Determines if dendrometer 1 should be logged, or skipped
+Determines if dendrometer 1 should be logged, or skipped
 Flag 3: Enable Dendrometer 2, values (E = enable, D = disable)
-	Determines if dendrometer 2 should be logged, or skipped
+Determines if dendrometer 2 should be logged, or skipped
 Flag 4: Enable DHT 1, values (E = enable, D = disable)
-	Determines if DHT-22 1 should be logged, or skipped
+Determines if DHT-22 1 should be logged, or skipped
 Flag 5: Enable DHT 2, values (E = enable, D = disable)
-	Determines if DHt-22 2 should be logged, or skipped
+Determines if DHt-22 2 should be logged, or skipped
 Flag 6: Enable SDI, values (E = enable, D = disable)
-	Determines if SDI-sensors should be logged, or skipped
+Determines if SDI-sensors should be logged, or skipped
 Flag 7: Enable Sap flux, values (E = enable, D = disable)
-	Determines if sap flux system should be logged, or skipped
+Determines if sap flux system should be logged, or skipped
 Flag 8	Thermocouple Type:
-	specifies the type of thermocouples used. Acceptable characters are any of the following: BEJKNRST .
-	This character is not case sensitive.
+specifies the type of thermocouples used. Acceptable characters are any of the following: BEJKNRST .
+This character is not case sensitive.
 
 Third Line
 ABC.. specifies the SDI12 addresses of the sensors. Thus, if logger is connected to 3 sensors, with addresses 0,7, and B, line 2 may read
