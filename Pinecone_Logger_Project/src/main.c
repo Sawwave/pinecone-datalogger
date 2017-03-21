@@ -121,6 +121,10 @@ int main (void)
 	/*remove power to the SD/MMC card, we'll re enable it when it's time to write the reading.*/
 	PORTA.OUTCLR.reg = ALL_POWER_ENABLE;
 	
+	if(sdInitSuccess && configFileSuccess){
+		LedFlashStatusCode(LED_CODE_START_SUCCESS);
+	}
+	
 	if(loggerConfig.configFlags & CONFIG_FLAGS_START_ON_HOUR){
 		DS3231_setAlarm(&i2cMasterModule, NULL);
 		ExternalInterruptSleep();
