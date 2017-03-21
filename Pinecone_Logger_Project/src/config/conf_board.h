@@ -248,6 +248,9 @@ struct LoggerConfig{
 #define SD_PIN_DETECT								PIN_PA07
 #define SD_PIN_DETECT_LEVEL							LOW
 
+#define LED_PIN										0
+#define LED_PIN_PINMASK								1 << LED_PIN
+
 //Mosfet PINS
 #define PWR_3V3_POWER_ENABLE						1 << 25
 #define PWR_5V_POWER_ENABLE							1 << 27
