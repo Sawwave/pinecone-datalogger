@@ -57,7 +57,7 @@ third line:
 fouth line:
 i may be letter i or d specifies if the sensor takes the reading immediately on waking up(i), or defers logging until after the sleep interval(d).
 */
-void ReadConfigFile(struct LoggerConfig *config);
+bool ReadConfigFile(struct LoggerConfig *config);
 
 bool SD_CheckIntegrity(const struct LoggerConfig *loggerConfig);
 
