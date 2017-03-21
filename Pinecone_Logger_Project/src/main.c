@@ -39,6 +39,7 @@
 #include "SDI12/SDI12.h"
 #include "Dendro/Dendro.h"
 #include "SD_FileUtils/SD_FileUtils.h"
+#include "LedCodes/LedCodes.h"
 
 //number of loggable values, outside of datetime and sdi-12 values
 #define NUM_LOG_VALUES						14
