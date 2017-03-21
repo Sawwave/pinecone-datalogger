@@ -100,7 +100,10 @@ int main (void)
 	ConfigureDendroADC(&adcModule);
 	
 	PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;
-	SdCardInit(&fatFileSys);
+	bool sdInitSuccess = SdCardInit(&fatFileSys);
+	if(sdInitSuccess){
+		
+	}
 	
 	//if we can read the time file, set the DS3231 time.
 	if(TryReadTimeFile(&dateTimeBuffer[1])){

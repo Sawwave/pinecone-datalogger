@@ -175,8 +175,11 @@ ABC.. specifies the SDI12 addresses of the sensors. Thus, if logger is connected
 
 Fourth line:
 9,9,9,... specifies the SDI12 number of values for each of the sdi sensors addressed in the Third line.
+
+
+returns true if config file was found, false otherwise
 */
-void ReadConfigFile(struct LoggerConfig *config){
+bool ReadConfigFile(struct LoggerConfig *config){
 	//set config defaults
 	config->loggingInterval = 60; //1 hour
 	config->numSdiSensors = 0;
