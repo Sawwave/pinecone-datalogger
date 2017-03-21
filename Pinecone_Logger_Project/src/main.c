@@ -110,8 +110,11 @@ int main (void)
 		DS3231_setTimeFromString(&i2cMasterModule, &dateTimeBuffer[1]);
 	}
 	
-	ReadConfigFile(&loggerConfig);
-	//SD_CreateWithHeaderIfMissing(&loggerConfig);
+	bool configFileSuccess = ReadConfigFile(&loggerConfig);
+	if(!configFileSuccess){
+		LedFlashStatusCode(LED_CODE_CONFIG_MISSING);
+	}
+	SD_CreateWithHeaderIfMissing(&loggerConfig);
 	
 	Max31856ConfigureSPI(&spiMasterModule, &spiSlaveInstance);
 	
