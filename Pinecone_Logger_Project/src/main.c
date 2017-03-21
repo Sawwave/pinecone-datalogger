@@ -101,8 +101,8 @@ int main (void)
 	
 	PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;
 	bool sdInitSuccess = SdCardInit(&fatFileSys);
-	if(sdInitSuccess){
-		
+	if(!sdInitSuccess){
+		LedRepeatStatusCode(LED_CODE_SD_CARD_NOT_FOUND);
 	}
 	
 	//if we can read the time file, set the DS3231 time.

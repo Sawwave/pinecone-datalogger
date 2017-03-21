@@ -177,7 +177,7 @@ Fourth line:
 9,9,9,... specifies the SDI12 number of values for each of the sdi sensors addressed in the Third line.
 
 
-returns true if config file was found, false otherwise
+returns true if config file was found, false otherwise.
 */
 bool ReadConfigFile(struct LoggerConfig *config){
 	//set config defaults
@@ -218,42 +218,52 @@ bool ReadConfigFile(struct LoggerConfig *config){
 			config->loggingInterval += (*ptrToIntervalBuffer)- '0';
 			ptrToIntervalBuffer++;
 		}
-
-		//parse the enable characters of the flag buffer
-		for(uint8_t bit = 0; bit < 7; bit++){
-			if(flagBuffer[bit] == 'D'){
-				config->configFlags &= ~ (1 << bit);
+		if(sizeof(flagBuffer) >= sizeof(char)*8){
+			//parse the enable characters of the flag buffer
+			for(uint8_t bit = 0; bit < 7; bit++){
+				if(flagBuffer[bit] == 'D'){
+					config->configFlags &= ~ (1 << bit);
+				}
+			}
+			
+			//read the last char of the flag buffer as the thermocouple type.
+			switch(flagBuffer[7]){
+				case 'b': case 'B':
+				config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_B;
+				break;
+				case 'e': case 'E':
+				config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_E;
+				break;
+				case 'j': case 'J':
+				config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_J;
+				break;
+				case 'k': case 'K':
+				config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_K;
+				break;
+				case 'n': case 'N':
+				config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_N;
+				break;
+				case 'r': case 'R':
+				config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_R;
+				break;
+				case 's': case 'S':
+				config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_S;
+				break;
+				//T is the only one left, so set that as default
+				default:
+				config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_T;
 			}
 		}
-		
-		//read the last char of the flag buffer as the thermocouple type.
-		switch(flagBuffer[7]){
-			case 'b': case 'B':
-			config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_B;
-			break;
-			case 'e': case 'E':
-			config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_E;
-			break;
-			case 'j': case 'J':
-			config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_J;
-			break;
-			case 'k': case 'K':
-			config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_K;
-			break;
-			case 'n': case 'N':
-			config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_N;
-			break;
-			case 'r': case 'R':
-			config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_R;
-			break;
-			case 's': case 'S':
-			config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_S;
-			break;
-			//T is the only one left, so set that as default
-			default:
-			config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_T;
+		else{
+			//return false if there wasn't enough chars in the flag buffer.
+			return false;
 		}
-		
+		//return true on completed config setup
+		return true;
+	}
+	else{
+		//return false if the file couldn't be opened.
+		return false;
 	}
 }
 
