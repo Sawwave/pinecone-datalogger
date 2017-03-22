@@ -151,7 +151,7 @@ static inline void MainLoop(void){
 		RunDht22System();
 		
 		//SD card requires 3v3, and SDI-12 requires 3v3 and 5v.
-		PORTA.DIRSEt.reg = PWR_5V_POWER_ENABLE;
+		PORTA.DIRSET.reg = PWR_5V_POWER_ENABLE;
 		PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE | PWR_5V_POWER_ENABLE;
 		
 		FIL dataFile;
@@ -268,10 +268,12 @@ static inline void RunSapFluxSystem(void){
 		ReadThermocouples(&(LogValues[LOG_VALUES_TC_BEFORE_INDEX]));
 		
 		//turn on heater, and turn off dendro/tc/dht. Then, sleep for the heater duration.
+		PORTA.DIRSET.reg = HEATER_MOSFET_PINMASK;
 		PORTA.OUTTGL.reg = HEATER_MOSFET_PINMASK | PWR_3V3_POWER_ENABLE;
 		TimedSleepSeconds(&tcInstance, HEATER_TIMED_SLEEP_SECONDS);
 		//turn heater off, and dendro/tc back on.
 		PORTA.OUTTGL.reg = HEATER_MOSFET_PINMASK | PWR_3V3_POWER_ENABLE;
+		PORTA.DIRCLR.reg = HEATER_MOSFET_PINMASK;
 		
 		ReadThermocouples(&(LogValues[LOG_VALUES_TC_AFTER_INDEX]));
 	}
