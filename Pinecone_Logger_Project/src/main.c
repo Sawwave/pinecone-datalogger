@@ -144,12 +144,14 @@ static inline void MainLoop(void){
 		DS3231_getTimeToString(&i2cMasterModule, &dateTimeBuffer[1]);
 		
 		// run sap flux system, dendrometers
-		PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;;
+		PORTA.DIRSET.reg = PWR_3V3_POWER_ENABLE;
+		PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;
 		RunSapFluxSystem();
 		ReadDendrometers();
 		RunDht22System();
 		
 		//SD card requires 3v3, and SDI-12 requires 3v3 and 5v.
+		PORTA.DIRSEt.reg = PWR_5V_POWER_ENABLE;
 		PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE | PWR_5V_POWER_ENABLE;
 		
 		FIL dataFile;
@@ -170,6 +172,8 @@ static inline void MainLoop(void){
 		struct Ds3231_alarmTime alarm;
 		DS3231_createAlarmTime(&dateTimeBuffer[1], loggerConfig.loggingInterval, &alarm);
 		DS3231_setAlarm(&i2cMasterModule, &alarm);
+		PORTA.OUTCLR.reg = ALL_GPIO_PINMASK;
+		PORTA.DIRCLR.reg = ALL_GPIO_PINMASK;
 		ExternalInterruptSleep();
 	}
 }
