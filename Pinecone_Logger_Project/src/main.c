@@ -139,8 +139,8 @@ static inline void MainLoop(void){
 		//get the time string from the DS3231. Load it into the buffer, starting at the second index to ignore the starting newline.
 		DS3231_getTimeToString(&i2cMasterModule, &dateTimeBuffer[1]);
 		
-		// run sap flux system, dendrometers, and DHT22
-		PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;
+		// run sap flux system, dendrometers
+		PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;;
 		RunSapFluxSystem();
 		ReadDendrometers();
 		RunDht22System();
@@ -173,6 +173,8 @@ static inline void MainLoop(void){
 static inline void RunDht22System(void){
 	//DHT22 requires at least 2 seconds of power before reading, so sleep here to give them time to think.
 	if(loggerConfig.configFlags & (CONFIG_FLAGS_ENABLE_DHT_1 | CONFIG_FLAGS_ENABLE_DHT_2)){
+		PORTA.DIRSET.reg = DHT22_1_PINMASK | DHT22_2_PINMASK;
+		PORTA.OUTSET.reg = DHT22_1_PINMASK | DHT22_2_PINMASK;
 		TimedSleepSeconds(&tcInstance, 2);
 	}
 	if(loggerConfig.configFlags & (CONFIG_FLAGS_ENABLE_DHT_1)){
@@ -187,6 +189,9 @@ static inline void RunDht22System(void){
 	else{
 		LogValues[LOG_VALUES_DHT2_INDEX] = NAN;
 	}
+	//set back to low power mode
+	PORTA.DIRCLR.reg = DHT22_1_PINMASK | DHT22_2_PINMASK;
+	PORTA.OUTCLR.reg = DHT22_2_PINMASK | DHT22_1_PINMASK;
 }
 
 static inline void RecordDateTime(FIL *dataFile){

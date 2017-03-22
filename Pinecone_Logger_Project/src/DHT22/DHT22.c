@@ -46,16 +46,13 @@ enum Dht22Status GetDht22Reading(float *temp, float *relativeHumidity, const uin
 {
 	//NOTE! this is probably unnecessary, just ignore for now.
 	//put the pinmask in the correct bits, enable IN, write the mux, and write the pincfg
-	const uint32_t wrConfigInValue = (dhtPinmask << PORT_WRCONFIG_PINMASK_Pos) | PORT_WRCONFIG_INEN | PORT_WRCONFIG_WRPMUX | PORT_WRCONFIG_WRPINCFG;
-	const uint32_t wrConfigPowerSave = (dhtPinmask << PORT_WRCONFIG_PINMASK_Pos) | PORT_WRCONFIG_WRPMUX | PORT_WRCONFIG_WRPINCFG;
+	const uint32_t wrConfigInValue = (dhtPinmask << PORT_WRCONFIG_PINMASK_Pos) | PORT_WRCONFIG_INEN  | PORT_WRCONFIG_WRPINCFG;
+	const uint32_t wrConfigPowerSave = (dhtPinmask << PORT_WRCONFIG_PINMASK_Pos)  | PORT_WRCONFIG_WRPINCFG;
 	uint32_t timeTaken = 0;
 	*temp = 0;
 	*relativeHumidity = 0;
 	uint8_t rxBuffer[5];
 	memset(rxBuffer, 0, 5);
-	
-	//set pin for output
-	PORTA.DIRSET.reg = dhtPinmask;
 
 	//start by holding the data pin low for at least 800us
 	PORTA.OUTCLR.reg = dhtPinmask;
@@ -94,7 +91,8 @@ enum Dht22Status GetDht22Reading(float *temp, float *relativeHumidity, const uin
 			}
 		}
 	}
-	//stop listening to the data pin
+	//change the pin to output HIGH to put DHT in sleep mode.
+	PORTA.DIRSET.reg = dhtPinmask;
 	PORTA.WRCONFIG.reg = wrConfigPowerSave;
 	PORTA.OUTSET.reg = dhtPinmask;
 	
