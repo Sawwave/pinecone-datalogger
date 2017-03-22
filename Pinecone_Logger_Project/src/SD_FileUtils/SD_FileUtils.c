@@ -27,35 +27,22 @@ second argument, fileResult, will show the result state of the attempted mount.
 */
 bool SdCardInit(FATFS *fatFileSys)
 {
+	sd_mmc_init();
+	
 	uint8_t numMountAttempts = 100;
-	FRESULT res;
-	do{
-		if(numMountAttempts--)
-		{
-			uint8_t numStatusAttempts = 255;
-			sd_mmc_init();
-			Ctrl_status checkStatus;
-			do{
-				checkStatus = sd_mmc_test_unit_ready(0);
-			} while (checkStatus != CTRL_GOOD && numStatusAttempts--);
-			
-			if(numStatusAttempts == 0){
-				break;
-			}
-			memset(fatFileSys, 0, sizeof(FATFS));
-			
-			res = f_mount(SD_VOLUME_NUMBER, fatFileSys);
-			if(res !=  FR_OK){
-				checkStatus = CTRL_FAIL;
+	uint8_t numStatusAttempts = 100;
+	
+	while(--numMountAttempts){
+		while(--numStatusAttempts){
+			if(sd_mmc_test_unit_ready(0) == CTRL_GOOD){
+				memset(fatFileSys, 0, sizeof(FATFS));
+				if(f_mount(SD_VOLUME_NUMBER, fatFileSys) == FR_OK){
+					return true;
+				}
 			}
 		}
-		else{
-			return false;
-		}
-		
-	}while(res != FR_OK && (numMountAttempts));
-
-	return true;
+	}
+	return false;
 }
 
 /* tryReadTimeFile
