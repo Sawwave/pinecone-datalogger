@@ -55,12 +55,16 @@ void LedFlashStatusCode(const LedStatusCode statusCode){
 		}
 	}
 	
+	PORTA.DIRSET.reg = LED_PIN_PINMASK;
+	
 	while(repetitions--){
 		PORTA.OUTSET.reg = LED_PIN_PINMASK;
 		delay_ms(ledFlashTime);
 		PORTA.OUTCLR.reg = LED_PIN_PINMASK;
 		delay_ms(ledFlashTime);
 	}
+	
+	PORTA.DIRCLR.reg = LED_PIN_PINMASK;
 }
 
 void LedRepeatStatusCode(const LedStatusCode statusCode){
