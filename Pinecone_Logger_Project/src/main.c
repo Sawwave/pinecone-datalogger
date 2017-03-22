@@ -259,6 +259,9 @@ static inline void QueryAndRecordSdiValues(FIL *dataFile){
 }
 
 static inline void RunSapFluxSystem(void){
+	//set both mux pins to low output
+	PORTA.DIRSET.reg = TC_MUX_SELECT_ALL_PINMASK;
+	PORTA.OUTCLR.reg = TC_MUX_SELECT_ALL_PINMASK;
 	
 	if(loggerConfig.configFlags & CONFIG_FLAGS_ENABLE_SAP_FLUX){
 		//read the starting values for the thermocouples
@@ -279,6 +282,9 @@ static inline void RunSapFluxSystem(void){
 			LogValues[index] = NAN;
 		}
 	}
+	//make sure the mux pins are low, and set to low power input.
+	PORTA.OUTCLR.reg = TC_MUX_SELECT_ALL_PINMASK;
+	PORTA.DIRCLR.reg =TC_MUX_SELECT_ALL_PINMASK;
 }
 
 static inline void ReadThermocouples(float *tcValuesOut){
