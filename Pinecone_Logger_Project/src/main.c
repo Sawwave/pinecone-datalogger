@@ -259,9 +259,6 @@ static inline void QueryAndRecordSdiValues(FIL *dataFile){
 }
 
 static inline void RunSapFluxSystem(void){
-	//set both mux pins to low output
-	PORTA.DIRSET.reg = TC_MUX_SELECT_ALL_PINMASK;
-	PORTA.OUTCLR.reg = TC_MUX_SELECT_ALL_PINMASK;
 	
 	if(loggerConfig.configFlags & CONFIG_FLAGS_ENABLE_SAP_FLUX){
 		//read the starting values for the thermocouples
@@ -284,9 +281,6 @@ static inline void RunSapFluxSystem(void){
 			LogValues[index] = NAN;
 		}
 	}
-	//make sure the mux pins are low, and set to low power input.
-	PORTA.OUTCLR.reg = TC_MUX_SELECT_ALL_PINMASK;
-	PORTA.DIRCLR.reg =TC_MUX_SELECT_ALL_PINMASK;
 }
 
 static inline void ReadThermocouples(float *tcValuesOut){
@@ -295,6 +289,10 @@ static inline void ReadThermocouples(float *tcValuesOut){
 	spi_enable(&spiMasterModule);
 	//start by configuring the registers to the required values.
 	Max31856ConfigureRegisters(&spiMasterModule, &spiSlaveInstance, loggerConfig.thermocoupleType);
+	
+	//set both mux pins to low output
+	PORTA.DIRSET.reg = TC_MUX_SELECT_ALL_PINMASK;
+	PORTA.OUTCLR.reg = TC_MUX_SELECT_ALL_PINMASK;
 	
 	for(uint8_t index = 0; index < 4; index++){
 		//request the reading.
@@ -312,6 +310,10 @@ static inline void ReadThermocouples(float *tcValuesOut){
 		}
 		PORTA.OUTTGL.reg = (index & 1)? TC_MUX_SELECT_ALL_PINMASK : TC_MUX_SELECT_A_PINMASK;
 	}
+	//make sure the mux pins are low, and set to low power input.
+	PORTA.OUTCLR.reg = TC_MUX_SELECT_ALL_PINMASK;
+	PORTA.DIRCLR.reg = TC_MUX_SELECT_ALL_PINMASK;
+	
 	spi_disable(&spiMasterModule);
 }
 
