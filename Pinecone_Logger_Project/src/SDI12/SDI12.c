@@ -38,6 +38,7 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction(const char *message, const uint8
 	system_interrupt_enter_critical_section();
 	
 	//set for 13 millis, ish
+	PORTA.DIRSET.reg = SDI_PIN_PINMASK;
 	PORTA.OUTSET.reg = SDI_PIN_PINMASK;
 	portable_delay_cycles(MARKING_DELAY_CYCLES);
 	
@@ -82,8 +83,7 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction(const char *message, const uint8
 		portable_delay_cycles(5);
 	} while( (timeout--) && ((PORTA.IN.reg & SDI_PIN_PINMASK)  == 0) );
 	if(timeout == 0){
-		//turn pin back into OUTPUT, and disable INEN
-		PORTA.DIRSET.reg = SDI_PIN_PINMASK;
+		//disable INEN, but keep as input for power saving.
 		#if SDI_PIN_PINMASK < (1 << 16)
 		PORTA.WRCONFIG.reg = PORT_WRCONFIG_WRPINCFG |  SDI_PIN_PINMASK;
 		#else
@@ -122,11 +122,10 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction(const char *message, const uint8
 	&& (outBuffer[byteNumber-1] != 10));						// the last byte was Line Feed
 
 	//we're done receiving the message, so we can leave the interrupt critical section.
-	//while we're at it, we can set the pin back to output, and put it in powersave mode
+	//while we're at it, let's put it in powersave mode
 	system_interrupt_leave_critical_section();
 
-	//turn pin back into OUTPUT, and disable INEN
-	PORTA.DIRSET.reg = SDI_PIN_PINMASK;
+	//disable INEN
 	PORTA.OUTCLR.reg = SDI_PIN_PINMASK;
 	#if SDI_PIN_PINMASK < (1 << 16)
 	PORTA.WRCONFIG.reg = PORT_WRCONFIG_WRPINCFG |  SDI_PIN_PINMASK;
