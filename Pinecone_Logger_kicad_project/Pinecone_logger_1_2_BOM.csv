@@ -1,0 +1,24 @@
+﻿Digi-Key Part Number,Manufacturer,Manufacturer Part Number,Customer Reference,Quantity 1,Quantity 2,Quantity 3,Mfg Std Lead Time,Description,Comments,RoHS Status,Lead Free Status,REACH Status
+ATSAMD20E18A-AUTCT-ND,MICROCHIP TECHNOLOGY (VA),ATSAMD20E18A-AUT,MCU,1,0,0,19 Weeks,IC MCU 32BIT 256KB FLASH 32TQFP,,RoHS Compliant,Lead free,Unaffected Dec-2015
+DS3231SN#T&RCT-ND,MAXIM INTEGRATED (VA),DS3231SN#T&R,RTC,1,0,0,6 Weeks,IC RTC CLK/CALENDAR I2C 16-SOIC,,RoHS Compliant,Lead free,Unaffected Jun-2016
+AP2281-3WG-7DICT-ND,DIODES INCORPORATED (VA),AP2281-3WG-7,3V3 LOAD SWITCH,1,0,0,8 Weeks,IC LOAD SWITCH 100US SOT-26,,RoHS Compliant,Lead free,Unaffected Jun-2016
+576-2749-1-ND,MICROCHIP TECHNOLOGY (VA),MIC5211-LXYM6-TR,REGULATOR,1,0,0,12 Weeks,IC REG LDO 3.3V/5V 80MA SOT23-6,,RoHS Compliant,Lead free,Unaffected Jun-2016
+MAX4618ESE+-ND,MAXIM INTEGRATED,MAX4618ESE+,TC MUX,1,0,0,6 Weeks,IC MULTIPLEXER DUAL 4X1 16SOIC,Alternate Packaging Exists,RoHS Compliant,Lead free,Unaffected Jun-2016
+MAX31856MUD+-ND,MAXIM INTEGRATED,MAX31856MUD+,TC AMP,1,0,0,14 Weeks,IC CONV THERMOCOUPLE 14TSSOP,Alternate Packaging Exists,RoHS Compliant,Lead free,Unaffected Jun-2016
+CP-102A-ND,CUI INC,PJ-102A,PWR JACK,1,0,0,10 Weeks,CONN PWR JACK 2X5.5MM SOLDER,,RoHS Compliant,Lead free,Unaffected Jun-2015
+952-1389-ND,HARWIN INC,M50-3600542,CORTEX DEBUG PORT,1,0,0,10 Weeks,CONN HDR 1.27MM SMD AU 10POS,Alternate Packaging Exists,RoHS Compliant,Lead free,Unaffected Dec-2015
+ED10565-ND,ON SHORE TECHNOLOGY INC,OSTVN06A150,6 PIN TERM,4,0,0,8 Weeks,CONN TERM BLOCK 2.54MM 6POS PCB,,RoHS Compliant,Lead free,Unaffected Jun-2016
+HR1964CT-ND,HIROSE ELECTRIC CO LTD (VA),DM3AT-SF-PEJM5,SD CARD PORT,1,0,0,8 Weeks,CONN MICRO SD CARD PUSH-PUSH R/A,Multiple packaging options exist for the part number you requested. This part was selected by the Digi-Key Auto Sensor ,RoHS Compliant,Lead free,Not Available
+ED10567-ND,ON SHORE TECHNOLOGY INC,OSTVN10A150,10 PIN TERM,1,0,0,8 Weeks,CONN TERM BLOCK 2.54MM 10POS PCB,,RoHS Compliant,Lead free,Unaffected Jun-2016
+490-1691-1-ND,MURATA ELECTRONICS (VA),GRM21BR71C105KA01L,1UF CAP,2,0,0,11 Weeks,CAP CER 1UF 16V X7R 0805,,RoHS Compliant,Lead free,Unaffected Jun-2016
+399-1170-1-ND,KEMET (VA),C0805C104K5RACTU,0.1UF CAP,13,0,0,22 Weeks,CAP CER 0.1UF 50V X7R 0805,,RoHS Compliant,Lead free,Unaffected Jun-2016
+490-4735-1-ND,MURATA ELECTRONICS (VA),GRM219R61A106KE44D,10UF CAP,2,0,0,11 Weeks,CAP CER 10UF 10V X5R 0805,,RoHS Compliant,Lead free,Unaffected Jun-2016
+399-1158-1-ND,KEMET (VA),C0805C103K5RACTU,0.01UF CAP,2,0,0,22 Weeks,CAP CER 10000PF 50V X7R 0805,,RoHS Compliant,Lead free,Unaffected Jun-2016
+399-9616-1-ND,KEMET (VA),Z0805C221APMST,FERRITE BEAD,1,0,0,18 Weeks,FERRITE BEAD 220 OHM 0805 1LN,,RoHS Compliant,Lead free,Unaffected Jun-2016
+785-1014-1-ND,ALPHA & OMEGA SEMICONDUCTOR INC (VA),AO3420,N-FET,2,0,0,16 Weeks,MOSFET N-CH 20V 6A SOT23,,RoHS Compliant,Lead free,Unaffected Jun-2016
+311-10KARCT-ND,YAGEO (VA),RC0805JR-0710KL,10K OHM,8,0,0,22 Weeks,RES SMD 10K OHM 5% 1/8W 0805,,RoHS Compliant,Lead free,Unaffected Dec-2015
+311-1.0KARCT-ND,YAGEO (VA),RC0805JR-071KL,1K OHM,1,0,0,22 Weeks,RES SMD 1K OHM 5% 1/8W 0805,Multiple packaging options exist for the part number you requested. This part was selected by the Digi-Key Auto Sensor ,RoHS Compliant,Lead free,Unaffected Dec-2015
+311-68ARCT-ND,YAGEO (VA),RC0805JR-0768RL,68 OHM,1,0,0,22 Weeks,RES SMD 68 OHM 5% 1/8W 0805,Multiple packaging options exist for the part number you requested. This part was selected by the Digi-Key Auto Sensor ,RoHS Compliant,Lead free,Unaffected Dec-2015
+475-2560-1-ND,OSRAM OPTO SEMICONDUCTORS INC(VA),LY R976-PS-36,LED,1,0,0,10 Weeks,LED YELLOW DIFFUSED 0805 SMD,,RoHS Compliant,Lead free,Unaffected Dec-2015
+952-1662-1-ND,HARWIN INC (VA),S8201-46R,BATT HOLDER,1,0,0,10 Weeks,HOLDER BATT COIN 12.5X2.5MM SMD,,RoHS Compliant,Lead free,Unaffected Dec-2015
+P033-ND,PANASONIC - BSG,CR1220,3V BATT,1,0,0,14 Weeks,BATTERY LITHIUM 3V COIN 12.5MM,,Not applicable,Not applicable,Not Available
