@@ -826,12 +826,12 @@
     <None Include="src\config\conf_sd_mmc.h">
       <SubType>compile</SubType>
     </None>
-    <Compile Include="src\DS1302\DS1302.c">
+    <None Include="src\DS1302\DS1302.c">
       <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\DS1302\DS1302.h">
+    </None>
+    <None Include="src\DS1302\DS1302.h">
       <SubType>compile</SubType>
-    </Compile>
+    </None>
     <Compile Include="src\DS3231\DS3231.c">
       <SubType>compile</SubType>
     </Compile>
@@ -889,9 +889,9 @@
     <Compile Include="src\DHT22\DHT22.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\DHT22\DHT22.h">
+    <None Include="src\DHT22\DHT22.h">
       <SubType>compile</SubType>
-    </Compile>
+    </None>
     <None Include="src\config\conf_fatfs.h">
       <SubType>compile</SubType>
     </None>
