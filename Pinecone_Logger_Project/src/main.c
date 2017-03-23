@@ -125,13 +125,14 @@ int main (void)
 	PORTA.OUTCLR.reg = ALL_POWER_ENABLE;
 	PORTA.DIRCLR.reg = ALL_POWER_ENABLE;
 	
-	if(sdInitSuccess && configFileSuccess){
-		LedFlashStatusCode(LED_CODE_START_SUCCESS);
-	}
-	
 	ExternalInterruptInit();
 	
 	if(loggerConfig.configFlags & CONFIG_FLAGS_START_ON_HOUR){
+		//flash success so that the user knows that, even though it's not logging now, it worked.
+		if(sdInitSuccess && configFileSuccess){
+			LedFlashStatusCode(LED_CODE_START_SUCCESS);
+		}
+		
 		DS3231_setAlarm(&i2cMasterModule, NULL);
 		ExternalInterruptSleep();
 	}
@@ -141,6 +142,12 @@ int main (void)
 
 static inline void MainLoop(void){
 	while(1){
+		
+		//flash success to show now logging
+		if(sdInitSuccess && configFileSuccess){
+			LedFlashStatusCode(LED_CODE_START_SUCCESS);
+		}
+		
 		//get the time string from the DS3231. Load it into the buffer, starting at the second index to ignore the starting newline.
 		DS3231_getTimeToString(&i2cMasterModule, &dateTimeBuffer[1]);
 		
