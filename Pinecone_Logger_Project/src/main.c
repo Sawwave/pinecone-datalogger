@@ -102,7 +102,7 @@ int main (void)
 	
 	PORTA.DIRSET.reg = PWR_3V3_POWER_ENABLE;
 	PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;
-	delay_ms(10);
+	delay_ms(100);
 	bool sdInitSuccess = SdCardInit(&fatFileSys);
 	if(!sdInitSuccess){
 		LedRepeatStatusCode(LED_CODE_SD_CARD_NOT_FOUND);
@@ -114,7 +114,7 @@ int main (void)
 		f_unlink(SD_TIME_FILENAME);
 	}
 	
-	bool configFileSuccess = ReadConfigFile(&loggerConfig);
+	int configFileSuccess = ReadConfigFile(&loggerConfig);
 	if(!configFileSuccess){
 		LedFlashStatusCode(LED_CODE_CONFIG_MISSING);
 	}
@@ -174,6 +174,7 @@ static inline void MainLoop(void){
 		
 		//close everything down, and get ready to sleep.
 		PORTA.OUTCLR.reg = ALL_POWER_ENABLE;
+		PORTA.DIRCLR.reg = ALL_POWER_ENABLE;
 		bod_disable(BOD_BOD33);
 		bod_clear_detected(BOD_BOD33);
 		

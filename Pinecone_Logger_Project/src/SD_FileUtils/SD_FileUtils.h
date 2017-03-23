@@ -38,24 +38,47 @@ return true if header was created or file already existed.*/
 void SD_CreateWithHeaderIfMissing(const struct LoggerConfig *loggerConfig);
 
 /*readConfigFile
-
 Reads the Configuration file, and stores the configuration in the given struct.
 Config file is formated as defined below:
 
+0000
+EEEEEEET
 ABC...
 9,9,9...
-0000
-i
 
 first line:
+0000 is the number of minutes between readings that the sensor will sleep
+
+Second line:
+specifies a series of boolean configuration flags:
+
+Flag 1: Start On Hour, values (E = wait for top of hour, D = log immediately)
+Determines if the logger should attempt to log immediately when waking up, or if it should wait until the top of the next hour.
+Flag 2: Enable Dendrometer 1, values (E = enable, D = disable)
+Determines if dendrometer 1 should be logged, or skipped
+Flag 3: Enable Dendrometer 2, values (E = enable, D = disable)
+Determines if dendrometer 2 should be logged, or skipped
+Flag 4: Enable DHT 1, values (E = enable, D = disable)
+Determines if DHT-22 1 should be logged, or skipped
+Flag 5: Enable DHT 2, values (E = enable, D = disable)
+Determines if DHt-22 2 should be logged, or skipped
+Flag 6: Enable SDI, values (E = enable, D = disable)
+Determines if SDI-sensors should be logged, or skipped
+Flag 7: Enable Sap flux, values (E = enable, D = disable)
+Determines if sap flux system should be logged, or skipped
+Flag 8	Thermocouple Type:
+specifies the type of thermocouples used. Acceptable characters are any of the following: BEJKNRST .
+This character is not case sensitive.
+
+Third Line
 ABC.. specifies the SDI12 addresses of the sensors. Thus, if logger is connected to 3 sensors, with addresses 0,7, and B, line 2 may read
 07B
-second line:
-9,9,9,... specifies the SDI12 number of values for each of the sdi sensors addressed in the first line.
-third line:
-0000 is the number of minutes between readings that the sensor will sleep
-fouth line:
-i may be letter i or d specifies if the sensor takes the reading immediately on waking up(i), or defers logging until after the sleep interval(d).
+
+Fourth line:
+9,9,9,... specifies the SDI12 number of values for each of the sdi sensors addressed in the Third line.
+
+
+returns true if config file was found, false otherwise.
 */
 bool ReadConfigFile(struct LoggerConfig *config);
 

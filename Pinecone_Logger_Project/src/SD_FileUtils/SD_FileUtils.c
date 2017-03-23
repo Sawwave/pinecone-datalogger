@@ -31,10 +31,11 @@ bool SdCardInit(FATFS *fatFileSys)
 	sd_mmc_init();
 	bool sdInitSuccess = false;
 	
-	uint8_t numMountAttempts = 32;
-	uint8_t numStatusAttempts = 32;
-	
+	uint8_t numMountAttempts = 255;
+	uint8_t numStatusAttempts = 255;
 	while(--numMountAttempts && !sdInitSuccess ){
+		//wait a bit before trying to mount again
+		delay_ms(1);
 		while(--numStatusAttempts && !sdInitSuccess){
 			if(sd_mmc_test_unit_ready(0) == CTRL_GOOD){
 				if(f_mount(SD_VOLUME_NUMBER, fatFileSys) == FR_OK){
@@ -175,8 +176,10 @@ bool ReadConfigFile(struct LoggerConfig *config){
 	config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_K;
 	config->configFlags = CONFIG_FLAGS_DEFAULT;
 	
+	int returnCode = 0;
+	
 	const uint8_t flagBufferLen = 11;
-	const uint8_t intervalBufferLen = 6; 
+	const uint8_t intervalBufferLen = 6;
 	const uint16_t numValuesBufferSize = SDI12_MAX_SUPPORTED_SENSORS * 4;
 	char intervalBuffer[intervalBufferLen];
 	char flagBuffer[flagBufferLen];
@@ -185,16 +188,29 @@ bool ReadConfigFile(struct LoggerConfig *config){
 	memset(intervalBuffer, 0, intervalBufferLen * sizeof(char));
 	memset(flagBuffer, 'X', flagBufferLen * sizeof(char));
 	memset(config->SDI12_SensorAddresses, 0, (SDI12_MAX_SUPPORTED_SENSORS + 1) * sizeof(char));
-		
+	
 	FIL fileObj;
-	FRESULT status = f_open(&fileObj, "0:lgr.cfg", FA_READ | FA_OPEN_EXISTING);
-	if(status == FR_OK){
-		f_gets(intervalBuffer, intervalBufferLen, &fileObj);
-		f_gets(flagBuffer, flagBufferLen, &fileObj);
-		f_gets(config->SDI12_SensorAddresses, SDI12_MAX_SUPPORTED_SENSORS, &fileObj);
-		f_gets(numValuesBuffer, numValuesBufferSize, &fileObj);
-		f_close(&fileObj);
-		
+	
+	uint8_t readTryCount = 100;
+	while(readTryCount--){
+		delay_ms(1);
+		FRESULT status = f_open(&fileObj, "0:lgr.cfg", FA_READ | FA_OPEN_EXISTING);
+		if(status == FR_OK){
+			f_gets(intervalBuffer, intervalBufferLen, &fileObj);
+			f_gets(flagBuffer, flagBufferLen, &fileObj);
+			f_gets(config->SDI12_SensorAddresses, SDI12_MAX_SUPPORTED_SENSORS, &fileObj);
+			f_gets(numValuesBuffer, numValuesBufferSize, &fileObj);
+			f_close(&fileObj);
+			//stop looping
+			break;
+		}
+		//on these conditions, give up looking for file.
+		else if (status == FR_NO_FILE || status == FR_NO_FILESYSTEM || status == FR_NOT_ENOUGH_CORE){
+			readTryCount = 0;
+		}		
+	}
+	
+	if(readTryCount){
 		char *ptrToNumValuesBuffer = &(numValuesBuffer[0]);
 		//count up the number of sdi sensors, and convert the numValues into ints for the config
 		config->numSdiSensors = 0;
@@ -258,22 +274,22 @@ bool ReadConfigFile(struct LoggerConfig *config){
 		else{
 			//return false if there wasn't enough chars in the flag buffer.
 			f_close(&fileObj);
-			return false;
+			return returnCode;
 		}
 		//return true on completed config setup
 		f_close(&fileObj);
-		return true;
+		return returnCode;
 	}
 	else{
 		//return false if the file couldn't be opened.
-		return false;
+		return returnCode;
 	}
 }
 
 /*SD_CheckIntegrity
 If the logger has a reason to think that the previous log was interrupted, this function may be called.
 Function determines how many values should be in each line, and passes that information to CheckAndFixLastFileLineIntegrity
-to potentiallyf fix integrity issues.*/
+to potentially fix integrity issues.*/
 bool SD_CheckIntegrity(const struct LoggerConfig *loggerConfig){
 	//count up the number of SDI values we're expecting
 	uint16_t expectedValues = 14; //start with 14 values, we'll add more for the SDI12s
