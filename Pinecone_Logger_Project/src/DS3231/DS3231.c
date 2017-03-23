@@ -53,8 +53,8 @@ static uint8_t intToBCD(const uint8_t intValue){
 }
 
 static void writeBCD_regToString(char stringPtr[2], const uint8_t regValue){
-	stringPtr[0] = (regValue & 0x0F) + '0';
 	stringPtr[1] = (regValue >> 4) + '0';
+	stringPtr[0] = (regValue & 0x0F) + '0';
 }
 
 static uint8_t charArrayToBCD(const char tensDigitPtr[2]){
