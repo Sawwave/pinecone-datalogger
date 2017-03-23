@@ -32,14 +32,15 @@ void Max31856ConfigureSPI(struct spi_module *spiMasterModule, struct spi_slave_i
 	spiMasterConfig.pinmux_pad3 = MAX31856_SPI_PAD3;
 	//xfers in MSB order by default.
 	//since CPHA must be 1 for the Max31856, use xfer mode 1 or 3.
-	spiMasterConfig.transfer_mode = SPI_TRANSFER_MODE_3;
+	spiMasterConfig.transfer_mode = SPI_TRANSFER_MODE_1;
 	
 	spi_init(spiMasterModule,  MAX31856_SPI_SERCOM_MODULE, &spiMasterConfig);
 	
 	struct spi_slave_inst_config slaveConfig;
 	spi_slave_inst_get_config_defaults(&slaveConfig);
 	slaveConfig.ss_pin = MAX31856_CS_PIN;
-	spi_attach_slave(spiSlaveInstance, &slaveConfig);
+	spi_attach_slave(spiSlaveInstance, &slaveConfig);	
+	
 }
 
 /*Max31856CheckWrittenRegister
@@ -104,10 +105,10 @@ enum Max31856_Status Max31856GetTemp(struct spi_module *spiMasterModule, struct 
 	spi_select_slave(spiMasterModule, slaveInst, true);
 	
 	//init the I/O buffers
-	uint8_t sendBuffer[5] = {MAX31856_TEMP_START_REG, 0, 0, 0, 0};
+	uint8_t sendBuffer[5] = {MAX31856_TEMP_START_REG , 0, 0, 0, 0};
 	uint8_t receiveBuffer[5] = {0, 0, 0, 0, 0};
 	status = spi_transceive_buffer_wait(spiMasterModule, sendBuffer, receiveBuffer, 5);
-	
+
 	spi_select_slave(spiMasterModule, slaveInst, false);
 	spi_unlock(spiMasterModule);
 	//if we got the temp, translate it to a double.

@@ -197,10 +197,8 @@ struct LoggerConfig{
 
 
 
-
-
-
 #else
+
 #define DS3231_SERCOM_MODULE						SERCOM3
 #define DS3231_SERCOM_SDA_PIN						PINMUX_PA22C_SERCOM3_PAD0
 #define DS3231_SERCOM_SCL_PIN						PINMUX_PA23C_SERCOM3_PAD1
@@ -243,8 +241,8 @@ struct LoggerConfig{
 #define LED_PIN_PINMASK								1 << LED_PIN
 
 //Mosfet PINS
-#define PWR_3V3_POWER_ENABLE						1 << 25
-#define PWR_5V_POWER_ENABLE							1 << 27
+#define PWR_3V3_POWER_ENABLE						1 << 24
+#define PWR_5V_POWER_ENABLE							1 << 25
 #define ALL_POWER_ENABLE							PWR_3V3_POWER_ENABLE | PWR_5V_POWER_ENABLE
 #define HEATER_MOSFET_PINMASK						1 << 28 //PIN_PA28
 

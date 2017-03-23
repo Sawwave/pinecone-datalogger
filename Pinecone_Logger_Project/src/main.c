@@ -65,7 +65,7 @@ static inline void WriteDataFileNanOrFloat(float value, FIL *datafile);
 
 static inline void DEBUG_LOOP(void);
 
-static struct spi_module spiMasterModule;
+struct spi_module spiMasterModule;
 static struct spi_slave_inst spiSlaveInstance;
 static struct i2c_master_module i2cMasterModule;
 static struct adc_module adcModule;
@@ -102,7 +102,7 @@ int main (void)
 	
 	PORTA.DIRSET.reg = PWR_3V3_POWER_ENABLE;
 	PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;
-	delay_ms(100);
+
 	bool sdInitSuccess = SdCardInit(&fatFileSys);
 	if(!sdInitSuccess){
 		LedRepeatStatusCode(LED_CODE_SD_CARD_NOT_FOUND);
@@ -152,10 +152,12 @@ static inline void MainLoop(void){
 		
 		// run sap flux system, dendrometers
 		PORTA.DIRSET.reg = PWR_3V3_POWER_ENABLE;
-		PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;
-		RunSapFluxSystem();
+		PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;		
+
+		//DHT22 goes first because it has 2s built in delay, giving dend and sap flux time to init
+		RunDht22System();	
 		ReadDendrometers();
-		RunDht22System();
+		RunSapFluxSystem();
 		
 		//SD card requires 3v3, and SDI-12 requires 3v3 and 5v.
 		PORTA.DIRSET.reg = PWR_5V_POWER_ENABLE;
@@ -268,7 +270,6 @@ static inline void QueryAndRecordSdiValues(FIL *dataFile){
 }
 
 static inline void RunSapFluxSystem(void){
-	
 	if(loggerConfig.configFlags & CONFIG_FLAGS_ENABLE_SAP_FLUX){
 		//read the starting values for the thermocouples
 		ReadThermocouples(&(LogValues[LOG_VALUES_TC_BEFORE_INDEX]));
