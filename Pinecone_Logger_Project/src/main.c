@@ -102,6 +102,7 @@ int main (void)
 	
 	PORTA.DIRSET.reg = PWR_3V3_POWER_ENABLE;
 	PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;
+	delay_ms(10);
 	bool sdInitSuccess = SdCardInit(&fatFileSys);
 	if(!sdInitSuccess){
 		LedRepeatStatusCode(LED_CODE_SD_CARD_NOT_FOUND);
@@ -162,6 +163,7 @@ static inline void MainLoop(void){
 		
 		FIL dataFile;
 		bod_enable(BOD_BOD33);
+		delay_ms(10);
 		f_open(&dataFile, SD_DATALOG_FILENAME, FA_WRITE);
 		f_lseek(&dataFile, f_size(&dataFile));	//append to the end of the file.
 		

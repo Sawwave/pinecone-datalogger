@@ -93,7 +93,7 @@ void DS3231_setTimeFromString(struct i2c_master_module *i2cMasterModule, const c
 	struct i2c_master_packet packet;
 	packet.address = DS3231_SLAVE_ADDRESS;
 	packet.data = data;
-	packet.data_length = 7;
+	packet.data_length = 8;
 	packet.high_speed = false;
 	packet.ten_bit_address = false;
 	
