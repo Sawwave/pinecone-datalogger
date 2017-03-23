@@ -106,7 +106,7 @@ int main (void)
 	if(!sdInitSuccess){
 		LedRepeatStatusCode(LED_CODE_SD_CARD_NOT_FOUND);
 	}
-		
+	
 	//if we can read the time file, set the DS3231 time.
 	if(TryReadTimeFile(&dateTimeBuffer[1])){
 		DS3231_setTimeFromString(&i2cMasterModule, &dateTimeBuffer[1]);
@@ -144,9 +144,7 @@ static inline void MainLoop(void){
 	while(1){
 		
 		//flash success to show now logging
-		if(sdInitSuccess && configFileSuccess){
-			LedFlashStatusCode(LED_CODE_START_SUCCESS);
-		}
+		LedFlashStatusCode(LED_CODE_START_SUCCESS);
 		
 		//get the time string from the DS3231. Load it into the buffer, starting at the second index to ignore the starting newline.
 		DS3231_getTimeToString(&i2cMasterModule, &dateTimeBuffer[1]);

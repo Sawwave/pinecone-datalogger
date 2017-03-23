@@ -122,7 +122,7 @@ void DS3231_getTimeToString(struct i2c_master_module *i2cMasterModule, char time
 	i2c_master_write_packet_wait(i2cMasterModule, &packet);
 	
 	//now, re-use the same data packet and buffer for the read from the date-time registers.
-	packet.data_length = 6;
+	packet.data_length = 7;
 	i2c_master_read_packet_wait(i2cMasterModule, &packet);
 	i2c_master_disable(i2cMasterModule);
 	
