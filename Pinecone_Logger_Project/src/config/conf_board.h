@@ -65,7 +65,7 @@
 #define CONFIG_FLAGS_DEFAULT		0xFF	//all flags on
 
 struct LoggerConfig{
-	char SDI12_SensorAddresses[SDI12_MAX_SUPPORTED_SENSORS + 1];	//extra char on the end for ease of f_gets function.
+	char SDI12_SensorAddresses[SDI12_MAX_SUPPORTED_SENSORS + 3];	//extra chars on the end for ease of f_gets function.
 	uint8_t SDI12_SensorNumValues[SDI12_MAX_SUPPORTED_SENSORS];
 	uint8_t numSdiSensors;
 	uint16_t loggingInterval;
@@ -231,11 +231,11 @@ struct LoggerConfig{
 
 #define SD_SERCOM_MODULE							SERCOM0
 #define SD_PINMUX_SETTING							SPI_SIGNAL_MUX_SETTING_K
-#define SD_SPI_PIN0									PINMUX_PA08C_SERCOM0_PAD0	//chip detect
+#define SD_SPI_PIN0									PINMUX_PA08C_SERCOM0_PAD0	//chip select
 #define SD_SPI_PIN1									PINMUX_PA09C_SERCOM0_PAD1	//SCK
 #define SD_SPI_PIN2									PINMUX_PA10C_SERCOM0_PAD2	//MISO
 #define SD_SPI_PIN3									PINMUX_PA11C_SERCOM0_PAD3	//MOSI
-#define SD_CS_PIN									PIN_PA14
+#define SD_CS_PIN									PIN_PA08
 #define SD_PIN_DETECT								PIN_PA07
 #define SD_PIN_DETECT_LEVEL							LOW
 

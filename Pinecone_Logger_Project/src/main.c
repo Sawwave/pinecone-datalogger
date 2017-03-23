@@ -71,7 +71,7 @@ static struct i2c_master_module i2cMasterModule;
 static struct adc_module adcModule;
 static struct tc_module tcInstance;
 static struct LoggerConfig loggerConfig;
-static FATFS fatFileSys;
+FATFS fatFileSys;
 
 #define dateTimeBufferLen  20	//defined as to not variably modify length at file scope.
 static char dateTimeBuffer[dateTimeBufferLen] = "\n00/00/2000,00:00:00";	//buffer starts with \n since this always starts a measurement.
@@ -106,10 +106,11 @@ int main (void)
 	if(!sdInitSuccess){
 		LedRepeatStatusCode(LED_CODE_SD_CARD_NOT_FOUND);
 	}
-	
+		
 	//if we can read the time file, set the DS3231 time.
 	if(TryReadTimeFile(&dateTimeBuffer[1])){
 		DS3231_setTimeFromString(&i2cMasterModule, &dateTimeBuffer[1]);
+		f_unlink(SD_TIME_FILENAME);
 	}
 	
 	bool configFileSuccess = ReadConfigFile(&loggerConfig);

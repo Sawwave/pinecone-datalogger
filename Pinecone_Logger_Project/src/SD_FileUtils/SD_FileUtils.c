@@ -27,22 +27,24 @@ second argument, fileResult, will show the result state of the attempted mount.
 */
 bool SdCardInit(FATFS *fatFileSys)
 {
+	memset(fatFileSys, 0, sizeof(FATFS));
 	sd_mmc_init();
+	bool sdInitSuccess = false;
 	
-	uint8_t numMountAttempts = 100;
-	uint8_t numStatusAttempts = 100;
+	uint8_t numMountAttempts = 32;
+	uint8_t numStatusAttempts = 32;
 	
-	while(--numMountAttempts){
-		while(--numStatusAttempts){
+	while(--numMountAttempts && !sdInitSuccess ){
+		while(--numStatusAttempts && !sdInitSuccess){
 			if(sd_mmc_test_unit_ready(0) == CTRL_GOOD){
-				memset(fatFileSys, 0, sizeof(FATFS));
 				if(f_mount(SD_VOLUME_NUMBER, fatFileSys) == FR_OK){
-					return true;
+					sdInitSuccess = true;
 				}
 			}
 		}
 	}
-	return false;
+	//returns false unless inner setup was successful
+	return sdInitSuccess;
 }
 
 /* tryReadTimeFile
@@ -79,7 +81,7 @@ void SD_CreateWithHeaderIfMissing(const struct LoggerConfig *loggerConfig)
 	FIL file;
 	FRESULT statsResult = f_open(&file, SD_DATALOG_FILENAME, FA_READ | FA_OPEN_EXISTING);
 	f_close(&file);
-	if (statsResult == FR_NO_FILE){
+	if (statsResult != FR_OK){
 		SD_FileCreateWithHeader(loggerConfig);
 	}
 }
@@ -173,18 +175,22 @@ bool ReadConfigFile(struct LoggerConfig *config){
 	config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_K;
 	config->configFlags = CONFIG_FLAGS_DEFAULT;
 	
-	FIL fileObj;
-	char intervalBuffer[5];
-	char flagBuffer[9];
+	const uint8_t flagBufferLen = 11;
+	const uint8_t intervalBufferLen = 6; 
 	const uint16_t numValuesBufferSize = SDI12_MAX_SUPPORTED_SENSORS * 4;
+	char intervalBuffer[intervalBufferLen];
+	char flagBuffer[flagBufferLen];
 	char numValuesBuffer[numValuesBufferSize];
-	memset(intervalBuffer, 0, 5 * sizeof(char));
-	memset(flagBuffer, 'X', 9 * sizeof(char));
-	memset(config->SDI12_SensorAddresses, 0, (SDI12_MAX_SUPPORTED_SENSORS + 1) * sizeof(char));
 	
-	if(f_open(&fileObj, SD_CONFIG_FILENAME, FA_READ) == FR_OK){
-		f_gets(intervalBuffer, 6, &fileObj);
-		f_gets(flagBuffer, 9, &fileObj);
+	memset(intervalBuffer, 0, intervalBufferLen * sizeof(char));
+	memset(flagBuffer, 'X', flagBufferLen * sizeof(char));
+	memset(config->SDI12_SensorAddresses, 0, (SDI12_MAX_SUPPORTED_SENSORS + 1) * sizeof(char));
+		
+	FIL fileObj;
+	FRESULT status = f_open(&fileObj, "0:lgr.cfg", FA_READ | FA_OPEN_EXISTING);
+	if(status == FR_OK){
+		f_gets(intervalBuffer, intervalBufferLen, &fileObj);
+		f_gets(flagBuffer, flagBufferLen, &fileObj);
 		f_gets(config->SDI12_SensorAddresses, SDI12_MAX_SUPPORTED_SENSORS, &fileObj);
 		f_gets(numValuesBuffer, numValuesBufferSize, &fileObj);
 		f_close(&fileObj);
@@ -198,13 +204,21 @@ bool ReadConfigFile(struct LoggerConfig *config){
 			config->numSdiSensors++;
 		}
 		
+		//set the logging interval to 0 so we can populate it!
+		config->loggingInterval = 0;
 		char *ptrToIntervalBuffer = intervalBuffer;
 		//parse out the interval.
-		while(*ptrToIntervalBuffer){
+		while( (*ptrToIntervalBuffer >= '0') && (*ptrToIntervalBuffer <= '9')){
 			config->loggingInterval *= 10;
 			config->loggingInterval += (*ptrToIntervalBuffer)- '0';
 			ptrToIntervalBuffer++;
 		}
+		
+		//in case of logging interval error, set it to 60.
+		if(config->loggingInterval == 0){
+			config->loggingInterval = 60;
+		}
+		
 		if(sizeof(flagBuffer) >= sizeof(char)*8){
 			//parse the enable characters of the flag buffer
 			for(uint8_t bit = 0; bit < 7; bit++){
@@ -243,9 +257,11 @@ bool ReadConfigFile(struct LoggerConfig *config){
 		}
 		else{
 			//return false if there wasn't enough chars in the flag buffer.
+			f_close(&fileObj);
 			return false;
 		}
 		//return true on completed config setup
+		f_close(&fileObj);
 		return true;
 	}
 	else{
