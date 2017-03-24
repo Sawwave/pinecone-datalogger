@@ -102,10 +102,9 @@ int main (void)
 	
 	PORTA.DIRSET.reg = PWR_3V3_POWER_ENABLE;
 	PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;
-
-	bool sdInitSuccess = SdCardInit(&fatFileSys);
-	if(!sdInitSuccess){
-		LedRepeatStatusCode(LED_CODE_SD_CARD_NOT_FOUND);
+	
+	while(!SdCardInit(&fatFileSys)){
+		LedFlashStatusCode(LED_CODE_SD_CARD_NOT_FOUND);
 	}
 	
 	//if we can read the time file, set the DS3231 time.
@@ -130,9 +129,7 @@ int main (void)
 	
 	if(loggerConfig.configFlags & CONFIG_FLAGS_START_ON_HOUR){
 		//flash success so that the user knows that, even though it's not logging now, it worked.
-		if(sdInitSuccess && configFileSuccess){
-			LedFlashStatusCode(LED_CODE_START_SUCCESS);
-		}
+		LedFlashStatusCode(LED_CODE_START_SUCCESS);
 		
 		DS3231_setAlarm(&i2cMasterModule, NULL);
 		ExternalInterruptSleep();
@@ -152,15 +149,15 @@ static inline void MainLoop(void){
 		
 		// run sap flux system, dendrometers
 		PORTA.DIRSET.reg = PWR_3V3_POWER_ENABLE;
-		PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;		
+		PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;
 
 		//DHT22 goes first because it has 2s built in delay, giving dend and sap flux time to init
-		RunDht22System();	
+		RunDht22System();
 		ReadDendrometers();
 		RunSapFluxSystem();
 		
 		//SD card requires 3v3, and SDI-12 requires 3v3 and 5v.
-		PORTA.DIRSET.reg = PWR_5V_POWER_ENABLE;
+		PORTA.DIRSET.reg = PWR_5V_POWER_ENABLE | PWR_5V_POWER_ENABLE;
 		PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE | PWR_5V_POWER_ENABLE;
 		
 		FIL dataFile;

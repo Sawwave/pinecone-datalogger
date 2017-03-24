@@ -53,8 +53,8 @@ static uint8_t intToBCD(const uint8_t intValue){
 }
 
 static void writeBCD_regToString(char stringPtr[2], const uint8_t regValue){
-	stringPtr[1] = (regValue >> 4) + '0';
-	stringPtr[0] = (regValue & 0x0F) + '0';
+	stringPtr[0] = (regValue >> 4) + '0';
+	stringPtr[1] = (regValue & 0x0F) + '0';
 }
 
 static uint8_t charArrayToBCD(const char tensDigitPtr[2]){
@@ -108,7 +108,7 @@ void DS3231_setTimeFromString(struct i2c_master_module *i2cMasterModule, const c
 
 void DS3231_getTimeToString(struct i2c_master_module *i2cMasterModule, char timeBuffer[19]){
 	//set up the write to re-zero the address register
-	uint8_t data[7];
+	uint8_t data[18];
 	data[0] = DS3231_SECONDS_REG_ADDRESS;
 	struct i2c_master_packet packet;
 	packet.address = DS3231_SLAVE_ADDRESS;
@@ -122,7 +122,7 @@ void DS3231_getTimeToString(struct i2c_master_module *i2cMasterModule, char time
 	i2c_master_write_packet_wait(i2cMasterModule, &packet);
 	
 	//now, re-use the same data packet and buffer for the read from the date-time registers.
-	packet.data_length = 7;
+	packet.data_length = 18;
 	i2c_master_read_packet_wait(i2cMasterModule, &packet);
 	i2c_master_disable(i2cMasterModule);
 	

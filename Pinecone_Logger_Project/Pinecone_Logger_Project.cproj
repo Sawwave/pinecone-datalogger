@@ -437,6 +437,7 @@
     </ListValues>
   </armgcc.linker.libraries.LibrarySearchPaths>
   <armgcc.linker.optimization.GarbageCollectUnusedSections>True</armgcc.linker.optimization.GarbageCollectUnusedSections>
+  <armgcc.linker.memorysettings.ExternalRAM />
   <armgcc.linker.miscellaneous.LinkerFlags>-Wl,--entry=Reset_Handler -Wl,--cref -mthumb -T../src/ASF/sam0/utils/linker_scripts/samd20/gcc/samd20j18_flash.ld</armgcc.linker.miscellaneous.LinkerFlags>
   <armgcc.preprocessingassembler.general.AssemblerFlags>-DARM_MATH_CM0PLUS=true -DBOARD=USER_BOARD -DCYCLE_MODE -DADC_CALLBACK_MODE=false -DRTC_CALENDAR_ASYNC=false -DTC_ASYNC=true -DSD_MMC_ENABLE -DSPI_CALLBACK_MODE=true -DI2C_MASTER_CALLBACK_MODE=false -DEXTINT_CALLBACK_MODE=false</armgcc.preprocessingassembler.general.AssemblerFlags>
   <armgcc.preprocessingassembler.general.DefaultIncludePath>False</armgcc.preprocessingassembler.general.DefaultIncludePath>

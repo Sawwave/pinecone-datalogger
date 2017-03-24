@@ -176,8 +176,6 @@ bool ReadConfigFile(struct LoggerConfig *config){
 	config->thermocoupleType = MAX31856_THERMOCOUPLE_TYPE_K;
 	config->configFlags = CONFIG_FLAGS_DEFAULT;
 	
-	int returnCode = 0;
-	
 	const uint8_t flagBufferLen = 11;
 	const uint8_t intervalBufferLen = 6;
 	const uint16_t numValuesBufferSize = SDI12_MAX_SUPPORTED_SENSORS * 4;
@@ -274,15 +272,15 @@ bool ReadConfigFile(struct LoggerConfig *config){
 		else{
 			//return false if there wasn't enough chars in the flag buffer.
 			f_close(&fileObj);
-			return returnCode;
+			return false;
 		}
 		//return true on completed config setup
 		f_close(&fileObj);
-		return returnCode;
+		return true;
 	}
 	else{
 		//return false if the file couldn't be opened.
-		return returnCode;
+		return false;
 	}
 }
 
