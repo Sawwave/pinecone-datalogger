@@ -8,6 +8,7 @@
 #include <string.h>
 #include <math.h>
 #include "SDI12/SDI12.h"
+#include "TimedSleep/TimedSleep.h"
 
 #define SDI12_MAX_NUMBER_TRANSACTION_ATTEMPTS		5
 #define MARKING_DELAY_CYCLES						13000	// >= 12ms marking length

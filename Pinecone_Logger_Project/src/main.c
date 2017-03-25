@@ -70,6 +70,7 @@ static struct spi_slave_inst spiSlaveInstance;
 static struct i2c_master_module i2cMasterModule;
 static struct adc_module adcModule;
 static struct tc_module tcInstance;
+static struct tc_module sdiTcInstance;
 static struct LoggerConfig loggerConfig;
 FATFS fatFileSys;
 
@@ -133,7 +134,7 @@ int main (void)
 		
 		DS3231_setAlarm(&i2cMasterModule, NULL);
 		ExternalInterruptSleep();
-	}
+	}	
 	
 	MainLoop();
 }
