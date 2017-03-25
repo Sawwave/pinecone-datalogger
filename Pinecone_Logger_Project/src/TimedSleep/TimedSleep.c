@@ -13,10 +13,6 @@
 #include <power.h>
 #include <extint.h>
 
-#define TIMED_SLEEP_TC_HARDWARE TC2
-#define SDI_BIT_TIMER_TC_HARDWARE TC4
-
-#define BAUD_1200_SLEEP_TIMING 6667
 static void TimerCounterSleepEndFunc(struct tc_module *const module);
 
 /*initSleepTimerCounter
@@ -62,31 +58,6 @@ void TimedSleepSeconds(struct tc_module *tc_instance, const uint32_t seconds){
 	//enable and go to sleep mode!
 	system_set_sleepmode(SYSTEM_SLEEPMODE_STANDBY);
 	system_sleep();
-}
-
-
-void SDI12_1200BaudDelayInit(struct tc_module *tc_instance){
-	struct tc_config tcConfig;
-	tc_get_config_defaults(&tcConfig);
-	tcConfig.counter_size = TC_COUNTER_SIZE_16BIT;
-	tcConfig.clock_source = GCLK_GENERATOR_0;
-	tcConfig.clock_prescaler = TC_CLOCK_PRESCALER_DIV1024;
-	tcConfig.oneshot = true;
-	tcConfig.run_in_standby = false;
-	tc_init(tc_instance, SDI_BIT_TIMER_TC_HARDWARE, &tcConfig);
-	tc_register_callback(tc_instance, TimerCounterSleepEndFunc, TC_CALLBACK_CC_CHANNEL0);
-	tc_enable_callback(tc_instance, TC_CALLBACK_CC_CHANNEL0);
-	tc_set_compare_value(tc_instance, TC_COMPARE_CAPTURE_CHANNEL_0, 7813);
-}
-
-void SDI12_SetTimingInterrupt(struct tc_module *tc_instance){
-	tc_set_count_value(tc_instance, 0);
-	tc_enable(tc_instance);
-	system_set_sleepmode(SYSTEM_SLEEPMODE_IDLE_2);
-}
-
-void SDI12_DisableTc(struct tc_module *tc_instance){
-	tc_disable(tc_instance);
 }
 
 

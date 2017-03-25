@@ -48,7 +48,6 @@
 #ifndef CONF_BOARD_H
 #define CONF_BOARD_H
 
-
 #define SDI12_MAX_SUPPORTED_SENSORS 24
 
 // avoid PA30 and PA31, these are for SWCLK and SWDIO respectively
@@ -72,6 +71,12 @@ struct LoggerConfig{
 	uint8_t thermocoupleType;
 	uint8_t configFlags;
 };
+
+
+
+#define TIMED_SLEEP_TC_HARDWARE TC2
+#define SDI_INTERFACE_TC_HARDWARE TC4
+
 
 
 #define SD_VOLUME_NUMBER							0

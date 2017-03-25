@@ -89,6 +89,8 @@ int main (void)
 	cpu_irq_enable();
 	
 	InitSleepTimerCounter(&tcInstance);
+	SDI12_InitTimingCounter(&sdiTcInstance);
+	
 	InitBodDetection();
 	//if we just woke up, and we're in brownout, wait 10 minutes until we try to start. This allows
 	//a solar panel to gather some energy
@@ -243,13 +245,13 @@ static inline void QueryAndRecordSdiValues(FIL *dataFile){
 			struct SDI_transactionPacket transactionPacket;
 			transactionPacket.address = loggerConfig.SDI12_SensorAddresses[sdiIndex];
 
-			SDI12_RequestSensorReading(&transactionPacket);
+			SDI12_RequestSensorReading(&sdiTcInstance, &transactionPacket);
 			if(transactionPacket.transactionStatus == SDI12_STATUS_OK){
 				//if the sensor asked us to wait for some time before reading, let's go into sleep mode for it.
 				if(transactionPacket.waitTime > 0){
 					TimedSleepSeconds(&tcInstance, transactionPacket.waitTime);
 				}
-				SDI12_GetSensedValues(&transactionPacket, sdiValuesForSensor);
+				SDI12_GetSensedValues(&sdiTcInstance, &transactionPacket, sdiValuesForSensor);
 			}
 			
 			for(uint8_t i=0; i< loggerConfig.SDI12_SensorNumValues[sdiIndex];i++){

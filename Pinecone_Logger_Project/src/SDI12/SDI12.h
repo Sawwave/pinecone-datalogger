@@ -24,18 +24,20 @@ In this transaction, the data logger sends a message addressed to a particular s
 outBuffer should be large enough to accommodate the expected response. For example, an _M! message should be somewhere in the range of
 12-16 characters to be safe.
 Returns SDI12_STATUS_OK on success, but may SDI12_TRANSACTION_TIMEOUT, SDI12_BAD_RESPONSE, or simply SDI12_TRANSACTION_FAILURE.*/
-enum SDI12_ReturnCode SDI12_PerformTransaction(const char *message, const uint8_t messageLen, char *outBuffer, const uint8_t outBufferLen);
+enum SDI12_ReturnCode SDI12_PerformTransaction(struct tc_module *tc_instance, const char *message, const uint8_t messageLen, char *outBuffer, const uint8_t outBufferLen);
 
 /*SDI12_RequestSensorReading
 communicates with the sensor at the given address on the SDI12 bus, and requests a reading (M! command).
 Will load SDI12_STATUS_OK into the packet on success, SDI12_BAD_RESPONSE on failure.
 */
-void SDI12_RequestSensorReading(struct SDI_transactionPacket *transactionPacket);
+void SDI12_RequestSensorReading(struct tc_module *tc_instance, struct SDI_transactionPacket *transactionPacket);
 
 /*SDI12_GetSensedValues
 After the sensor has had values requested with SDI12_RequestSensorReading, use this function to read the values as floats
 The floats will be loaded into the outValues float array. NOTE!!!! outValues array MUST have a number of indices >= the
 number of expected values from the transaction packet. Otherwise, Undefined operation or segfaults may occur.*/
-bool SDI12_GetSensedValues(struct SDI_transactionPacket *transactionPacket, float *outValues);
+bool SDI12_GetSensedValues(struct tc_module *tc_instance, struct SDI_transactionPacket *transactionPacket, float *outValues);
+
+void SDI12_InitTimingCounter(struct tc_module *tc_instance);
 
 #endif /* SDI12_H_ */

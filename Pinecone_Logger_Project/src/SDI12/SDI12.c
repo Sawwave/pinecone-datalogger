@@ -16,9 +16,17 @@
 #define BIT_TIMING_DELAY_CYCLES						928		//833us bit timing
 #define BIT_TIMING_HALF_DELAY_CYCLES				400		//416.5us to get halfway into reading a bit
 
+
+
+
+#define BAUD_1200_SLEEP_TIMING 3333
+
 static char CharAddParity(char address);
 static uint8_t SDI12_ParseNumValuesFromResponse(char outBuffer[], uint8_t outBufferLen);
 static bool SDI12_GetTimeFromResponse(const char *response, uint16_t *outTime);
+
+static void setTimingCounter(struct tc_module *tc_instance);
+static void disableTimingCounter(struct tc_module *tc_instance);
 
 
 #ifdef SDI12_UNIT_TESTING
@@ -31,7 +39,7 @@ In this transaction, the data logger sends a message addressed to a particular s
 outBuffer should be large enough to accommodate the expected response. For example, an _M! message should be somewhere in the range of
 12-16 characters to be safe.
 Returns SDI12_STATUS_OK on success, but may SDI12_TRANSACTION_TIMEOUT, SDI12_BAD_RESPONSE, or simply SDI12_TRANSACTION_FAILURE.*/
-enum SDI12_ReturnCode  SDI12_PerformTransaction(const char *message, const uint8_t messageLen, char *outBuffer, const uint8_t outBufferLen){
+enum SDI12_ReturnCode  SDI12_PerformTransaction(struct tc_module *tc_instance, const char *message, const uint8_t messageLen, char *outBuffer, const uint8_t outBufferLen){
 	//clear out the output buffer
 	memset(outBuffer, 0, sizeof(char)*outBufferLen);
 
@@ -50,7 +58,8 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction(const char *message, const uint8
 	for(uint8_t byteNumber = 0; byteNumber < messageLen; byteNumber++){
 		//send the start bit (always HIGH)
 		PORTA.OUTSET.reg = SDI_PIN_PINMASK;
-		portable_delay_cycles(BIT_TIMING_DELAY_CYCLES);
+		setTimingCounter(tc_instance);
+		system_sleep();
 		
 		//send the data byte, with parity bit already included
 		uint8_t bitmask = 0x1;
@@ -61,13 +70,18 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction(const char *message, const uint8
 			else{
 				PORTA.OUTCLR.reg = SDI_PIN_PINMASK;
 			}
-			portable_delay_cycles(BIT_TIMING_DELAY_CYCLES);
+			setTimingCounter(tc_instance);
+			system_sleep();
+			
+			
 			bitmask <<= 1;
 		}
 		
 		//send stop bit (always LOW);
 		PORTA.OUTCLR.reg = SDI_PIN_PINMASK;
-		portable_delay_cycles(BIT_TIMING_DELAY_CYCLES);
+		setTimingCounter(tc_instance);
+		system_sleep();
+		
 	}
 
 	//set SDI pin to input by changing DIR and setting INEN in WRCONFIG
@@ -97,18 +111,25 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction(const char *message, const uint8
 	uint8_t byteNumber = 0;
 	do{
 		//delay through start bit, and halfway into first data bit.
-		portable_delay_cycles(BIT_TIMING_HALF_DELAY_CYCLES + BIT_TIMING_DELAY_CYCLES);
+		portable_delay_cycles(BIT_TIMING_HALF_DELAY_CYCLES);
+		setTimingCounter(tc_instance);
+		system_sleep();
+		
 		
 		uint8_t bitmask = 0x1;
 		while(bitmask < 0x80){
 			if((PORTA.IN.reg & SDI_PIN_PINMASK) == 0){
 				outBuffer[byteNumber] |= bitmask;
 			}
-			portable_delay_cycles(BIT_TIMING_DELAY_CYCLES);
+			setTimingCounter(tc_instance);
+			system_sleep();
+			
 			bitmask <<= 1;
 		}
 		//delay through parity bit
-		portable_delay_cycles(BIT_TIMING_DELAY_CYCLES);
+		setTimingCounter(tc_instance);
+		system_sleep();
+		
 		
 		timeout = 255;
 		//loop-delay through the stop bit (LOW) to realign with the byte frame
@@ -150,7 +171,7 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction(const char *message, const uint8
 communicates with the sensor at the given address on the SDI12 bus, and requests a reading (M! command).
 Will load SDI12_STATUS_OK into the packet on success, SDI12_BAD_RESPONSE on failure.
 */
-void SDI12_RequestSensorReading(struct SDI_transactionPacket *transactionPacket){
+void SDI12_RequestSensorReading(struct tc_module *tc_instance, struct SDI_transactionPacket *transactionPacket){
 	uint8_t tries = SDI12_MAX_NUMBER_TRANSACTION_ATTEMPTS;
 	const uint8_t messageLen = 3;
 	char message[3] = { CharAddParity(transactionPacket->address), 'M', '!'};
@@ -161,7 +182,7 @@ void SDI12_RequestSensorReading(struct SDI_transactionPacket *transactionPacket)
 	//try up to MAX NUMBER TRANSACTIONS to get a successful response.
 	//loop will RETURN on success.
 	while(tries--){
-		transactionPacket->transactionStatus = SDI12_PerformTransaction(message, messageLen, response, responseLength);
+		transactionPacket->transactionStatus = SDI12_PerformTransaction(tc_instance, message, messageLen, response, responseLength);
 		
 		if(transactionPacket->transactionStatus == SDI12_STATUS_OK){
 			//get time from response. only if it parsed successfully do we consider this a successful transaction
@@ -177,7 +198,7 @@ void SDI12_RequestSensorReading(struct SDI_transactionPacket *transactionPacket)
 After the sensor has had values requested with SDI12_RequestSensorReading, use this function to read the values as floats
 The floats will be loaded into the outValues float array. NOTE!!!! outValues array MUST have a number of indices >= the
 number of expected values from the transaction packet. Otherwise, Undefined operation or segfaults may occur.*/
-bool SDI12_GetSensedValues(struct SDI_transactionPacket *transactionPacket, float *outValues){
+bool SDI12_GetSensedValues(struct tc_module *tc_instance, struct SDI_transactionPacket *transactionPacket, float *outValues){
 	uint8_t dNumberChar = '0';
 	uint8_t numValuesReceived = 0;
 	const uint8_t messageLen = 4;
@@ -199,7 +220,7 @@ bool SDI12_GetSensedValues(struct SDI_transactionPacket *transactionPacket, floa
 	while(numValuesReceived < transactionPacket->numberOfValuesToReturn){
 		uint8_t tries = SDI12_MAX_NUMBER_TRANSACTION_ATTEMPTS;
 		while(tries--){
-			transactionPacket->transactionStatus = SDI12_PerformTransaction(message, messageLen, response, responseLen);
+			transactionPacket->transactionStatus = SDI12_PerformTransaction(tc_instance, message, messageLen, response, responseLen);
 			if(transactionPacket->transactionStatus == SDI12_STATUS_OK){
 				//star the float parsing after the address character
 				char *floatParsePointer = &response[1];
@@ -274,6 +295,34 @@ static uint8_t SDI12_ParseNumValuesFromResponse(char responseBuffer[], uint8_t r
 		valuesIndex++;
 	}
 	return numValuesSensed;
+}
+
+
+void SDI12_InitTimingCounter(struct tc_module *tc_instance){
+	struct tc_config tcConfig;
+	tc_get_config_defaults(&tcConfig);
+	tcConfig.counter_size = TC_COUNTER_SIZE_16BIT;
+	tcConfig.clock_source = GCLK_GENERATOR_0;
+	tcConfig.clock_prescaler = TC_CLOCK_PRESCALER_DIV2;
+	tcConfig.oneshot = true;
+	tcConfig.run_in_standby = false;
+	
+	tc_init(tc_instance, SDI_INTERFACE_TC_HARDWARE, &tcConfig);
+	tc_register_callback(tc_instance, disableTimingCounter, TC_CALLBACK_CC_CHANNEL0);
+	tc_enable_callback(tc_instance, TC_CALLBACK_CC_CHANNEL0);
+	tc_set_compare_value(tc_instance, TC_COMPARE_CAPTURE_CHANNEL_0, BAUD_1200_SLEEP_TIMING);
+}
+
+
+static void disableTimingCounter(struct tc_module *tc_instance){
+	tc_disable(tc_instance);
+}
+
+
+static void setTimingCounter(struct tc_module *tc_instance){
+	tc_set_count_value(tc_instance, 0);
+	tc_enable(tc_instance);
+	system_set_sleepmode(SYSTEM_SLEEPMODE_IDLE_2);
 }
 
 #ifdef SDI12_UNIT_TESTING

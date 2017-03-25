@@ -26,12 +26,6 @@ Internal 32KHz oscillator should also be enabled, and able to run in standby
 */
 void TimedSleepSeconds(struct tc_module *tc_instance, const uint32_t seconds);
 
-void SDI12_1200BaudDelayInit(struct tc_module *tc_instance);
-
-void SDI12_SetTimingInterrupt(struct tc_module *tc_instance);
-
-void SDI12_DisableTc(struct tc_module *tc_instance);
-
 void ExternalInterruptInit(void);
 
 void ExternalInterruptSleep(void);
