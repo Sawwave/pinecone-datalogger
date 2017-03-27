@@ -43,8 +43,6 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction(struct tc_module *tc_instance, c
 	//clear out the output buffer
 	memset(outBuffer, 0, sizeof(char)*outBufferLen);
 
-	//disable all interrupts, since they can mess up the bit timings.
-	system_interrupt_enter_critical_section();
 	
 	//set for 13 millis, ish
 	PORTA.DIRSET.reg = SDI_PIN_PINMASK;
@@ -142,10 +140,6 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction(struct tc_module *tc_instance, c
 	} while( (timeout)											//we got the start bit!
 	&& (byteNumber < (outBufferLen - 1))						//the buffer overflowed (overflew?)
 	&& (outBuffer[byteNumber-1] != 10));						// the last byte was Line Feed
-
-	//we're done receiving the message, so we can leave the interrupt critical section.
-	//while we're at it, let's put it in powersave mode
-	system_interrupt_leave_critical_section();
 
 	//disable INEN
 	PORTA.OUTCLR.reg = SDI_PIN_PINMASK;
