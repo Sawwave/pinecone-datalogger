@@ -11,15 +11,16 @@
 #include "TimedSleep/TimedSleep.h"
 
 #define SDI12_MAX_NUMBER_TRANSACTION_ATTEMPTS		5
-#define MARKING_DELAY_CYCLES						13000	// >= 12ms marking length
+#define MARKING_DELAY_CYCLES						12000	// >= 12ms marking length
 #define SPACING_8330_DELAY_CYCLES					9520 	//8330us spacing delay
-#define BIT_TIMING_DELAY_CYCLES						928		//833us bit timing
+//#define BIT_TIMING_DELAY_CYCLES						928		//833us bit timing
+#define BIT_TIMING_DELAY_CYCLES						945		//833us bit timing
 #define BIT_TIMING_HALF_DELAY_CYCLES				400		//416.5us to get halfway into reading a bit
 
 
 
 
-#define BAUD_1200_SLEEP_TIMING 3333
+#define BAUD_1200_SLEEP_TIMING 6667
 
 static char CharAddParity(char address);
 static uint8_t SDI12_ParseNumValuesFromResponse(char outBuffer[], uint8_t outBufferLen);
@@ -41,60 +42,59 @@ outBuffer should be large enough to accommodate the expected response. For examp
 Returns SDI12_STATUS_OK on success, but may SDI12_TRANSACTION_TIMEOUT, SDI12_BAD_RESPONSE, or simply SDI12_TRANSACTION_FAILURE.*/
 enum SDI12_ReturnCode  SDI12_PerformTransaction(struct tc_module *tc_instance, const char *message, const uint8_t messageLen, char *outBuffer, const uint8_t outBufferLen){
 	//clear out the output buffer
-	memset(outBuffer, 0, sizeof(char)*outBufferLen);
+	memset(outBuffer, 0, sizeof(char) * outBufferLen);
 
-	
 	//set for 13 millis, ish
-	PORTA.DIRSET.reg = SDI_PIN_PINMASK;
 	PORTA.OUTSET.reg = SDI_PIN_PINMASK;
 	portable_delay_cycles(MARKING_DELAY_CYCLES);
 	
-	//clear for 8330 micros
+	//clear for at least 8330 micros
 	PORTA.OUTCLR.reg = SDI_PIN_PINMASK;
 	portable_delay_cycles(SPACING_8330_DELAY_CYCLES);
 	
 	for(uint8_t byteNumber = 0; byteNumber < messageLen; byteNumber++){
 		//send the start bit (always HIGH)
 		PORTA.OUTSET.reg = SDI_PIN_PINMASK;
-		setTimingCounter(tc_instance);
-		system_sleep();
+		portable_delay_cycles(BIT_TIMING_DELAY_CYCLES);
 		
 		//send the data byte, with parity bit already included
 		uint8_t bitmask = 0x1;
 		while(bitmask){
-			if( (message[byteNumber] & bitmask) == 0 ){
-				PORTA.OUTSET.reg = SDI_PIN_PINMASK;
-			}
-			else{
+			if(message[byteNumber] & bitmask){
 				PORTA.OUTCLR.reg = SDI_PIN_PINMASK;
 			}
-			setTimingCounter(tc_instance);
-			system_sleep();
-			
+			else{
+				PORTA.OUTSET.reg = SDI_PIN_PINMASK;
+			}
+			portable_delay_cycles(BIT_TIMING_DELAY_CYCLES);
 			
 			bitmask <<= 1;
 		}
 		
 		//send stop bit (always LOW);
 		PORTA.OUTCLR.reg = SDI_PIN_PINMASK;
-		setTimingCounter(tc_instance);
-		system_sleep();
+		portable_delay_cycles(BIT_TIMING_DELAY_CYCLES);
 		
 	}
-
+	
 	//set SDI pin to input by changing DIR and setting INEN in WRCONFIG
-	PORTA.DIRCLR.reg = SDI_PIN_PINMASK;
+	PORTA.OUTCLR.reg = SDI_PIN_PINMASK;
 	#if SDI_PIN_PINMASK < (1 << 16)
-	PORTA.WRCONFIG.reg = PORT_WRCONFIG_WRPINCFG | PORT_WRCONFIG_INEN | SDI_PIN_PINMASK;
+	PORTA.WRCONFIG.reg = PORT_WRCONFIG_WRPINCFG | PORT_WRCONFIG_INEN | SDI_PIN_PINMASK | PORT_WRCONFIG_PULLEN;
 	#else
 	PORTA.WRCONFIG.reg = PORT_WRCONFIG_WRPINCFG | PORT_WRCONFIG_INEN | (SDI_PIN_PINMASK >> 16) | PORT_WRCONFIG_HWSEL;
 	#endif
+	PORTA.DIRCLR.reg = SDI_PIN_PINMASK;
+	
 
-	//wait for the timeout or for the data line to go HIGH on the start bit response. A timeout value of 10000 gives us roughly 50ms until timeout
-	uint16_t timeout = 10000;
+	//wait for the timeout to be LOW at least once, then delay through the start bit (HIGH)
+	uint16_t timeout = 10000;  
 	do{
 		portable_delay_cycles(5);
-	} while( (timeout--) && ((PORTA.IN.reg & SDI_PIN_PINMASK)  == 0) );
+	} while( (--timeout) && !(PORTA.IN.reg & SDI_PIN_PINMASK));
+	do{
+		portable_delay_cycles(5);
+	} while( (--timeout) && (PORTA.IN.reg & SDI_PIN_PINMASK));
 	if(timeout == 0){
 		//disable INEN, but keep as input for power saving.
 		#if SDI_PIN_PINMASK < (1 << 16)
@@ -105,28 +105,24 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction(struct tc_module *tc_instance, c
 		return SDI12_TRANSACTION_TIMEOUT;
 	}
 	
-	//if we got here, we just started the start bit (HIGH).
+	
+	//if we got here, we've just gone through the first start bit (HIGH)
 	uint8_t byteNumber = 0;
 	do{
-		//delay through start bit, and halfway into first data bit.
+		//delay halfway into the bit
+		portable_delay_cycles(BIT_TIMING_DELAY_CYCLES);
 		portable_delay_cycles(BIT_TIMING_HALF_DELAY_CYCLES);
-		setTimingCounter(tc_instance);
-		system_sleep();
-		
 		
 		uint8_t bitmask = 0x1;
 		while(bitmask < 0x80){
 			if((PORTA.IN.reg & SDI_PIN_PINMASK) == 0){
 				outBuffer[byteNumber] |= bitmask;
 			}
-			setTimingCounter(tc_instance);
-			system_sleep();
+			portable_delay_cycles(BIT_TIMING_DELAY_CYCLES);
 			
 			bitmask <<= 1;
 		}
-		//delay through parity bit
-		setTimingCounter(tc_instance);
-		system_sleep();
+		portable_delay_cycles(BIT_TIMING_DELAY_CYCLES);
 		
 		
 		timeout = 255;
@@ -137,9 +133,11 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction(struct tc_module *tc_instance, c
 		
 		byteNumber++;
 		
-	} while( (timeout)											//we got the start bit!
-	&& (byteNumber < (outBufferLen - 1))						//the buffer overflowed (overflew?)
-	&& (outBuffer[byteNumber-1] != 10));						// the last byte was Line Feed
+	} while(
+	(timeout)	&& 												//we got the start bit!
+	(byteNumber < (outBufferLen - 1)) && 						//the buffer overflowed (overflew?)
+	(outBuffer[byteNumber-1] != 10)								// the last byte was Line Feed
+	);
 
 	//disable INEN
 	PORTA.OUTCLR.reg = SDI_PIN_PINMASK;
@@ -297,7 +295,7 @@ void SDI12_InitTimingCounter(struct tc_module *tc_instance){
 	tc_get_config_defaults(&tcConfig);
 	tcConfig.counter_size = TC_COUNTER_SIZE_16BIT;
 	tcConfig.clock_source = GCLK_GENERATOR_0;
-	tcConfig.clock_prescaler = TC_CLOCK_PRESCALER_DIV2;
+	tcConfig.clock_prescaler = TC_CLOCK_PRESCALER_DIV1;
 	tcConfig.oneshot = true;
 	tcConfig.run_in_standby = false;
 	
@@ -307,16 +305,15 @@ void SDI12_InitTimingCounter(struct tc_module *tc_instance){
 	tc_set_compare_value(tc_instance, TC_COMPARE_CAPTURE_CHANNEL_0, BAUD_1200_SLEEP_TIMING);
 }
 
-
-static void disableTimingCounter(struct tc_module *tc_instance){
-	tc_disable(tc_instance);
-}
-
-
 static void setTimingCounter(struct tc_module *tc_instance){
 	tc_set_count_value(tc_instance, 0);
 	tc_enable(tc_instance);
-	system_set_sleepmode(SYSTEM_SLEEPMODE_IDLE_2);
+	system_set_sleepmode(SYSTEM_SLEEPMODE_IDLE_1);
+}
+
+
+static void disableTimingCounter(struct tc_module *tc_instance){
+	//tc_disable(tc_instance);
 }
 
 #ifdef SDI12_UNIT_TESTING

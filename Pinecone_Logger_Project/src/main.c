@@ -160,7 +160,8 @@ static inline void MainLoop(void){
 		RunSapFluxSystem();
 		
 		//SD card requires 3v3, and SDI-12 requires 3v3 and 5v.
-		PORTA.DIRSET.reg = PWR_5V_POWER_ENABLE | PWR_5V_POWER_ENABLE;
+		PORTA.DIRSET.reg = PWR_3V3_POWER_ENABLE | PWR_5V_POWER_ENABLE | SDI_PIN_PINMASK;
+		PORTA.OUTCLR.reg = SDI_PIN_PINMASK;
 		PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE | PWR_5V_POWER_ENABLE;
 		
 		FIL dataFile;
@@ -175,16 +176,19 @@ static inline void MainLoop(void){
 		f_close(&dataFile);
 		
 		//close everything down, and get ready to sleep.
-		PORTA.OUTCLR.reg = ALL_POWER_ENABLE;
-		PORTA.DIRCLR.reg = ALL_POWER_ENABLE;
+		PORTA.OUTCLR.reg = ALL_POWER_ENABLE | SDI_PIN_PINMASK;
+		PORTA.DIRCLR.reg = ALL_POWER_ENABLE | SDI_PIN_PINMASK;
+		
 		bod_disable(BOD_BOD33);
 		bod_clear_detected(BOD_BOD33);
 		
 		struct Ds3231_alarmTime alarm;
 		DS3231_createAlarmTime(&dateTimeBuffer[1], loggerConfig.loggingInterval, &alarm);
 		DS3231_setAlarm(&i2cMasterModule, &alarm);
+		
 		PORTA.OUTCLR.reg = ALL_GPIO_PINMASK;
 		PORTA.DIRCLR.reg = ALL_GPIO_PINMASK;
+		
 		ExternalInterruptSleep();
 	}
 }
@@ -233,6 +237,8 @@ static inline void RecordNonSdiValues(FIL *dataFile){
 }
 
 static inline void QueryAndRecordSdiValues(FIL *dataFile){
+	delay_s(1);
+	
 	if(loggerConfig.configFlags & CONFIG_FLAGS_ENABLE_SDI){
 		for(uint8_t sdiIndex = 0; sdiIndex < loggerConfig.numSdiSensors; sdiIndex++){
 			

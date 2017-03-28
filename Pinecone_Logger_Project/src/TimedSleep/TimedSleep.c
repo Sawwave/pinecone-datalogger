@@ -25,7 +25,7 @@ void InitSleepTimerCounter(struct tc_module *tc_instance){
 	tc_get_config_defaults(&tcConfig);
 	tcConfig.counter_size = TC_COUNTER_SIZE_32BIT;
 	tcConfig.clock_source = GCLK_GENERATOR_1;
-	tcConfig.clock_prescaler = TC_CLOCK_PRESCALER_DIV64;
+	tcConfig.clock_prescaler = TC_CLOCK_PRESCALER_DIV4;
 	tcConfig.oneshot = true;
 	tcConfig.run_in_standby = true;
 	tc_init(tc_instance, TIMED_SLEEP_TC_HARDWARE, &tcConfig);
@@ -53,7 +53,7 @@ Set the time to be greater than extint wakeup timer, so that internal timer is a
 */
 void TimedSleepSeconds(struct tc_module *tc_instance, const uint32_t seconds){
 	tc_set_count_value(tc_instance, 0);
-	tc_set_compare_value(tc_instance, TC_COMPARE_CAPTURE_CHANNEL_0, seconds);
+	tc_set_compare_value(tc_instance, TC_COMPARE_CAPTURE_CHANNEL_0, seconds * 250L);
 	tc_enable(tc_instance);
 	//enable and go to sleep mode!
 	system_set_sleepmode(SYSTEM_SLEEPMODE_STANDBY);
