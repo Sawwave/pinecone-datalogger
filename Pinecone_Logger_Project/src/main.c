@@ -205,12 +205,14 @@ static inline void RunDht22System(void){
 	}
 	else{
 		LogValues[LOG_VALUES_DHT1_INDEX] = NAN;
+		LogValues[LOG_VALUES_DHT1_INDEX + 1] = NAN;
 	}
 	if(loggerConfig.configFlags & (CONFIG_FLAGS_ENABLE_DHT_2)){
 		GetDht22Reading(&(LogValues[LOG_VALUES_DHT2_INDEX]), &(LogValues[LOG_VALUES_DHT2_INDEX + 1]), DHT22_2_PINMASK);
 	}
 	else{
 		LogValues[LOG_VALUES_DHT2_INDEX] = NAN;
+		LogValues[LOG_VALUES_DHT2_INDEX + 1] = NAN;
 	}
 	//set back to low power mode
 	PORTA.DIRCLR.reg = DHT22_1_PINMASK | DHT22_2_PINMASK;
