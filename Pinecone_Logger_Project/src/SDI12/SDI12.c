@@ -11,10 +11,9 @@
 #include "TimedSleep/TimedSleep.h"
 
 #define SDI12_MAX_NUMBER_TRANSACTION_ATTEMPTS		5
-#define MARKING_DELAY_CYCLES						12000	// >= 12ms marking length
-#define SPACING_8330_DELAY_CYCLES					9520 	//8330us spacing delay
-//#define BIT_TIMING_DELAY_CYCLES						928		//833us bit timing
-#define BIT_TIMING_DELAY_CYCLES						945		//833us bit timing
+#define MARKING_DELAY_CYCLES						13000	// >= 12ms marking length
+#define SPACING_8330_DELAY_CYCLES					12080 	//8330us spacing delay
+#define BIT_TIMING_DELAY_CYCLES						940		//833us bit timing
 #define BIT_TIMING_HALF_DELAY_CYCLES				400		//416.5us to get halfway into reading a bit
 
 
@@ -26,10 +25,6 @@ static char CharAddParity(char address);
 static uint8_t SDI12_ParseNumValuesFromResponse(char outBuffer[], uint8_t outBufferLen);
 static bool SDI12_GetTimeFromResponse(const char *response, uint16_t *outTime);
 
-static void setTimingCounter(struct tc_module *tc_instance);
-static void disableTimingCounter(struct tc_module *tc_instance);
-
-
 #ifdef SDI12_UNIT_TESTING
 static bool SDI12_TIME_FORMAT_UNIT_TEST(void);
 #endif
@@ -40,7 +35,7 @@ In this transaction, the data logger sends a message addressed to a particular s
 outBuffer should be large enough to accommodate the expected response. For example, an _M! message should be somewhere in the range of
 12-16 characters to be safe.
 Returns SDI12_STATUS_OK on success, but may SDI12_TRANSACTION_TIMEOUT, SDI12_BAD_RESPONSE, or simply SDI12_TRANSACTION_FAILURE.*/
-enum SDI12_ReturnCode  SDI12_PerformTransaction(struct tc_module *tc_instance, const char *message, const uint8_t messageLen, char *outBuffer, const uint8_t outBufferLen){
+enum SDI12_ReturnCode  SDI12_PerformTransaction( const char *message, const uint8_t messageLen, char *outBuffer, const uint8_t outBufferLen){
 	//clear out the output buffer
 	memset(outBuffer, 0, sizeof(char) * outBufferLen);
 
@@ -88,13 +83,15 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction(struct tc_module *tc_instance, c
 	
 
 	//wait for the timeout to be LOW at least once, then delay through the start bit (HIGH)
-	uint16_t timeout = 10000;  
+	uint16_t timeout = 1000;
+	
 	do{
-		portable_delay_cycles(5);
-	} while( (--timeout) && !(PORTA.IN.reg & SDI_PIN_PINMASK));
-	do{
-		portable_delay_cycles(5);
+		portable_delay_cycles(10);
 	} while( (--timeout) && (PORTA.IN.reg & SDI_PIN_PINMASK));
+	do{
+		portable_delay_cycles(10);
+	} while( (--timeout) && !(PORTA.IN.reg & SDI_PIN_PINMASK));
+	
 	if(timeout == 0){
 		//disable INEN, but keep as input for power saving.
 		#if SDI_PIN_PINMASK < (1 << 16)
@@ -163,7 +160,7 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction(struct tc_module *tc_instance, c
 communicates with the sensor at the given address on the SDI12 bus, and requests a reading (M! command).
 Will load SDI12_STATUS_OK into the packet on success, SDI12_BAD_RESPONSE on failure.
 */
-void SDI12_RequestSensorReading(struct tc_module *tc_instance, struct SDI_transactionPacket *transactionPacket){
+void SDI12_RequestSensorReading(struct SDI_transactionPacket *transactionPacket){
 	uint8_t tries = SDI12_MAX_NUMBER_TRANSACTION_ATTEMPTS;
 	const uint8_t messageLen = 3;
 	char message[3] = { CharAddParity(transactionPacket->address), 'M', '!'};
@@ -174,7 +171,7 @@ void SDI12_RequestSensorReading(struct tc_module *tc_instance, struct SDI_transa
 	//try up to MAX NUMBER TRANSACTIONS to get a successful response.
 	//loop will RETURN on success.
 	while(tries--){
-		transactionPacket->transactionStatus = SDI12_PerformTransaction(tc_instance, message, messageLen, response, responseLength);
+		transactionPacket->transactionStatus = SDI12_PerformTransaction(message, messageLen, response, responseLength);
 		
 		if(transactionPacket->transactionStatus == SDI12_STATUS_OK){
 			//get time from response. only if it parsed successfully do we consider this a successful transaction
@@ -190,7 +187,7 @@ void SDI12_RequestSensorReading(struct tc_module *tc_instance, struct SDI_transa
 After the sensor has had values requested with SDI12_RequestSensorReading, use this function to read the values as floats
 The floats will be loaded into the outValues float array. NOTE!!!! outValues array MUST have a number of indices >= the
 number of expected values from the transaction packet. Otherwise, Undefined operation or segfaults may occur.*/
-bool SDI12_GetSensedValues(struct tc_module *tc_instance, struct SDI_transactionPacket *transactionPacket, float *outValues){
+bool SDI12_GetSensedValues(struct SDI_transactionPacket *transactionPacket, float *outValues){
 	uint8_t dNumberChar = '0';
 	uint8_t numValuesReceived = 0;
 	const uint8_t messageLen = 4;
@@ -212,7 +209,7 @@ bool SDI12_GetSensedValues(struct tc_module *tc_instance, struct SDI_transaction
 	while(numValuesReceived < transactionPacket->numberOfValuesToReturn){
 		uint8_t tries = SDI12_MAX_NUMBER_TRANSACTION_ATTEMPTS;
 		while(tries--){
-			transactionPacket->transactionStatus = SDI12_PerformTransaction(tc_instance, message, messageLen, response, responseLen);
+			transactionPacket->transactionStatus = SDI12_PerformTransaction(message, messageLen, response, responseLen);
 			if(transactionPacket->transactionStatus == SDI12_STATUS_OK){
 				//star the float parsing after the address character
 				char *floatParsePointer = &response[1];
@@ -289,32 +286,6 @@ static uint8_t SDI12_ParseNumValuesFromResponse(char responseBuffer[], uint8_t r
 	return numValuesSensed;
 }
 
-
-void SDI12_InitTimingCounter(struct tc_module *tc_instance){
-	struct tc_config tcConfig;
-	tc_get_config_defaults(&tcConfig);
-	tcConfig.counter_size = TC_COUNTER_SIZE_16BIT;
-	tcConfig.clock_source = GCLK_GENERATOR_0;
-	tcConfig.clock_prescaler = TC_CLOCK_PRESCALER_DIV1;
-	tcConfig.oneshot = true;
-	tcConfig.run_in_standby = false;
-	
-	tc_init(tc_instance, SDI_INTERFACE_TC_HARDWARE, &tcConfig);
-	tc_register_callback(tc_instance, disableTimingCounter, TC_CALLBACK_CC_CHANNEL0);
-	tc_enable_callback(tc_instance, TC_CALLBACK_CC_CHANNEL0);
-	tc_set_compare_value(tc_instance, TC_COMPARE_CAPTURE_CHANNEL_0, BAUD_1200_SLEEP_TIMING);
-}
-
-static void setTimingCounter(struct tc_module *tc_instance){
-	tc_set_count_value(tc_instance, 0);
-	tc_enable(tc_instance);
-	system_set_sleepmode(SYSTEM_SLEEPMODE_IDLE_1);
-}
-
-
-static void disableTimingCounter(struct tc_module *tc_instance){
-	//tc_disable(tc_instance);
-}
 
 #ifdef SDI12_UNIT_TESTING
 static bool SDI12_TIME_FORMAT_UNIT_TEST(void){

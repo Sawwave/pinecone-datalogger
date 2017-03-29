@@ -49,6 +49,8 @@
 #define CONF_BOARD_H
 
 #define SDI12_MAX_SUPPORTED_SENSORS 24
+//#define BIT_TIMING_DELAY_CYCLES						955		//833us bit timing
+
 
 // avoid PA30 and PA31, these are for SWCLK and SWDIO respectively
 //Put all IN and OUT data GPIOs on the lower 16 pins to make WRCONFIG access easier.

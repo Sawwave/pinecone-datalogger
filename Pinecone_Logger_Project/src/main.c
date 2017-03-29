@@ -41,6 +41,9 @@
 #include "SD_FileUtils/SD_FileUtils.h"
 #include "LedCodes/LedCodes.h"
 
+
+
+
 //number of loggable values, outside of datetime and sdi-12 values
 #define NUM_LOG_VALUES						14
 #define LOG_VALUES_TC_BEFORE_INDEX 			0
@@ -70,7 +73,6 @@ static struct spi_slave_inst spiSlaveInstance;
 static struct i2c_master_module i2cMasterModule;
 static struct adc_module adcModule;
 static struct tc_module tcInstance;
-static struct tc_module sdiTcInstance;
 static struct LoggerConfig loggerConfig;
 FATFS fatFileSys;
 
@@ -89,7 +91,6 @@ int main (void)
 	cpu_irq_enable();
 	
 	InitSleepTimerCounter(&tcInstance);
-	SDI12_InitTimingCounter(&sdiTcInstance);
 	
 	InitBodDetection();
 	//if we just woke up, and we're in brownout, wait 10 minutes until we try to start. This allows
@@ -136,7 +137,7 @@ int main (void)
 		
 		DS3231_setAlarm(&i2cMasterModule, NULL);
 		ExternalInterruptSleep();
-	}	
+	}
 	
 	MainLoop();
 }
@@ -165,6 +166,7 @@ static inline void MainLoop(void){
 		PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE | PWR_5V_POWER_ENABLE;
 		
 		FIL dataFile;
+				
 		bod_enable(BOD_BOD33);
 		delay_ms(10);
 		f_open(&dataFile, SD_DATALOG_FILENAME, FA_WRITE);
@@ -173,6 +175,7 @@ static inline void MainLoop(void){
 		RecordDateTime(&dataFile);
 		RecordNonSdiValues(&dataFile);
 		QueryAndRecordSdiValues(&dataFile);
+
 		f_close(&dataFile);
 		
 		//close everything down, and get ready to sleep.
@@ -249,30 +252,32 @@ static inline void QueryAndRecordSdiValues(FIL *dataFile){
 			for(uint8_t i = 0; i< loggerConfig.SDI12_SensorNumValues[sdiIndex];i++){
 				sdiValuesForSensor[i] = NAN;
 			}
-			
+
 			struct SDI_transactionPacket transactionPacket;
 			transactionPacket.address = loggerConfig.SDI12_SensorAddresses[sdiIndex];
-
-			SDI12_RequestSensorReading(&sdiTcInstance, &transactionPacket);
+			SDI12_RequestSensorReading(&transactionPacket);
 			if(transactionPacket.transactionStatus == SDI12_STATUS_OK){
 				//if the sensor asked us to wait for some time before reading, let's go into sleep mode for it.
 				if(transactionPacket.waitTime > 0){
 					TimedSleepSeconds(&tcInstance, transactionPacket.waitTime);
 				}
-				SDI12_GetSensedValues(&sdiTcInstance, &transactionPacket, sdiValuesForSensor);
+				SDI12_GetSensedValues(&transactionPacket, sdiValuesForSensor);
 			}
 			
 			for(uint8_t i=0; i< loggerConfig.SDI12_SensorNumValues[sdiIndex];i++){
 				//check for brownout before writing to SD card.
 				WriteDataFileNanOrFloat(sdiValuesForSensor[i], dataFile);
 			}
+			//write all work so far to the datafile.
 			f_sync(dataFile);
 		}
 	}
 	
 	else{
 		for(uint8_t sdiIndex = 0; sdiIndex < loggerConfig.numSdiSensors; sdiIndex++){
-			f_puts(",NAN", dataFile);
+			for(uint8_t sdiValIndex = 0; sdiValIndex < loggerConfig.SDI12_SensorNumValues[sdiIndex];sdiValIndex++){
+				f_puts(",NAN", dataFile);
+			}
 		}
 	}
 }
