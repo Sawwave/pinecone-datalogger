@@ -59,7 +59,7 @@
  * Define which GCLK source is used when selecting EXTINT_CLK_GCLK type.
  */
 #if (EXTINT_CLOCK_SELECTION == EXTINT_CLK_GCLK)
-#  define EXTINT_CLOCK_SOURCE      GCLK_GENERATOR_0
+#  define EXTINT_CLOCK_SOURCE      GCLK_GENERATOR_1
 #endif
 
 #endif

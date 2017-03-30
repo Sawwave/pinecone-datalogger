@@ -29,7 +29,8 @@
 
 #define DS3231_CTRL_CONVERT_TEMP_BITMASK	1 << 6
 #define DS3231_CTRL_ALARM_INTERRUPT_BITMASK	1 << 2
-#define DS3231_CTRL_ALARM_2_ENALBE_BITMASK	1 << 1
+#define DS3231_CTRL_ALARM_2_ENABLE_BITMASK	1 << 1
+#define DS3231_CTRL_ALARM_1_ENABLE_BITMASK	1 << 0
 
 #define DS3231_STATUS_OSCIL_STOP_BITMASK	1 << 7
 #define DS3231_STATUS_ALARM2_ON_BITMASK		1 << 2
@@ -76,7 +77,6 @@ void DS3231_init_i2c(struct i2c_master_module *i2cMasterModule){
 }
 
 void DS3231_setTimeFromString(struct i2c_master_module *i2cMasterModule, const char timeBuffer[19]){
-	i2c_master_enable(i2cMasterModule);
 	//find the character for century c in (2cXX) year format, and turn it into a bit 7 set or clear
 	uint8_t centuryBit = (timeBuffer[DS3231_TIME_BUFFER_CENTURY_INDEX] - '0') << 7;
 	uint8_t data[8];
@@ -137,27 +137,29 @@ void DS3231_getTimeToString(struct i2c_master_module *i2cMasterModule, char time
 	writeBCD_regToString(&timeBuffer[DS3231_TIME_BUFFER_MONTH_INDEX], data[5]);
 	//write the century Char
 	timeBuffer[DS3231_TIME_BUFFER_CENTURY_INDEX] = centuryChar;
-	writeBCD_regToString(&timeBuffer[DS3231_TIME_BUFFER_YEAR_INDEX], data[6]);	
+	writeBCD_regToString(&timeBuffer[DS3231_TIME_BUFFER_YEAR_INDEX], data[6]);
 }
 
 void DS3231_setAlarm(struct i2c_master_module *i2cMasterModule, const struct Ds3231_alarmTime *alarmTime){
-	uint8_t sendBuffer[5];
+	uint8_t sendBuffer[6];
 	sendBuffer[0] = DS3231_ALARM2_START_REG;
 	//if alarm time is a null pointer, that means we're starting on the next hour (next time minutes is 00).
 	if(alarmTime){
-		sendBuffer[1] = intToBCD(alarmTime->minutes);
-		sendBuffer[2] = intToBCD(alarmTime->hours);
+		sendBuffer[1] = intToBCD(alarmTime->minutes) | DS3231_ALARM_SUPRESS_BITMASK;
+		sendBuffer[2] = intToBCD(alarmTime->hours) | DS3231_ALARM_SUPRESS_BITMASK;
 	}
 	else{
 		sendBuffer[1] = 0;
 		sendBuffer[2] = DS3231_ALARM_SUPRESS_BITMASK;
 	}
 	sendBuffer[3] = DS3231_ALARM_SUPRESS_BITMASK;
-	sendBuffer[4] =	DS3231_CTRL_ALARM_INTERRUPT_BITMASK | DS3231_CTRL_ALARM_2_ENALBE_BITMASK;
+	sendBuffer[4] =	DS3231_CTRL_ALARM_INTERRUPT_BITMASK | DS3231_CTRL_ALARM_2_ENABLE_BITMASK;
+	sendBuffer[5] = 0;
+
 
 	struct i2c_master_packet packet;
 	packet.address = DS3231_SLAVE_ADDRESS;
-	packet.data_length = 5;
+	packet.data_length = 6;
 	packet.data = sendBuffer;
 	packet.high_speed = false;
 	packet.ten_bit_address = false;
@@ -172,7 +174,7 @@ void DS3231_setAlarm(struct i2c_master_module *i2cMasterModule, const struct Ds3
 void DS3231_disableAlarm(struct i2c_master_module *i2cMasterModule){
 	uint8_t sendBuffer[2];
 	sendBuffer[0] = DS3231_CONTROL_REG_ADDRESS;
-	sendBuffer[1] = 0;
+	sendBuffer[1] = DS3231_CTRL_ALARM_INTERRUPT_BITMASK;
 	
 	struct i2c_master_packet packet;
 	packet.address = DS3231_SLAVE_ADDRESS;
@@ -195,4 +197,33 @@ void DS3231_createAlarmTime(const char *dateTimeString, const uint16_t alarmTime
 	alarmTime->hours = (hour + (alarmTimeInMinutes / 60 )) % 24;
 	alarmTime->minutes = (minute + alarmTimeInMinutes) % 60;
 	
+}
+
+void DS3231_alarmOnSecond(struct i2c_master_module *i2cMasterModule){
+	uint8_t sendBuffer[9];
+	sendBuffer[0] = DS3231_ALARM2_START_REG;
+	//if alarm time is a null pointer, that means we're starting on the next hour (next time minutes is 00).
+	sendBuffer[1] = DS3231_ALARM_SUPRESS_BITMASK;	//s
+	sendBuffer[2] = DS3231_ALARM_SUPRESS_BITMASK;	//m
+	sendBuffer[3] = DS3231_ALARM_SUPRESS_BITMASK;	//h
+	//sendBuffer[4] = DS3231_ALARM_SUPRESS_BITMASK;	//d
+	//sendBuffer[5] = DS3231_ALARM_SUPRESS_BITMASK;	//m
+	//sendBuffer[6] = DS3231_ALARM_SUPRESS_BITMASK;	//h
+	//sendBuffer[7] = DS3231_ALARM_SUPRESS_BITMASK;	//d
+	sendBuffer[4] =	DS3231_CTRL_ALARM_INTERRUPT_BITMASK | DS3231_CTRL_ALARM_2_ENABLE_BITMASK;
+	sendBuffer[5] = 0;
+
+
+	struct i2c_master_packet packet;
+	packet.address = DS3231_SLAVE_ADDRESS;
+	packet.data_length = 6;
+	packet.data = sendBuffer;
+	packet.high_speed = false;
+	packet.ten_bit_address = false;
+
+	i2c_master_enable(i2cMasterModule);
+
+	i2c_master_write_packet_wait(i2cMasterModule, &packet);
+	
+	i2c_master_disable(i2cMasterModule);
 }

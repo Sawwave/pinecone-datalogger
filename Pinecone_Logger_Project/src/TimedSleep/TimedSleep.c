@@ -7,6 +7,7 @@
 
 #include <asf.h>
 #include "TimedSleep/TimedSleep.h"
+#include "LedCodes/LedCodes.h"
 #include <tc.h>
 #include <tc_interrupt.h>
 #include <sleepmgr.h>
@@ -14,6 +15,10 @@
 #include <extint.h>
 
 static void TimerCounterSleepEndFunc(struct tc_module *const module);
+static void ExtintCallbackFunc(void){
+	extint_chan_disable_callback(DS3231_EIC_LINE, EXTINT_CALLBACK_TYPE_DETECT);
+};
+
 
 /*initSleepTimerCounter
 Sets up TimerCounters 4 and 5 to work together as a 32-bit timer.
@@ -61,14 +66,16 @@ void TimedSleepSeconds(struct tc_module *tc_instance, const uint32_t seconds){
 }
 
 
-void ExternalInterruptInit(void){
+void ExternalInterruptInit(){
 	struct extint_chan_conf extintConfig;
 	extint_chan_get_config_defaults(&extintConfig);
 	extintConfig.gpio_pin_pull = EXTINT_PULL_NONE;
 	extintConfig.gpio_pin = PIN_PA28A_EIC_EXTINT8;
 	extintConfig.gpio_pin_mux = MUX_PA28A_EIC_EXTINT8;
-	extintConfig.detection_criteria = EXTINT_DETECT_LOW;
+	extintConfig.detection_criteria = EXTINT_DETECT_FALLING;
 	extint_chan_set_config(DS3231_EIC_LINE, &extintConfig);
+	
+	extint_register_callback(ExtintCallbackFunc, DS3231_EIC_LINE, EXTINT_CALLBACK_TYPE_DETECT);
 }
 
 void ExternalInterruptSleep(void){
@@ -77,7 +84,7 @@ void ExternalInterruptSleep(void){
 	PORTA.OUTCLR.reg = ALL_GPIO_PINMASK;
 	
 	system_interrupt_enable_global();
+	extint_chan_enable_callback(DS3231_EIC_LINE, EXTINT_CALLBACK_TYPE_DETECT);
 	system_set_sleepmode(SYSTEM_SLEEPMODE_STANDBY);
 	system_sleep();
-	system_interrupt_disable_global();
 }

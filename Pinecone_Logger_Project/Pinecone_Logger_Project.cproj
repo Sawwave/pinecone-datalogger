@@ -36,7 +36,7 @@
           <option id="common2.services.delay" value="Add" config="cycle" content-id="Atmel.ASF" />
           <option id="sam0.drivers.adc" value="Add" config="polled" content-id="Atmel.ASF" />
           <option id="sam0.drivers.bod" value="Add" config="" content-id="Atmel.ASF" />
-          <option id="sam0.drivers.extint" value="Add" config="polled" content-id="Atmel.ASF" />
+          <option id="sam0.drivers.extint" value="Add" config="callback" content-id="Atmel.ASF" />
           <option id="sam0.drivers.port" value="Add" config="" content-id="Atmel.ASF" />
           <option id="sam0.drivers.rtc" value="Add" config="calendar_polled" content-id="Atmel.ASF" />
           <option id="sam0.drivers.sercom.i2c.master" value="Add" config="polled" content-id="Atmel.ASF" />
@@ -311,6 +311,8 @@
           <file path="src/ASF/sam0/drivers/sercom/i2c/quick_start_master/qs_i2c_master_basic_use.h" framework="" version="3.29.0" source="sam0\drivers\sercom\i2c\quick_start_master\qs_i2c_master_basic_use.h" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/sam0/drivers/sercom/i2c/quick_start_master_dma/qs_i2c_master_dma.h" framework="" version="3.29.0" source="sam0\drivers\sercom\i2c\quick_start_master_dma\qs_i2c_master_dma.h" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/sam0/drivers/sercom/i2c/i2c_samd20/i2c_master.c" framework="" version="3.29.0" source="sam0\drivers\sercom\i2c\i2c_samd20\i2c_master.c" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam0/drivers/extint/extint_callback.c" framework="" version="3.29.0" source="sam0\drivers\extint\extint_callback.c" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam0/drivers/extint/extint_callback.h" framework="" version="3.29.0" source="sam0\drivers\extint\extint_callback.h" changed="False" content-id="Atmel.ASF" />
         </files>
         <documentation help="http://asf.atmel.com/docs/3.29.0/common.applications.user_application.sam0_system.user_board.atsamd20j18/html/index.html" />
         <offline-documentation help="" />
@@ -366,7 +368,7 @@
       <Value>SD_MMC_ENABLE</Value>
       <Value>SPI_CALLBACK_MODE=true</Value>
       <Value>I2C_MASTER_CALLBACK_MODE=false</Value>
-      <Value>EXTINT_CALLBACK_MODE=false</Value>
+      <Value>EXTINT_CALLBACK_MODE=true</Value>
     </ListValues>
   </armgcc.compiler.symbols.DefSymbols>
   <armgcc.compiler.directories.DefaultIncludePath>False</armgcc.compiler.directories.DefaultIncludePath>
@@ -439,7 +441,7 @@
   <armgcc.linker.optimization.GarbageCollectUnusedSections>True</armgcc.linker.optimization.GarbageCollectUnusedSections>
   <armgcc.linker.memorysettings.ExternalRAM />
   <armgcc.linker.miscellaneous.LinkerFlags>-Wl,--entry=Reset_Handler -Wl,--cref -mthumb -T../src/ASF/sam0/utils/linker_scripts/samd20/gcc/samd20j18_flash.ld</armgcc.linker.miscellaneous.LinkerFlags>
-  <armgcc.preprocessingassembler.general.AssemblerFlags>-DARM_MATH_CM0PLUS=true -DBOARD=USER_BOARD -DCYCLE_MODE -DADC_CALLBACK_MODE=false -DRTC_CALENDAR_ASYNC=false -DTC_ASYNC=true -DSD_MMC_ENABLE -DSPI_CALLBACK_MODE=true -DI2C_MASTER_CALLBACK_MODE=false -DEXTINT_CALLBACK_MODE=false</armgcc.preprocessingassembler.general.AssemblerFlags>
+  <armgcc.preprocessingassembler.general.AssemblerFlags>-DARM_MATH_CM0PLUS=true -DBOARD=USER_BOARD -DCYCLE_MODE -DADC_CALLBACK_MODE=false -DRTC_CALENDAR_ASYNC=false -DTC_ASYNC=true -DSD_MMC_ENABLE -DSPI_CALLBACK_MODE=true -DI2C_MASTER_CALLBACK_MODE=false -DEXTINT_CALLBACK_MODE=true</armgcc.preprocessingassembler.general.AssemblerFlags>
   <armgcc.preprocessingassembler.general.DefaultIncludePath>False</armgcc.preprocessingassembler.general.DefaultIncludePath>
   <armgcc.preprocessingassembler.general.IncludePaths>
     <ListValues>
@@ -512,7 +514,7 @@
       <Value>SD_MMC_ENABLE</Value>
       <Value>SPI_CALLBACK_MODE=true</Value>
       <Value>I2C_MASTER_CALLBACK_MODE=false</Value>
-      <Value>EXTINT_CALLBACK_MODE=false</Value>
+      <Value>EXTINT_CALLBACK_MODE=true</Value>
     </ListValues>
   </armgcc.compiler.symbols.DefSymbols>
   <armgcc.compiler.directories.DefaultIncludePath>False</armgcc.compiler.directories.DefaultIncludePath>
@@ -590,7 +592,7 @@
   <armgcc.linker.memorysettings.ExternalRAM />
   <armgcc.linker.miscellaneous.LinkerFlags>-Wl,--entry=Reset_Handler -Wl,--cref -mthumb -T../src/ASF/sam0/utils/linker_scripts/samd20/gcc/samd20j18_flash.ld</armgcc.linker.miscellaneous.LinkerFlags>
   <armgcc.assembler.debugging.DebugLevel>Default (-g)</armgcc.assembler.debugging.DebugLevel>
-  <armgcc.preprocessingassembler.general.AssemblerFlags>-DARM_MATH_CM0PLUS=true -DBOARD=USER_BOARD -DCYCLE_MODE -DADC_CALLBACK_MODE=false -DRTC_CALENDAR_ASYNC=false -DTC_ASYNC=true -DSD_MMC_ENABLE -DSPI_CALLBACK_MODE=true -DI2C_MASTER_CALLBACK_MODE=false -DEXTINT_CALLBACK_MODE=false</armgcc.preprocessingassembler.general.AssemblerFlags>
+  <armgcc.preprocessingassembler.general.AssemblerFlags>-DARM_MATH_CM0PLUS=true -DBOARD=USER_BOARD -DCYCLE_MODE -DADC_CALLBACK_MODE=false -DRTC_CALENDAR_ASYNC=false -DTC_ASYNC=true -DSD_MMC_ENABLE -DSPI_CALLBACK_MODE=true -DI2C_MASTER_CALLBACK_MODE=false -DEXTINT_CALLBACK_MODE=true</armgcc.preprocessingassembler.general.AssemblerFlags>
   <armgcc.preprocessingassembler.general.DefaultIncludePath>False</armgcc.preprocessingassembler.general.DefaultIncludePath>
   <armgcc.preprocessingassembler.general.IncludePaths>
     <ListValues>
@@ -775,6 +777,12 @@
       <SubType>compile</SubType>
     </Compile>
     <None Include="src\ASF\sam0\drivers\bod\bod_sam_d_r\bod_feature.h">
+      <SubType>compile</SubType>
+    </None>
+    <Compile Include="src\ASF\sam0\drivers\extint\extint_callback.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <None Include="src\ASF\sam0\drivers\extint\extint_callback.h">
       <SubType>compile</SubType>
     </None>
     <Compile Include="src\ASF\sam0\drivers\extint\extint_sam_d_r\extint.c">

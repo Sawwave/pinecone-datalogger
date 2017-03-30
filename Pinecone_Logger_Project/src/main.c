@@ -127,7 +127,7 @@ int main (void)
 	
 	/*remove power to the SD/MMC card, we'll re enable it when it's time to write the reading.*/
 	PORTA.OUTCLR.reg = ALL_POWER_ENABLE;
-	PORTA.DIRCLR.reg = ALL_POWER_ENABLE;
+	//PORTA.DIRCLR.reg = ALL_POWER_ENABLE;
 	
 	ExternalInterruptInit();
 	
@@ -137,7 +137,11 @@ int main (void)
 		
 		DS3231_setAlarm(&i2cMasterModule, NULL);
 		ExternalInterruptSleep();
+		DS3231_disableAlarm(&i2cMasterModule);
 	}
+	
+
+	
 	
 	MainLoop();
 }
@@ -150,6 +154,10 @@ static inline void MainLoop(void){
 		
 		//get the time string from the DS3231. Load it into the buffer, starting at the second index to ignore the starting newline.
 		DS3231_getTimeToString(&i2cMasterModule, &dateTimeBuffer[1]);
+		
+		//set the next DS3231 alarm
+		DS3231_setAlarm()
+		
 		
 		// run sap flux system, dendrometers
 		PORTA.DIRSET.reg = PWR_3V3_POWER_ENABLE;
@@ -166,7 +174,7 @@ static inline void MainLoop(void){
 		PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE | PWR_5V_POWER_ENABLE;
 		
 		FIL dataFile;
-				
+		
 		bod_enable(BOD_BOD33);
 		delay_ms(10);
 		f_open(&dataFile, SD_DATALOG_FILENAME, FA_WRITE);
@@ -185,14 +193,17 @@ static inline void MainLoop(void){
 		bod_disable(BOD_BOD33);
 		bod_clear_detected(BOD_BOD33);
 		
+		PORTA.OUTCLR.reg = ALL_GPIO_PINMASK;
+		PORTA.DIRCLR.reg = ALL_GPIO_PINMASK;
+		
+		//set the alarm to get ready for sleep mode.
 		struct Ds3231_alarmTime alarm;
 		DS3231_createAlarmTime(&dateTimeBuffer[1], loggerConfig.loggingInterval, &alarm);
 		DS3231_setAlarm(&i2cMasterModule, &alarm);
 		
-		PORTA.OUTCLR.reg = ALL_GPIO_PINMASK;
-		PORTA.DIRCLR.reg = ALL_GPIO_PINMASK;
 		
 		ExternalInterruptSleep();
+		DS3231_disableAlarm(&i2cMasterModule);
 	}
 }
 

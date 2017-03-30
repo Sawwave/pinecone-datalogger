@@ -8,6 +8,8 @@
 #ifndef TIMED_SLEEP_H_
 #define TIMED_SLEEP_H_
 
+#include "extint.h"
+
 #define TIMED_SLEEP_1_HOUR 3600
 
 /*initSleepTimerCounter
