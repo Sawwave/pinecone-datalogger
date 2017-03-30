@@ -156,7 +156,7 @@ static inline void MainLoop(void){
 		DS3231_getTimeToString(&i2cMasterModule, &dateTimeBuffer[1]);
 		
 		//set the next DS3231 alarm
-		DS3231_setAlarm()
+		DS3231_setAlarmFromTime(&i2cMasterModule, loggerConfig.loggingInterval, &dateTimeBuffer[1]);
 		
 		
 		// run sap flux system, dendrometers
@@ -195,12 +195,7 @@ static inline void MainLoop(void){
 		
 		PORTA.OUTCLR.reg = ALL_GPIO_PINMASK;
 		PORTA.DIRCLR.reg = ALL_GPIO_PINMASK;
-		
-		//set the alarm to get ready for sleep mode.
-		struct Ds3231_alarmTime alarm;
-		DS3231_createAlarmTime(&dateTimeBuffer[1], loggerConfig.loggingInterval, &alarm);
-		DS3231_setAlarm(&i2cMasterModule, &alarm);
-		
+				
 		
 		ExternalInterruptSleep();
 		DS3231_disableAlarm(&i2cMasterModule);

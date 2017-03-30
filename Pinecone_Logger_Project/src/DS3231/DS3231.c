@@ -64,7 +64,7 @@ static uint8_t charArrayToBCD(const char tensDigitPtr[2]){
 	return (onesChar -'0') | ((tensChar - '0') << 4);
 }
 
-static uint8_t parseTwoDigitInt(const char *str){
+static uint8_t charArrayToInt(const char *str){
 	return ((str[0] - '0') * 10) + (str[1] - '0');
 }
 
@@ -191,25 +191,23 @@ void DS3231_disableAlarm(struct i2c_master_module *i2cMasterModule){
 }
 
 
-void DS3231_createAlarmTime(const char *dateTimeString, const uint16_t alarmTimeInMinutes, struct Ds3231_alarmTime *alarmTime){
-	uint8_t hour = parseTwoDigitInt(&dateTimeString[DS3231_TIME_BUFFER_HOUR_INDEX]);
-	uint8_t minute = parseTwoDigitInt(&dateTimeString[DS3231_TIME_BUFFER_MINUTE_INDEX]);
-	alarmTime->hours = (hour + (alarmTimeInMinutes / 60 )) % 24;
-	alarmTime->minutes = (minute + alarmTimeInMinutes) % 60;
+//set the next DS3231 alarm
+void DS3231_setAlarmFromTime(struct i2c_master_module *i2cMasterModule, const uint16_t loggingInterval, const char timeBuffer[19]){
 	
-}
-
-void DS3231_alarmOnSecond(struct i2c_master_module *i2cMasterModule){
-	uint8_t sendBuffer[9];
+	//TODO: perform better optomization here
+	//calculate the alarm minute and hour
+	uint32_t minutesIntoDay =charArrayToInt(&timeBuffer[DS3231_TIME_BUFFER_MINUTE_INDEX]) + 
+	(charArrayToInt(timeBuffer[DS3231_TIME_BUFFER_HOUR_INDEX + 1])*60)+
+	loggingInterval;
+	
+	minutesIntoDay %= (24*60);
+	
+	
+	uint8_t sendBuffer[6];
 	sendBuffer[0] = DS3231_ALARM2_START_REG;
-	//if alarm time is a null pointer, that means we're starting on the next hour (next time minutes is 00).
-	sendBuffer[1] = DS3231_ALARM_SUPRESS_BITMASK;	//s
-	sendBuffer[2] = DS3231_ALARM_SUPRESS_BITMASK;	//m
-	sendBuffer[3] = DS3231_ALARM_SUPRESS_BITMASK;	//h
-	//sendBuffer[4] = DS3231_ALARM_SUPRESS_BITMASK;	//d
-	//sendBuffer[5] = DS3231_ALARM_SUPRESS_BITMASK;	//m
-	//sendBuffer[6] = DS3231_ALARM_SUPRESS_BITMASK;	//h
-	//sendBuffer[7] = DS3231_ALARM_SUPRESS_BITMASK;	//d
+	sendBuffer[1] = intToBCD(minutesIntoDay % 60)| DS3231_ALARM_SUPRESS_BITMASK;
+	sendBuffer[2] = intToBCD(minutesIntoDay / 60) | DS3231_ALARM_SUPRESS_BITMASK;
+	sendBuffer[3] = DS3231_ALARM_SUPRESS_BITMASK;
 	sendBuffer[4] =	DS3231_CTRL_ALARM_INTERRUPT_BITMASK | DS3231_CTRL_ALARM_2_ENABLE_BITMASK;
 	sendBuffer[5] = 0;
 
