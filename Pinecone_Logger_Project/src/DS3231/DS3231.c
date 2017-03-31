@@ -197,7 +197,7 @@ void DS3231_setAlarmFromTime(struct i2c_master_module *i2cMasterModule, const ui
 	//TODO: perform better optomization here
 	//calculate the alarm minute and hour
 	uint32_t minutesIntoDay =charArrayToInt(&timeBuffer[DS3231_TIME_BUFFER_MINUTE_INDEX]) + 
-	(charArrayToInt(timeBuffer[DS3231_TIME_BUFFER_HOUR_INDEX + 1])*60)+
+	(charArrayToInt(&timeBuffer[DS3231_TIME_BUFFER_HOUR_INDEX + 1])*60)+
 	loggingInterval;
 	
 	minutesIntoDay %= (24*60);

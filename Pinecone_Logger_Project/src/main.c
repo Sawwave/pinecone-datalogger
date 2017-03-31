@@ -66,7 +66,6 @@ static inline void QueryAndRecordSdiValues(FIL *dataFile);
 static inline void InitBodDetection(void);
 static inline void WriteDataFileNanOrFloat(float value, FIL *datafile);
 
-static inline void DEBUG_LOOP(void);
 
 struct spi_module spiMasterModule;
 static struct spi_slave_inst spiSlaveInstance;
@@ -387,33 +386,4 @@ static inline void WriteDataFileNanOrFloat(float value, FIL *datafile){
 	else{
 		f_close(datafile);
 	}
-}
-
-static inline void DEBUG_LOOP(void){
-	
-	PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;
-	while(1){
-		ReadThermocouples(LogValues);
-		FIL datafile;
-		FRESULT status = f_open(&datafile, "tcvals.txt",  FA_OPEN_ALWAYS | FA_WRITE);
-		f_lseek(&datafile, f_size(&datafile));	//append to the end of the file.
-		static char parseBuffer[24];
-		if(status == FR_OK){
-			for(uint8_t i = 0;i<4;i++){
-				if(isnan(LogValues[i])){
-					f_puts("NAN, ",&datafile);
-				}
-				else{
-					gcvtf(LogValues[i], FLOAT_TO_STR_PRECISION, parseBuffer);
-					f_puts(parseBuffer, &datafile);
-					f_puts(", ", &datafile);
-				}
-			}
-			f_puts("\n", &datafile);
-			f_close(&datafile);
-		}
-		delay_s(1);
-	}
-	PORTA.OUTCLR.reg = PWR_3V3_POWER_ENABLE;
-	
 }
