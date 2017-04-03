@@ -145,11 +145,11 @@ void DS3231_setAlarm(struct i2c_master_module *i2cMasterModule, const struct Ds3
 	sendBuffer[0] = DS3231_ALARM2_START_REG;
 	//if alarm time is a null pointer, that means we're starting on the next hour (next time minutes is 00).
 	if(alarmTime){
-		sendBuffer[1] = intToBCD(alarmTime->minutes) | DS3231_ALARM_SUPRESS_BITMASK;
-		sendBuffer[2] = intToBCD(alarmTime->hours) | DS3231_ALARM_SUPRESS_BITMASK;
+		sendBuffer[1] = intToBCD(alarmTime->minutes);
+		sendBuffer[2] = intToBCD(alarmTime->hours);
 	}
 	else{
-		sendBuffer[1] = 0;
+		sendBuffer[1] = 0x04;
 		sendBuffer[2] = DS3231_ALARM_SUPRESS_BITMASK;
 	}
 	sendBuffer[3] = DS3231_ALARM_SUPRESS_BITMASK;
@@ -197,7 +197,7 @@ void DS3231_setAlarmFromTime(struct i2c_master_module *i2cMasterModule, const ui
 	//TODO: perform better optomization here
 	//calculate the alarm minute and hour
 	uint32_t minutesIntoDay =charArrayToInt(&timeBuffer[DS3231_TIME_BUFFER_MINUTE_INDEX]) + 
-	(charArrayToInt(&timeBuffer[DS3231_TIME_BUFFER_HOUR_INDEX + 1])*60)+
+	(charArrayToInt(&timeBuffer[DS3231_TIME_BUFFER_HOUR_INDEX])*60)+
 	loggingInterval;
 	
 	minutesIntoDay %= (24*60);
@@ -205,8 +205,8 @@ void DS3231_setAlarmFromTime(struct i2c_master_module *i2cMasterModule, const ui
 	
 	uint8_t sendBuffer[6];
 	sendBuffer[0] = DS3231_ALARM2_START_REG;
-	sendBuffer[1] = intToBCD(minutesIntoDay % 60)| DS3231_ALARM_SUPRESS_BITMASK;
-	sendBuffer[2] = intToBCD(minutesIntoDay / 60) | DS3231_ALARM_SUPRESS_BITMASK;
+	sendBuffer[1] = intToBCD(minutesIntoDay % 60);
+	sendBuffer[2] = intToBCD(minutesIntoDay / 60);
 	sendBuffer[3] = DS3231_ALARM_SUPRESS_BITMASK;
 	sendBuffer[4] =	DS3231_CTRL_ALARM_INTERRUPT_BITMASK | DS3231_CTRL_ALARM_2_ENABLE_BITMASK;
 	sendBuffer[5] = 0;

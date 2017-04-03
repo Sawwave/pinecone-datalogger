@@ -89,6 +89,9 @@ int main (void)
 	irq_initialize_vectors();
 	cpu_irq_enable();
 	
+	//set these as output, and keep it that way, otherwise can power when not expecting to.
+	PORTA.DIRSET.reg = ALL_POWER_ENABLE| HEATER_MOSFET_PINMASK;
+	
 	InitSleepTimerCounter(&tcInstance);
 	
 	InitBodDetection();
@@ -102,20 +105,19 @@ int main (void)
 	
 	DS3231_init_i2c(&i2cMasterModule);
 	ConfigureDendroADC(&adcModule);
-	
-	PORTA.DIRSET.reg = PWR_3V3_POWER_ENABLE;
+
 	PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;
 	
 	while(!SdCardInit(&fatFileSys)){
 		LedFlashStatusCode(LED_CODE_SD_CARD_NOT_FOUND);
 	}
 	
+	
 	//if we can read the time file, set the DS3231 time.
 	if(TryReadTimeFile(&dateTimeBuffer[1])){
 		DS3231_setTimeFromString(&i2cMasterModule, &dateTimeBuffer[1]);
 		f_unlink(SD_TIME_FILENAME);
 	}
-	
 	int configFileSuccess = ReadConfigFile(&loggerConfig);
 	if(!configFileSuccess){
 		LedFlashStatusCode(LED_CODE_CONFIG_MISSING);
@@ -125,10 +127,18 @@ int main (void)
 	Max31856ConfigureSPI(&spiMasterModule, &spiSlaveInstance);
 	
 	/*remove power to the SD/MMC card, we'll re enable it when it's time to write the reading.*/
-	PORTA.OUTCLR.reg = ALL_POWER_ENABLE;
-	//PORTA.DIRCLR.reg = ALL_POWER_ENABLE;
+	PORTA.OUTCLR.reg = PWR_3V3_POWER_ENABLE;
 	
 	ExternalInterruptInit();
+	
+	PORTA.OUTCLR.reg = PWR_3V3_POWER_ENABLE;
+	
+	
+	//disable the SD sercom module
+	SD_SERCOM_MODULE->SPI.CTRLA.reg &= ~SERCOM_SPI_CTRLA_ENABLE;
+	PORTA.OUTCLR.reg = 1 << SD_CS_PIN;
+	
+	
 	
 	if(loggerConfig.configFlags & CONFIG_FLAGS_START_ON_HOUR){
 		//flash success so that the user knows that, even though it's not logging now, it worked.
@@ -141,13 +151,12 @@ int main (void)
 	
 
 	
-	
 	MainLoop();
 }
 
 static inline void MainLoop(void){
 	while(1){
-		
+
 		//flash success to show now logging
 		LedFlashStatusCode(LED_CODE_START_SUCCESS);
 		
@@ -157,9 +166,7 @@ static inline void MainLoop(void){
 		//set the next DS3231 alarm
 		DS3231_setAlarmFromTime(&i2cMasterModule, loggerConfig.loggingInterval, &dateTimeBuffer[1]);
 		
-		
 		// run sap flux system, dendrometers
-		PORTA.DIRSET.reg = PWR_3V3_POWER_ENABLE;
 		PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;
 
 		//DHT22 goes first because it has 2s built in delay, giving dend and sap flux time to init
@@ -168,11 +175,17 @@ static inline void MainLoop(void){
 		RunSapFluxSystem();
 		
 		//SD card requires 3v3, and SDI-12 requires 3v3 and 5v.
-		PORTA.DIRSET.reg = PWR_3V3_POWER_ENABLE | PWR_5V_POWER_ENABLE | SDI_PIN_PINMASK;
+ 		PORTA.DIRSET.reg = SDI_PIN_PINMASK;
 		PORTA.OUTCLR.reg = SDI_PIN_PINMASK;
 		PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE | PWR_5V_POWER_ENABLE;
 		
 		FIL dataFile;
+		
+		
+		//reinitialize the sd card
+		PORTA.OUTSET.reg = 1 << SD_CS_PIN;
+		SD_SERCOM_MODULE->SPI.CTRLA.reg |= SERCOM_SPI_CTRLA_ENABLE;
+		while(!SdCardInit(&fatFileSys));
 		
 		bod_enable(BOD_BOD33);
 		delay_ms(10);
@@ -187,14 +200,21 @@ static inline void MainLoop(void){
 		
 		//close everything down, and get ready to sleep.
 		PORTA.OUTCLR.reg = ALL_POWER_ENABLE | SDI_PIN_PINMASK;
-		PORTA.DIRCLR.reg = ALL_POWER_ENABLE | SDI_PIN_PINMASK;
 		
 		bod_disable(BOD_BOD33);
 		bod_clear_detected(BOD_BOD33);
 		
+		//disable the SD sercom module
+		SD_SERCOM_MODULE->SPI.CTRLA.reg &= ~SERCOM_SPI_CTRLA_ENABLE;
+		PORTA.OUTCLR.reg = 1 << SD_CS_PIN;
+		
+		
+		//flash success to show now logging
+		LedFlashStatusCode(LED_CODE_START_SUCCESS);
+		
 		PORTA.OUTCLR.reg = ALL_GPIO_PINMASK;
-		PORTA.DIRCLR.reg = ALL_GPIO_PINMASK;
-				
+		PORTA.DIRCLR.reg = ALL_DATA_PINMASK;
+		
 		
 		ExternalInterruptSleep();
 		DS3231_disableAlarm(&i2cMasterModule);
@@ -293,12 +313,14 @@ static inline void RunSapFluxSystem(void){
 		ReadThermocouples(&(LogValues[LOG_VALUES_TC_BEFORE_INDEX]));
 		
 		//turn on heater, and turn off dendro/tc/dht. Then, sleep for the heater duration.
-		PORTA.DIRSET.reg = HEATER_MOSFET_PINMASK;
 		PORTA.OUTTGL.reg = HEATER_MOSFET_PINMASK | PWR_3V3_POWER_ENABLE;
-		TimedSleepSeconds(&tcInstance, HEATER_TIMED_SLEEP_SECONDS);
-		//turn heater off, and dendro/tc back on.
-		PORTA.OUTTGL.reg = HEATER_MOSFET_PINMASK | PWR_3V3_POWER_ENABLE;
-		PORTA.DIRCLR.reg = HEATER_MOSFET_PINMASK;
+		
+		//go to sleep for the full heater period, but wake up a second beforehand to turn on the power to the amp
+		TimedSleepSeconds(&tcInstance, HEATER_TIMED_SLEEP_SECONDS - 1);
+		PORTA.OUTTGL.reg = PWR_3V3_POWER_ENABLE;
+		TimedSleepSeconds(&tcInstance, 1);
+		PORTA.OUTTGL.reg = HEATER_MOSFET_PINMASK;
+		
 		
 		ReadThermocouples(&(LogValues[LOG_VALUES_TC_AFTER_INDEX]));
 	}

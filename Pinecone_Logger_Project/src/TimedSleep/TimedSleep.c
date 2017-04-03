@@ -80,7 +80,7 @@ void ExternalInterruptInit(){
 
 void ExternalInterruptSleep(void){
 	//set all pins to power-saving mode
-	PORTA.DIRCLR.reg = ALL_GPIO_PINMASK;
+	PORTA.DIRCLR.reg = ALL_DATA_PINMASK;
 	PORTA.OUTCLR.reg = ALL_GPIO_PINMASK;
 	
 	system_interrupt_enable_global();

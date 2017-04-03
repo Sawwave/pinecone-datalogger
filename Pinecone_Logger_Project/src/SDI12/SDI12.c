@@ -208,7 +208,7 @@ bool SDI12_GetSensedValues(struct SDI_transactionPacket *transactionPacket, floa
 	//TODO: make the num tries actually work, and exit out when needed.
 	while(numValuesReceived < transactionPacket->numberOfValuesToReturn){
 		uint8_t tries = SDI12_MAX_NUMBER_TRANSACTION_ATTEMPTS;
-		while(tries--){
+		while(--tries){
 			transactionPacket->transactionStatus = SDI12_PerformTransaction(message, messageLen, response, responseLen);
 			if(transactionPacket->transactionStatus == SDI12_STATUS_OK){
 				//star the float parsing after the address character
