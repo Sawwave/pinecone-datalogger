@@ -79,6 +79,19 @@ FATFS fatFileSys;
 static char dateTimeBuffer[dateTimeBufferLen] = "\n00/00/2000,00:00:00";	//buffer starts with \n since this always starts a measurement.
 static float LogValues[NUM_LOG_VALUES];
 
+/*charAddParity
+takes a given character, and adds an even parity bit in the MSB.
+*/
+static char CharAddParity(char address){
+	address &= 0x7F;	//make sure that the MSB starts cleared
+	for(uint8_t bitmask = 1; bitmask != 0x80; bitmask <<= 1){
+		if(address & bitmask){
+			address ^= 0x80; //flip the parity bit
+		}
+	}
+	return address;
+}
+
 
 int main (void)
 {
@@ -126,13 +139,56 @@ int main (void)
 	
 	Max31856ConfigureSPI(&spiMasterModule, &spiSlaveInstance);
 	
-	/*remove power to the SD/MMC card, we'll re enable it when it's time to write the reading.*/
-	PORTA.OUTCLR.reg = PWR_3V3_POWER_ENABLE;
-	
 	ExternalInterruptInit();
 	
-	PORTA.OUTCLR.reg = PWR_3V3_POWER_ENABLE;
 	
+	
+	
+
+	int boolMessage = 1;
+	while(1){
+		PORTA.DIRSET.reg = SDI_PIN_PINMASK | PWR_5V_POWER_ENABLE | PWR_3V3_POWER_ENABLE;
+		PORTA.OUTSET.reg = PWR_5V_POWER_ENABLE | PWR_3V3_POWER_ENABLE;
+		PORTA.OUTCLR.reg = SDI_PIN_PINMASK;
+		LedFlashStatusCode(LED_CODE_START_SUCCESS);
+		delay_ms(10);
+		FIL f;
+		char outbuf[30];
+		
+		if(boolMessage){
+			char inMessage[2] = {CharAddParity('?'), CharAddParity('!')};
+			enum SDI12_ReturnCode rc = SDI12_PerformTransaction( inMessage, 2, outbuf, 30);
+		}
+		else{
+			char inMessage[3] = {CharAddParity('1'), CharAddParity('I'), CharAddParity('!')};
+			enum SDI12_ReturnCode rc = SDI12_PerformTransaction( inMessage, 3,outbuf,30);
+		}
+		boolMessage = !boolMessage;
+		f_open(&f, "test.txt", FA_WRITE | FA_OPEN_ALWAYS);
+		f_lseek(&f,f_size(&f));
+		for(int i = 0; i<30; i++){
+			if(outbuf[i] == 13){
+				f_puts("cr",&f);
+			}
+			else if(outbuf[i] == 10){
+				f_puts("lf",&f);
+			}
+			else if(outbuf[i] < 32){
+				f_putc('-', &f);
+			}
+			else{
+				f_putc(outbuf[i], &f);
+			}
+		}
+		f_putc('\n', &f);
+		f_close(&f);
+
+	}
+	
+	
+	
+	
+	PORTA.OUTCLR.reg = PWR_3V3_POWER_ENABLE;
 	
 	//disable the SD sercom module
 	SD_SERCOM_MODULE->SPI.CTRLA.reg &= ~SERCOM_SPI_CTRLA_ENABLE;
@@ -166,8 +222,8 @@ static inline void MainLoop(void){
 		//set the next DS3231 alarm
 		DS3231_setAlarmFromTime(&i2cMasterModule, loggerConfig.loggingInterval, &dateTimeBuffer[1]);
 		
-		// run sap flux system, dendrometers
-		PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;
+		// run sap flux system, dendrometers, and power up 5v rail to give sensors time to initialize.
+		PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE | PWR_5V_POWER_ENABLE;
 
 		//DHT22 goes first because it has 2s built in delay, giving dend and sap flux time to init
 		RunDht22System();
@@ -175,13 +231,14 @@ static inline void MainLoop(void){
 		RunSapFluxSystem();
 		
 		//SD card requires 3v3, and SDI-12 requires 3v3 and 5v.
- 		PORTA.DIRSET.reg = SDI_PIN_PINMASK;
+		PORTA.DIRSET.reg = SDI_PIN_PINMASK;
 		PORTA.OUTCLR.reg = SDI_PIN_PINMASK;
-		PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE | PWR_5V_POWER_ENABLE;
+		PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;
+		
+		//sleep for a second to allow the SDI12 sensors to wake up and initialize if the above sensors were disabled.
+		TimedSleepSeconds(&tcInstance,1);
 		
 		FIL dataFile;
-		
-		
 		//reinitialize the sd card
 		PORTA.OUTSET.reg = 1 << SD_CS_PIN;
 		SD_SERCOM_MODULE->SPI.CTRLA.reg |= SERCOM_SPI_CTRLA_ENABLE;
@@ -206,13 +263,7 @@ static inline void MainLoop(void){
 		
 		//disable the SD sercom module
 		SD_SERCOM_MODULE->SPI.CTRLA.reg &= ~SERCOM_SPI_CTRLA_ENABLE;
-		PORTA.OUTCLR.reg = 1 << SD_CS_PIN;
-		
-		
-		//flash success to show now logging
-		LedFlashStatusCode(LED_CODE_START_SUCCESS);
-		
-		PORTA.OUTCLR.reg = ALL_GPIO_PINMASK;
+		PORTA.OUTCLR.reg = ALL_GPIO_PINMASK | 1 << SD_CS_PIN;
 		PORTA.DIRCLR.reg = ALL_DATA_PINMASK;
 		
 		
@@ -273,8 +324,9 @@ static inline void QueryAndRecordSdiValues(FIL *dataFile){
 		for(uint8_t sdiIndex = 0; sdiIndex < loggerConfig.numSdiSensors; sdiIndex++){
 			
 			//create the array for the values, and initialize the values to NAN.
-			float sdiValuesForSensor[loggerConfig.SDI12_SensorNumValues[sdiIndex]];
-			for(uint8_t i = 0; i< loggerConfig.SDI12_SensorNumValues[sdiIndex];i++){
+			const uint8_t numValsForSensor = loggerConfig.SDI12_SensorNumValues[sdiIndex];
+			float sdiValuesForSensor[numValsForSensor];
+			for(uint8_t i = 0; i< numValsForSensor;i++){
 				sdiValuesForSensor[i] = NAN;
 			}
 
@@ -286,10 +338,10 @@ static inline void QueryAndRecordSdiValues(FIL *dataFile){
 				if(transactionPacket.waitTime > 0){
 					TimedSleepSeconds(&tcInstance, transactionPacket.waitTime);
 				}
-				SDI12_GetSensedValues(&transactionPacket, sdiValuesForSensor);
+				SDI12_GetSensedValues( &transactionPacket, sdiValuesForSensor);
 			}
 			
-			for(uint8_t i=0; i< loggerConfig.SDI12_SensorNumValues[sdiIndex];i++){
+			for(uint8_t i=0; i< numValsForSensor;i++){
 				//check for brownout before writing to SD card.
 				WriteDataFileNanOrFloat(sdiValuesForSensor[i], dataFile);
 			}

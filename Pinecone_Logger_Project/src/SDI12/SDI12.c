@@ -10,12 +10,21 @@
 #include "SDI12/SDI12.h"
 #include "TimedSleep/TimedSleep.h"
 
+
+#ifdef SDI_DEBUG
 #define SDI12_MAX_NUMBER_TRANSACTION_ATTEMPTS		5
-#define MARKING_DELAY_CYCLES						13000	// >= 12ms marking length
+#define MARKING_DELAY_CYCLES						15000	// >= 12ms marking length
 #define SPACING_8330_DELAY_CYCLES					12080 	//8330us spacing delay
-#define BIT_TIMING_DELAY_CYCLES						940		//833us bit timing
+#define BIT_TIMING_DELAY_CYCLES						900		//833us bit timing
 #define BIT_TIMING_HALF_DELAY_CYCLES				400		//416.5us to get halfway into reading a bit
 
+#else
+#define SDI12_MAX_NUMBER_TRANSACTION_ATTEMPTS		5
+#define MARKING_DELAY_CYCLES						18000	// >= 12ms marking length
+#define SPACING_8330_DELAY_CYCLES					14080 	// >= 8330us spacing delay
+#define BIT_TIMING_DELAY_CYCLES						970		//833us bit timing
+#define BIT_TIMING_HALF_DELAY_CYCLES				300		//416.5us to get halfway into reading a bit
+#endif
 
 
 
@@ -208,7 +217,7 @@ bool SDI12_GetSensedValues(struct SDI_transactionPacket *transactionPacket, floa
 	//TODO: make the num tries actually work, and exit out when needed.
 	while(numValuesReceived < transactionPacket->numberOfValuesToReturn){
 		uint8_t tries = SDI12_MAX_NUMBER_TRANSACTION_ATTEMPTS;
-		while(--tries){
+		while(tries--){
 			transactionPacket->transactionStatus = SDI12_PerformTransaction(message, messageLen, response, responseLen);
 			if(transactionPacket->transactionStatus == SDI12_STATUS_OK){
 				//star the float parsing after the address character
@@ -255,7 +264,6 @@ parses the response from a _M! transaction to find the number of seconds that ne
 if the 2nd, 3rd, or 4th characters aren't numbers, will return false, otherwise true.
 Function also returns false if the response string is less than 4 characters long.
 If the function returns false that outTime will be invalid.
-
 response MUST be at least 4 characters long
 */
 static bool SDI12_GetTimeFromResponse(const char response[], uint16_t *outTime){

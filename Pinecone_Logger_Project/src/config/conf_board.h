@@ -77,7 +77,7 @@ struct LoggerConfig{
 
 
 #define TIMED_SLEEP_TC_HARDWARE TC2
-#define SDI_INTERFACE_TC_HARDWARE TC4
+#define SDI12_TC_HARDWARE TC4
 
 
 

@@ -149,7 +149,7 @@ void DS3231_setAlarm(struct i2c_master_module *i2cMasterModule, const struct Ds3
 		sendBuffer[2] = intToBCD(alarmTime->hours);
 	}
 	else{
-		sendBuffer[1] = 0x04;
+		sendBuffer[1] = 0x00;
 		sendBuffer[2] = DS3231_ALARM_SUPRESS_BITMASK;
 	}
 	sendBuffer[3] = DS3231_ALARM_SUPRESS_BITMASK;
