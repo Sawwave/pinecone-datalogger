@@ -14,6 +14,7 @@
 #include <power.h>
 #include <extint.h>
 
+
 static void TimerCounterSleepEndFunc(struct tc_module *const module);
 static void ExtintCallbackFunc(void){
 	extint_chan_disable_callback(DS3231_EIC_LINE, EXTINT_CALLBACK_TYPE_DETECT);
@@ -78,13 +79,16 @@ void ExternalInterruptInit(){
 	extint_register_callback(ExtintCallbackFunc, DS3231_EIC_LINE, EXTINT_CALLBACK_TYPE_DETECT);
 }
 
+/*Set device to sleep, using DS3231 extint as a wakeup alarm*/
 void ExternalInterruptSleep(void){
-	//set all pins to power-saving mode
-	PORTA.DIRCLR.reg = ALL_DATA_PINMASK;
-	PORTA.OUTCLR.reg = ALL_GPIO_PINMASK;
-	
 	system_interrupt_enable_global();
 	extint_chan_enable_callback(DS3231_EIC_LINE, EXTINT_CALLBACK_TYPE_DETECT);
 	system_set_sleepmode(SYSTEM_SLEEPMODE_STANDBY);
 	system_sleep();
+}
+
+/*enable DS3231 extint wakeup alarm, but don't go to sleep.*/
+void EnableExtintWakeup(void){
+	system_interrupt_enable_global();
+	extint_chan_enable_callback(DS3231_EIC_LINE, EXTINT_CALLBACK_TYPE_DETECT);
 }

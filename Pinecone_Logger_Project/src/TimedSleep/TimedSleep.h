@@ -32,4 +32,6 @@ void ExternalInterruptInit(void);
 
 void ExternalInterruptSleep(void);
 
+void EnableExtintWakeup(void);
+
 #endif /* TIMEDSLEEP_H_ */

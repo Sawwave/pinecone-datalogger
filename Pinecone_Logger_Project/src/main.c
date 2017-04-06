@@ -78,19 +78,7 @@ FATFS fatFileSys;
 #define dateTimeBufferLen  20	//defined as to not variably modify length at file scope.
 static char dateTimeBuffer[dateTimeBufferLen] = "\n00/00/2000,00:00:00";	//buffer starts with \n since this always starts a measurement.
 static float LogValues[NUM_LOG_VALUES];
-
-/*charAddParity
-takes a given character, and adds an even parity bit in the MSB.
-*/
-static char CharAddParity(char address){
-	address &= 0x7F;	//make sure that the MSB starts cleared
-	for(uint8_t bitmask = 1; bitmask != 0x80; bitmask <<= 1){
-		if(address & bitmask){
-			address ^= 0x80; //flip the parity bit
-		}
-	}
-	return address;
-}
+uint32_t logCounter = 0;
 
 
 int main (void)
@@ -103,7 +91,7 @@ int main (void)
 	cpu_irq_enable();
 	
 	//set these as output, and keep it that way, otherwise can power when not expecting to.
-	PORTA.DIRSET.reg = ALL_POWER_ENABLE| HEATER_MOSFET_PINMASK;
+	PORTA.DIRSET.reg = ALL_POWER_ENABLE | HEATER_MOSFET_PINMASK | SDI_PIN_PINMASK;
 	
 	InitSleepTimerCounter(&tcInstance);
 	
@@ -141,61 +129,13 @@ int main (void)
 	
 	ExternalInterruptInit();
 	
-	
-	
-	
-
-	int boolMessage = 1;
-	while(1){
-		PORTA.DIRSET.reg = SDI_PIN_PINMASK | PWR_5V_POWER_ENABLE | PWR_3V3_POWER_ENABLE;
-		PORTA.OUTSET.reg = PWR_5V_POWER_ENABLE | PWR_3V3_POWER_ENABLE;
-		PORTA.OUTCLR.reg = SDI_PIN_PINMASK;
-		LedFlashStatusCode(LED_CODE_START_SUCCESS);
-		delay_ms(10);
-		FIL f;
-		char outbuf[30];
-		
-		if(boolMessage){
-			char inMessage[2] = {CharAddParity('?'), CharAddParity('!')};
-			enum SDI12_ReturnCode rc = SDI12_PerformTransaction( inMessage, 2, outbuf, 30);
-		}
-		else{
-			char inMessage[3] = {CharAddParity('1'), CharAddParity('I'), CharAddParity('!')};
-			enum SDI12_ReturnCode rc = SDI12_PerformTransaction( inMessage, 3,outbuf,30);
-		}
-		boolMessage = !boolMessage;
-		f_open(&f, "test.txt", FA_WRITE | FA_OPEN_ALWAYS);
-		f_lseek(&f,f_size(&f));
-		for(int i = 0; i<30; i++){
-			if(outbuf[i] == 13){
-				f_puts("cr",&f);
-			}
-			else if(outbuf[i] == 10){
-				f_puts("lf",&f);
-			}
-			else if(outbuf[i] < 32){
-				f_putc('-', &f);
-			}
-			else{
-				f_putc(outbuf[i], &f);
-			}
-		}
-		f_putc('\n', &f);
-		f_close(&f);
-
-	}
-	
-	
-	
-	
 	PORTA.OUTCLR.reg = PWR_3V3_POWER_ENABLE;
 	
 	//disable the SD sercom module
 	SD_SERCOM_MODULE->SPI.CTRLA.reg &= ~SERCOM_SPI_CTRLA_ENABLE;
 	PORTA.OUTCLR.reg = 1 << SD_CS_PIN;
 	
-	
-	
+
 	if(loggerConfig.configFlags & CONFIG_FLAGS_START_ON_HOUR){
 		//flash success so that the user knows that, even though it's not logging now, it worked.
 		LedFlashStatusCode(LED_CODE_START_SUCCESS);
@@ -219,11 +159,10 @@ static inline void MainLoop(void){
 		//get the time string from the DS3231. Load it into the buffer, starting at the second index to ignore the starting newline.
 		DS3231_getTimeToString(&i2cMasterModule, &dateTimeBuffer[1]);
 		
-		//set the next DS3231 alarm
 		DS3231_setAlarmFromTime(&i2cMasterModule, loggerConfig.loggingInterval, &dateTimeBuffer[1]);
 		
 		// run sap flux system, dendrometers, and power up 5v rail to give sensors time to initialize.
-		PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE | PWR_5V_POWER_ENABLE;
+		PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;
 
 		//DHT22 goes first because it has 2s built in delay, giving dend and sap flux time to init
 		RunDht22System();
@@ -231,12 +170,11 @@ static inline void MainLoop(void){
 		RunSapFluxSystem();
 		
 		//SD card requires 3v3, and SDI-12 requires 3v3 and 5v.
+		PORTA.OUTSET.reg = ALL_POWER_ENABLE;
 		PORTA.DIRSET.reg = SDI_PIN_PINMASK;
 		PORTA.OUTCLR.reg = SDI_PIN_PINMASK;
-		PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;
-		
 		//sleep for a second to allow the SDI12 sensors to wake up and initialize if the above sensors were disabled.
-		TimedSleepSeconds(&tcInstance,1);
+		TimedSleepSeconds(&tcInstance, 1);
 		
 		FIL dataFile;
 		//reinitialize the sd card
@@ -245,7 +183,7 @@ static inline void MainLoop(void){
 		while(!SdCardInit(&fatFileSys));
 		
 		bod_enable(BOD_BOD33);
-		delay_ms(10);
+		
 		f_open(&dataFile, SD_DATALOG_FILENAME, FA_WRITE);
 		f_lseek(&dataFile, f_size(&dataFile));	//append to the end of the file.
 		
@@ -263,12 +201,17 @@ static inline void MainLoop(void){
 		
 		//disable the SD sercom module
 		SD_SERCOM_MODULE->SPI.CTRLA.reg &= ~SERCOM_SPI_CTRLA_ENABLE;
-		PORTA.OUTCLR.reg = ALL_GPIO_PINMASK | 1 << SD_CS_PIN;
+		PORTA.OUTCLR.reg = ALL_GPIO_PINMASK | (1 << SD_CS_PIN);
 		PORTA.DIRCLR.reg = ALL_DATA_PINMASK;
 		
-		
-		ExternalInterruptSleep();
+		EnableExtintWakeup();
+		//with the extint wakeup enabled, go to sleep with the Timer/counter as a backup, set one minute later than DS3231 alarm
+		TimedSleepSeconds(&tcInstance, loggerConfig.loggingInterval + 60);
+		//turn off the timer backup
+		tc_disable(&tcInstance);
+		//disable the DS3231 alarm
 		DS3231_disableAlarm(&i2cMasterModule);
+
 	}
 }
 
@@ -318,8 +261,6 @@ static inline void RecordNonSdiValues(FIL *dataFile){
 }
 
 static inline void QueryAndRecordSdiValues(FIL *dataFile){
-	delay_s(1);
-	
 	if(loggerConfig.configFlags & CONFIG_FLAGS_ENABLE_SDI){
 		for(uint8_t sdiIndex = 0; sdiIndex < loggerConfig.numSdiSensors; sdiIndex++){
 			
@@ -338,7 +279,7 @@ static inline void QueryAndRecordSdiValues(FIL *dataFile){
 				if(transactionPacket.waitTime > 0){
 					TimedSleepSeconds(&tcInstance, transactionPacket.waitTime);
 				}
-				SDI12_GetSensedValues( &transactionPacket, sdiValuesForSensor);
+				SDI12_GetSensedValues(&transactionPacket, sdiValuesForSensor);
 			}
 			
 			for(uint8_t i=0; i< numValsForSensor;i++){
@@ -351,9 +292,10 @@ static inline void QueryAndRecordSdiValues(FIL *dataFile){
 	}
 	
 	else{
+		//fill the spaces with NANs since we're not reading them.
 		for(uint8_t sdiIndex = 0; sdiIndex < loggerConfig.numSdiSensors; sdiIndex++){
 			for(uint8_t sdiValIndex = 0; sdiValIndex < loggerConfig.SDI12_SensorNumValues[sdiIndex];sdiValIndex++){
-				f_puts(",NAN", dataFile);
+				f_puts(",not", dataFile);
 			}
 		}
 	}

@@ -69,7 +69,7 @@ struct LoggerConfig{
 	char SDI12_SensorAddresses[SDI12_MAX_SUPPORTED_SENSORS + 3];	//extra chars on the end for ease of f_gets function.
 	uint8_t SDI12_SensorNumValues[SDI12_MAX_SUPPORTED_SENSORS];
 	uint8_t numSdiSensors;
-	uint16_t loggingInterval;
+	uint16_t loggingInterval;	//in minutes
 	uint8_t thermocoupleType;
 	uint8_t configFlags;
 };
