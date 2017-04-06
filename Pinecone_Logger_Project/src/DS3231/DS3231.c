@@ -49,6 +49,9 @@
 #define DS3231_TIME_BUFFER_CENTURY_INDEX	7
 
 
+#define DS3231_DEBUG
+
+
 static uint8_t intToBCD(const uint8_t intValue){
 	return (intValue % 10) | ((intValue / 10) << 4);
 }
@@ -117,13 +120,33 @@ void DS3231_getTimeToString(struct i2c_master_module *i2cMasterModule, char time
 	packet.high_speed = false;
 	packet.ten_bit_address = false;
 	
-	//send the first packet to set the register address to read from to 0.
 	i2c_master_enable(i2cMasterModule);
-	i2c_master_write_packet_wait(i2cMasterModule, &packet);
 	
+	//try to send the packet, repeat until success or until timeout
+	uint16_t attempt = 1000;
+	enum status_code  i2cStatus;
+	do{
+		i2cStatus = i2c_master_write_packet_wait(i2cMasterModule, &packet);
+		if((attempt--) == 0){
+			i2c_master_disable(i2cMasterModule);
+			return;
+		}
+		
+	}while (i2cStatus != STATUS_OK);
+
 	//now, re-use the same data packet and buffer for the read from the date-time registers.
 	packet.data_length = 18;
-	i2c_master_read_packet_wait(i2cMasterModule, &packet);
+	
+	attempt = 1000;
+	do{
+		i2cStatus = i2c_master_read_packet_wait(i2cMasterModule, &packet);
+		if((attempt--) == 0){
+			i2c_master_disable(i2cMasterModule);
+			return;
+		}
+		
+	}while (i2cStatus != STATUS_OK);
+	
 	i2c_master_disable(i2cMasterModule);
 	
 	//save the century bit, and strip it off the month.
@@ -185,7 +208,19 @@ void DS3231_disableAlarm(struct i2c_master_module *i2cMasterModule){
 	
 	i2c_master_enable(i2cMasterModule);
 
-	i2c_master_write_packet_wait(i2cMasterModule, &packet);
+	//write the alarm off message, trying until success or timeout
+	uint16_t attempt = 1000;
+	enum status_code  i2cStatus;
+	do{
+		i2cStatus = i2c_master_write_packet_wait(i2cMasterModule, &packet);
+		if((attempt--) == 0){
+			i2c_master_disable(i2cMasterModule);
+			return;
+		}
+		
+	}while (i2cStatus != STATUS_OK);
+
+
 	
 	i2c_master_disable(i2cMasterModule);
 }
@@ -194,13 +229,15 @@ void DS3231_disableAlarm(struct i2c_master_module *i2cMasterModule){
 //set the next DS3231 alarm
 void DS3231_setAlarmFromTime(struct i2c_master_module *i2cMasterModule, const uint16_t loggingInterval, const char timeBuffer[19]){
 	
+	
+	//Error checking: If the time buffer is not in a valid state, log at top of next hour
+	
 	//TODO: perform better optomization here
 	//calculate the alarm minute and hour
-	uint32_t minutesIntoDay =charArrayToInt(&timeBuffer[DS3231_TIME_BUFFER_MINUTE_INDEX]) + 
-	(charArrayToInt(&timeBuffer[DS3231_TIME_BUFFER_HOUR_INDEX])*60)+
+	uint32_t minutesIntoDay =charArrayToInt(&timeBuffer[DS3231_TIME_BUFFER_MINUTE_INDEX]) +
+	(charArrayToInt(&timeBuffer[DS3231_TIME_BUFFER_HOUR_INDEX])*60) +
 	loggingInterval;
 	
-	minutesIntoDay %= (24*60);
 	
 	
 	uint8_t sendBuffer[6];
@@ -221,7 +258,19 @@ void DS3231_setAlarmFromTime(struct i2c_master_module *i2cMasterModule, const ui
 
 	i2c_master_enable(i2cMasterModule);
 
-	i2c_master_write_packet_wait(i2cMasterModule, &packet);
+
+	//write the alarm off message, trying until success or timeout
+	uint16_t attempt = 1000;
+	enum status_code i2cStatus;
+	do{
+		i2cStatus = i2c_master_write_packet_wait(i2cMasterModule, &packet);
+		if((attempt--) == 0){
+			i2c_master_disable(i2cMasterModule);
+			return;
+		}
+		
+	}while (i2cStatus != STATUS_OK);
+
 	
 	i2c_master_disable(i2cMasterModule);
 }
