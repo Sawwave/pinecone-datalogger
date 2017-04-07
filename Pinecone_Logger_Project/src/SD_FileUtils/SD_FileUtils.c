@@ -221,15 +221,17 @@ bool ReadConfigFile(struct LoggerConfig *config){
 		//set the logging interval to 0 so we can populate it!
 		config->loggingInterval = 0;
 		char *ptrToIntervalBuffer = intervalBuffer;
+		bool loggingIntervalSuccess = false;
 		//parse out the interval.
 		while( (*ptrToIntervalBuffer >= '0') && (*ptrToIntervalBuffer <= '9')){
+			loggingIntervalSuccess = true;
 			config->loggingInterval *= 10;
 			config->loggingInterval += (*ptrToIntervalBuffer)- '0';
 			ptrToIntervalBuffer++;
 		}
 		
 		//in case of logging interval error, set it to 60.
-		if(config->loggingInterval == 0){
+		if(!loggingIntervalSuccess){
 			config->loggingInterval = 60;
 		}
 		

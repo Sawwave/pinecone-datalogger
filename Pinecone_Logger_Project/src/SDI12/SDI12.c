@@ -10,20 +10,19 @@
 #include "SDI12/SDI12.h"
 #include "TimedSleep/TimedSleep.h"
 
-
 #ifdef SDI_DEBUG
 #define SDI12_MAX_NUMBER_TRANSACTION_ATTEMPTS		5
-#define MARKING_DELAY_CYCLES						15000	// >= 12ms marking length
-#define SPACING_8330_DELAY_CYCLES					12080 	//8330us spacing delay
-#define BIT_TIMING_DELAY_CYCLES						900		//833us bit timing
+#define BREAK_DELAY_CYCLES							20000	// >= 12ms marking length
+#define MARKING_8330_DELAY_CYCLES					16080 	//8330us spacing delay
+#define BIT_TIMING_DELAY_CYCLES						940		//833us bit timing
 #define BIT_TIMING_HALF_DELAY_CYCLES				400		//416.5us to get halfway into reading a bit
 
 #else
 #define SDI12_MAX_NUMBER_TRANSACTION_ATTEMPTS		5
-#define MARKING_DELAY_CYCLES						18000	// >= 12ms marking length
-#define SPACING_8330_DELAY_CYCLES					14080 	// >= 8330us spacing delay
-#define BIT_TIMING_DELAY_CYCLES						970		//833us bit timing
-#define BIT_TIMING_HALF_DELAY_CYCLES				300		//416.5us to get halfway into reading a bit
+#define BREAK_DELAY_CYCLES							30000	// >= 12ms marking length
+#define MARKING_8330_DELAY_CYCLES					30080 	// >= 8330us spacing delay
+#define BIT_TIMING_DELAY_CYCLES						980		//833us bit timing
+#define BIT_TIMING_HALF_DELAY_CYCLES				200		//416.5us to get halfway into reading a bit
 #endif
 
 
@@ -47,15 +46,10 @@ Returns SDI12_STATUS_OK on success, but may SDI12_TRANSACTION_TIMEOUT, SDI12_BAD
 enum SDI12_ReturnCode  SDI12_PerformTransaction( const char *message, const uint8_t messageLen, char *outBuffer, const uint8_t outBufferLen){
 	//clear out the output buffer
 	memset(outBuffer, 0, sizeof(char) * outBufferLen);
-
-	//set for 13 millis, ish
-	PORTA.DIRSET.reg = SDI_PIN_PINMASK;
-	PORTA.OUTSET.reg = SDI_PIN_PINMASK;
-	portable_delay_cycles(MARKING_DELAY_CYCLES);
 	
 	//clear for at least 8330 micros
 	PORTA.OUTCLR.reg = SDI_PIN_PINMASK;
-	portable_delay_cycles(SPACING_8330_DELAY_CYCLES);
+	portable_delay_cycles(MARKING_8330_DELAY_CYCLES);
 	
 	for(uint8_t byteNumber = 0; byteNumber < messageLen; byteNumber++){
 		//send the start bit (always HIGH)
@@ -93,7 +87,7 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction( const char *message, const uint
 	
 
 	//wait for the timeout to be LOW at least once, then delay through the start bit (HIGH)
-	uint16_t timeout = 1000;
+	uint16_t timeout = 10000;
 	
 	do{
 		portable_delay_cycles(10);
@@ -103,7 +97,8 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction( const char *message, const uint
 	} while( (--timeout) && !(PORTA.IN.reg & SDI_PIN_PINMASK));
 	
 	if(timeout == 0){
-		//disable INEN, but keep as input for power saving.
+		PORTA.DIRSET.reg = SDI_PIN_PINMASK;
+		PORTA.OUTCLR.reg = SDI_PIN_PINMASK;
 		#if SDI_PIN_PINMASK < (1 << 16)
 		PORTA.WRCONFIG.reg = PORT_WRCONFIG_WRPINCFG |  SDI_PIN_PINMASK;
 		#else
@@ -147,6 +142,7 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction( const char *message, const uint
 	);
 
 	//disable INEN
+	PORTA.DIRSET.reg = SDI_PIN_PINMASK;
 	PORTA.OUTCLR.reg = SDI_PIN_PINMASK;
 	#if SDI_PIN_PINMASK < (1 << 16)
 	PORTA.WRCONFIG.reg = PORT_WRCONFIG_WRPINCFG |  SDI_PIN_PINMASK;
@@ -178,6 +174,11 @@ void SDI12_RequestSensorReading(struct SDI_transactionPacket *transactionPacket)
 	char response[12];
 	memset(response, 0, sizeof(response));
 	
+	// send a break to get the sensor ready, or to abort a previous measurement.
+	PORTA.DIRSET.reg = SDI_PIN_PINMASK;
+	PORTA.OUTSET.reg = SDI_PIN_PINMASK;
+	portable_delay_cycles(BREAK_DELAY_CYCLES);
+	
 	//try up to MAX NUMBER TRANSACTIONS to get a successful response.
 	//loop will RETURN on success.
 	while(tries--){
@@ -189,6 +190,10 @@ void SDI12_RequestSensorReading(struct SDI_transactionPacket *transactionPacket)
 				transactionPacket->numberOfValuesToReturn = SDI12_ParseNumValuesFromResponse(response, responseLength);
 				return;
 			}
+		}
+		else{
+			//retries must wait between 16.67ms and 87ms
+			delay_ms(20);
 		}
 	}
 }
@@ -215,6 +220,12 @@ bool SDI12_GetSensedValues(struct SDI_transactionPacket *transactionPacket, floa
 	for(uint8_t counter = 0; counter < transactionPacket->numberOfValuesToReturn; counter++){
 		outValues[counter] = NAN;
 	}
+	
+	// send a break to get the sensor ready, or to abort a previous measurement.
+	PORTA.DIRSET.reg = SDI_PIN_PINMASK;
+	PORTA.OUTSET.reg = SDI_PIN_PINMASK;
+	portable_delay_cycles(BREAK_DELAY_CYCLES);
+	
 	//TODO: make the num tries actually work, and exit out when needed.
 	while(numValuesReceived < transactionPacket->numberOfValuesToReturn){
 		uint8_t tries = SDI12_MAX_NUMBER_TRANSACTION_ATTEMPTS;
@@ -236,8 +247,15 @@ bool SDI12_GetSensedValues(struct SDI_transactionPacket *transactionPacket, floa
 					//stop trying for this D_! command, we succeeded.
 					break;
 				}
+				else{
+					//if the response was good, but didn't seem to have any valid data, return with what we have.
+					return false;
+				}
 			}
-			//on failure
+			else{
+				//retries must wait between 16.67ms and 87ms
+				delay_ms(20);
+			}
 		}
 		if(tries == 0){
 			//these values couldn't be gathered in the give number of tries, so we'll call this sensor gathering a failure.

@@ -78,7 +78,6 @@ FATFS fatFileSys;
 #define dateTimeBufferLen  20	//defined as to not variably modify length at file scope.
 static char dateTimeBuffer[dateTimeBufferLen] = "\n00/00/2000,00:00:00";	//buffer starts with \n since this always starts a measurement.
 static float LogValues[NUM_LOG_VALUES];
-uint32_t logCounter = 0;
 
 
 int main (void)
@@ -146,20 +145,20 @@ int main (void)
 	}
 	
 
-	
 	MainLoop();
 }
 
 static inline void MainLoop(void){
 	while(1){
-
 		//flash success to show now logging
 		LedFlashStatusCode(LED_CODE_START_SUCCESS);
 		
 		//get the time string from the DS3231. Load it into the buffer, starting at the second index to ignore the starting newline.
 		DS3231_getTimeToString(&i2cMasterModule, &dateTimeBuffer[1]);
 		
-		DS3231_setAlarmFromTime(&i2cMasterModule, loggerConfig.loggingInterval, &dateTimeBuffer[1]);
+		if(loggerConfig.loggingInterval != 0){
+			DS3231_setAlarmFromTime(&i2cMasterModule, loggerConfig.loggingInterval, &dateTimeBuffer[1]);
+		}
 		
 		// run sap flux system, dendrometers, and power up 5v rail to give sensors time to initialize.
 		PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;
@@ -171,7 +170,6 @@ static inline void MainLoop(void){
 		
 		//SD card requires 3v3, and SDI-12 requires 3v3 and 5v.
 		PORTA.OUTSET.reg = ALL_POWER_ENABLE;
-		PORTA.DIRSET.reg = SDI_PIN_PINMASK;
 		PORTA.OUTCLR.reg = SDI_PIN_PINMASK;
 		//sleep for a second to allow the SDI12 sensors to wake up and initialize if the above sensors were disabled.
 		TimedSleepSeconds(&tcInstance, 1);
@@ -193,24 +191,25 @@ static inline void MainLoop(void){
 
 		f_close(&dataFile);
 		
-		//close everything down, and get ready to sleep.
-		PORTA.OUTCLR.reg = ALL_POWER_ENABLE | SDI_PIN_PINMASK;
 		
 		bod_disable(BOD_BOD33);
 		bod_clear_detected(BOD_BOD33);
 		
 		//disable the SD sercom module
 		SD_SERCOM_MODULE->SPI.CTRLA.reg &= ~SERCOM_SPI_CTRLA_ENABLE;
-		PORTA.OUTCLR.reg = ALL_GPIO_PINMASK | (1 << SD_CS_PIN);
-		PORTA.DIRCLR.reg = ALL_DATA_PINMASK;
+		//close everything down, and get ready to sleep.
+		PORTA.OUTCLR.reg = ALL_POWER_ENABLE | SDI_PIN_PINMASK | HEATER_MOSFET_PINMASK | DHT22_ALL_PINMASK | TC_MUX_SELECT_ALL_PINMASK | SDI_PIN_PINMASK | LED_PIN_PINMASK | (1 << SD_CS_PIN);
+		PORTA.DIRCLR.reg = DHT22_ALL_PINMASK | TC_MUX_SELECT_ALL_PINMASK | LED_PIN_PINMASK ;
 		
-		EnableExtintWakeup();
-		//with the extint wakeup enabled, go to sleep with the Timer/counter as a backup, set one minute later than DS3231 alarm
-		TimedSleepSeconds(&tcInstance, loggerConfig.loggingInterval + 60);
-		//turn off the timer backup
-		tc_disable(&tcInstance);
-		//disable the DS3231 alarm
-		DS3231_disableAlarm(&i2cMasterModule);
+		if(loggerConfig.loggingInterval != 0){
+			EnableExtintWakeup();
+			//with the extint wakeup enabled, go to sleep with the Timer/counter as a backup, set one minute later than DS3231 alarm
+			TimedSleepSeconds(&tcInstance, (loggerConfig.loggingInterval+1) * 60);
+			//turn off the timer backup
+			tc_disable(&tcInstance);
+			//disable the DS3231 alarm
+			DS3231_disableAlarm(&i2cMasterModule);
+		}
 
 	}
 }
@@ -277,7 +276,8 @@ static inline void QueryAndRecordSdiValues(FIL *dataFile){
 			if(transactionPacket.transactionStatus == SDI12_STATUS_OK){
 				//if the sensor asked us to wait for some time before reading, let's go into sleep mode for it.
 				if(transactionPacket.waitTime > 0){
-					TimedSleepSeconds(&tcInstance, transactionPacket.waitTime);
+					//TimedSleepSeconds(&tcInstance, transactionPacket.waitTime);
+					TimedSleepSeconds(&tcInstance, transactionPacket.waitTime + 1);
 				}
 				SDI12_GetSensedValues(&transactionPacket, sdiValuesForSensor);
 			}
@@ -295,7 +295,7 @@ static inline void QueryAndRecordSdiValues(FIL *dataFile){
 		//fill the spaces with NANs since we're not reading them.
 		for(uint8_t sdiIndex = 0; sdiIndex < loggerConfig.numSdiSensors; sdiIndex++){
 			for(uint8_t sdiValIndex = 0; sdiValIndex < loggerConfig.SDI12_SensorNumValues[sdiIndex];sdiValIndex++){
-				f_puts(",not", dataFile);
+				f_puts(",NAN", dataFile);
 			}
 		}
 	}

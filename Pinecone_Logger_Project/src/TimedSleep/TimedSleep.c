@@ -16,9 +16,8 @@
 
 
 static void TimerCounterSleepEndFunc(struct tc_module *const module);
-static void ExtintCallbackFunc(void){
-	extint_chan_disable_callback(DS3231_EIC_LINE, EXTINT_CALLBACK_TYPE_DETECT);
-};
+
+static void ExtintCallbackFunc(void);
 
 
 /*initSleepTimerCounter
@@ -46,6 +45,11 @@ Function will disable the TimerCounter.*/
 static void TimerCounterSleepEndFunc(struct tc_module *const module){
 	tc_disable(module);
 }
+
+
+static void ExtintCallbackFunc(void){
+	extint_chan_disable_callback(DS3231_EIC_LINE, EXTINT_CALLBACK_TYPE_DETECT);
+};
 
 /*TimedSleep_seconds
 sets a timer-counter, and then enters standby sleep mode.
