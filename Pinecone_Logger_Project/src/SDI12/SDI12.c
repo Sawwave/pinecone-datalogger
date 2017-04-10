@@ -21,7 +21,7 @@
 #define SDI12_MAX_NUMBER_TRANSACTION_ATTEMPTS		5
 #define BREAK_DELAY_CYCLES							30000	// >= 12ms marking length
 #define MARKING_8330_DELAY_CYCLES					30080 	// >= 8330us spacing delay
-#define BIT_TIMING_DELAY_CYCLES						980		//833us bit timing
+#define BIT_TIMING_DELAY_CYCLES						967		//833us bit timing
 #define BIT_TIMING_HALF_DELAY_CYCLES				200		//416.5us to get halfway into reading a bit
 #endif
 

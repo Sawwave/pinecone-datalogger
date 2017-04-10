@@ -170,6 +170,7 @@ static inline void MainLoop(void){
 		
 		//SD card requires 3v3, and SDI-12 requires 3v3 and 5v.
 		PORTA.OUTSET.reg = ALL_POWER_ENABLE;
+		PORTA.DIRSET.reg = SDI_PIN_PINMASK;
 		PORTA.OUTCLR.reg = SDI_PIN_PINMASK;
 		//sleep for a second to allow the SDI12 sensors to wake up and initialize if the above sensors were disabled.
 		TimedSleepSeconds(&tcInstance, 1);
@@ -191,22 +192,22 @@ static inline void MainLoop(void){
 
 		f_close(&dataFile);
 		
+		//close everything down, and get ready to sleep.
+		PORTA.OUTCLR.reg = ALL_POWER_ENABLE | SDI_PIN_PINMASK;
 		
 		bod_disable(BOD_BOD33);
 		bod_clear_detected(BOD_BOD33);
 		
 		//disable the SD sercom module
 		SD_SERCOM_MODULE->SPI.CTRLA.reg &= ~SERCOM_SPI_CTRLA_ENABLE;
-		//close everything down, and get ready to sleep.
-		PORTA.OUTCLR.reg = ALL_POWER_ENABLE | SDI_PIN_PINMASK | HEATER_MOSFET_PINMASK | DHT22_ALL_PINMASK | TC_MUX_SELECT_ALL_PINMASK | SDI_PIN_PINMASK | LED_PIN_PINMASK | (1 << SD_CS_PIN);
-		PORTA.DIRCLR.reg = DHT22_ALL_PINMASK | TC_MUX_SELECT_ALL_PINMASK | LED_PIN_PINMASK ;
+		PORTA.OUTCLR.reg = (ALL_GPIO_PINMASK | (1 << SD_CS_PIN)) | SDI_PIN_PINMASK;
+		PORTA.DIRCLR.reg = ALL_DATA_PINMASK;
+		PORTA.DIRSET.reg = SDI_PIN_PINMASK;
 		
 		if(loggerConfig.loggingInterval != 0){
 			EnableExtintWakeup();
 			//with the extint wakeup enabled, go to sleep with the Timer/counter as a backup, set one minute later than DS3231 alarm
 			TimedSleepSeconds(&tcInstance, (loggerConfig.loggingInterval+1) * 60);
-			//turn off the timer backup
-			tc_disable(&tcInstance);
 			//disable the DS3231 alarm
 			DS3231_disableAlarm(&i2cMasterModule);
 		}
