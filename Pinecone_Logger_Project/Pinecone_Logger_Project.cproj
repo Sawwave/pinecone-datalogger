@@ -1185,9 +1185,14 @@
     </None>
     <Compile Include="src\SDI12\SDI12.h">
       <SubType>compile</SubType>
+      <CustomCompilationSetting Condition="'$(Configuration)' == 'Release'">
+      </CustomCompilationSetting>
     </Compile>
     <Compile Include="src\SDI12\SDI12.c">
       <SubType>compile</SubType>
+      <CustomCompilationSetting Condition="'$(Configuration)' == 'Debug'">-O0</CustomCompilationSetting>
+      <CustomCompilationSetting Condition="'$(Configuration)' == 'Release'">
+      </CustomCompilationSetting>
     </Compile>
     <None Include="src\asf.h">
       <SubType>compile</SubType>

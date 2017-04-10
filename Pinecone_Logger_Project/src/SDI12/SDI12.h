@@ -30,7 +30,7 @@ enum SDI12_ReturnCode SDI12_PerformTransaction(const char *message, const uint8_
 communicates with the sensor at the given address on the SDI12 bus, and requests a reading (M! command).
 Will load SDI12_STATUS_OK into the packet on success, SDI12_BAD_RESPONSE on failure.
 */
-void SDI12_RequestSensorReading(struct SDI_transactionPacket *transactionPacket);
+bool SDI12_RequestSensorReading(struct SDI_transactionPacket *transactionPacket);
 
 /*SDI12_GetSensedValues
 After the sensor has had values requested with SDI12_RequestSensorReading, use this function to read the values as floats

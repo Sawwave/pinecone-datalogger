@@ -270,7 +270,6 @@ static inline void QueryAndRecordSdiValues(FIL *dataFile){
 			for(uint8_t i = 0; i< numValsForSensor;i++){
 				sdiValuesForSensor[i] = NAN;
 			}
-
 			struct SDI_transactionPacket transactionPacket;
 			transactionPacket.address = loggerConfig.SDI12_SensorAddresses[sdiIndex];
 			SDI12_RequestSensorReading(&transactionPacket);
@@ -282,7 +281,6 @@ static inline void QueryAndRecordSdiValues(FIL *dataFile){
 				}
 				SDI12_GetSensedValues(&transactionPacket, sdiValuesForSensor);
 			}
-			
 			for(uint8_t i=0; i< numValsForSensor;i++){
 				//check for brownout before writing to SD card.
 				WriteDataFileNanOrFloat(sdiValuesForSensor[i], dataFile);

@@ -10,21 +10,21 @@
 #include "SDI12/SDI12.h"
 #include "TimedSleep/TimedSleep.h"
 
-#ifdef SDI_DEBUG
-#define SDI12_MAX_NUMBER_TRANSACTION_ATTEMPTS		5
-#define BREAK_DELAY_CYCLES							20000	// >= 12ms marking length
-#define MARKING_8330_DELAY_CYCLES					16080 	//8330us spacing delay
-#define BIT_TIMING_DELAY_CYCLES						940		//833us bit timing
-#define BIT_TIMING_HALF_DELAY_CYCLES				400		//416.5us to get halfway into reading a bit
-
-#else
-#define SDI12_MAX_NUMBER_TRANSACTION_ATTEMPTS		5
+//#ifdef SDI_DEBUG
+//#define BREAK_DELAY_CYCLES							80000	// >= 12ms marking length
+//#define MARKING_8330_DELAY_CYCLES					16080 	//8330us spacing delay
+//#define BIT_TIMING_DELAY_CYCLES						940		//833us bit timing
+//#define BIT_TIMING_HALF_DELAY_CYCLES				400		//416.5us to get halfway into reading a bit
+//
+//#else
 #define BREAK_DELAY_CYCLES							30000	// >= 12ms marking length
-#define MARKING_8330_DELAY_CYCLES					30080 	// >= 8330us spacing delay
+#define MARKING_8330_DELAY_CYCLES					20080 	// >= 8330us spacing delay
 #define BIT_TIMING_DELAY_CYCLES						967		//833us bit timing
 #define BIT_TIMING_HALF_DELAY_CYCLES				200		//416.5us to get halfway into reading a bit
-#endif
+//#endif
 
+#define SDI12_MAX_OUTER_TRY_COUNT		4
+#define SDI12_MAX_INNER_TRY_COUNT		7
 
 
 #define BAUD_1200_SLEEP_TIMING 6667
@@ -32,10 +32,38 @@
 static char CharAddParity(char address);
 static uint8_t SDI12_ParseNumValuesFromResponse(char outBuffer[], uint8_t outBufferLen);
 static bool SDI12_GetTimeFromResponse(const char *response, uint16_t *outTime);
+static bool PerformTransactionWithTries(const char *message, const uint8_t messageLen, char *outBuffer, const uint8_t outBufferLen);
 
 #ifdef SDI12_UNIT_TESTING
 static bool SDI12_TIME_FORMAT_UNIT_TEST(void);
 #endif
+
+
+
+
+
+static bool PerformTransactionWithTries(const char *message, const uint8_t messageLen, char *outBuffer, const uint8_t outBufferLen){
+	uint8_t outerTryCount = SDI12_MAX_OUTER_TRY_COUNT;
+	while(outerTryCount--){
+		
+		// send a break to get the sensor ready, or to abort a previous measurement.
+		PORTA.DIRSET.reg = SDI_PIN_PINMASK;
+		PORTA.OUTSET.reg = SDI_PIN_PINMASK;
+		portable_delay_cycles(BREAK_DELAY_CYCLES);
+		
+		uint8_t innerTryCount = SDI12_MAX_INNER_TRY_COUNT;
+		while(innerTryCount--){
+			enum SDI12_ReturnCode returnCode =  SDI12_PerformTransaction(message,messageLen,outBuffer,outBufferLen);
+			if(returnCode == SDI12_STATUS_OK){
+				return SDI12_STATUS_OK;
+			}
+		}
+	}
+	return SDI12_TRANSACTION_FAILURE;
+}
+
+
+
 
 /*SDI12 PerformTransaction
 The major workhorse of the SDI-12 library. performs a full transaction with an SDI-12 sensor.
@@ -85,9 +113,10 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction( const char *message, const uint
 	#endif
 	PORTA.DIRCLR.reg = SDI_PIN_PINMASK;
 	
-
+	portable_delay_cycles(BIT_TIMING_DELAY_CYCLES);
+	
 	//wait for the timeout to be LOW at least once, then delay through the start bit (HIGH)
-	uint16_t timeout = 10000;
+	uint16_t timeout = 4000;
 	
 	do{
 		portable_delay_cycles(10);
@@ -164,38 +193,24 @@ enum SDI12_ReturnCode  SDI12_PerformTransaction( const char *message, const uint
 
 /*SDI12_RequestSensorReading
 communicates with the sensor at the given address on the SDI12 bus, and requests a reading (M! command).
-Will load SDI12_STATUS_OK into the packet on success, SDI12_BAD_RESPONSE on failure.
 */
-void SDI12_RequestSensorReading(struct SDI_transactionPacket *transactionPacket){
-	uint8_t tries = SDI12_MAX_NUMBER_TRANSACTION_ATTEMPTS;
+bool SDI12_RequestSensorReading(struct SDI_transactionPacket *transactionPacket){
+
 	const uint8_t messageLen = 3;
 	char message[3] = { CharAddParity(transactionPacket->address), 'M', '!'};
 	const uint8_t responseLength = 12;
 	char response[12];
 	memset(response, 0, sizeof(response));
 	
-	// send a break to get the sensor ready, or to abort a previous measurement.
-	PORTA.DIRSET.reg = SDI_PIN_PINMASK;
-	PORTA.OUTSET.reg = SDI_PIN_PINMASK;
-	portable_delay_cycles(BREAK_DELAY_CYCLES);
-	
-	//try up to MAX NUMBER TRANSACTIONS to get a successful response.
-	//loop will RETURN on success.
-	while(tries--){
-		transactionPacket->transactionStatus = SDI12_PerformTransaction(message, messageLen, response, responseLength);
-		
-		if(transactionPacket->transactionStatus == SDI12_STATUS_OK){
-			//get time from response. only if it parsed successfully do we consider this a successful transaction
-			if(SDI12_GetTimeFromResponse(response, &(transactionPacket->waitTime)) ){
-				transactionPacket->numberOfValuesToReturn = SDI12_ParseNumValuesFromResponse(response, responseLength);
-				return;
-			}
-		}
-		else{
-			//retries must wait between 16.67ms and 87ms
-			delay_ms(20);
+	transactionPacket->transactionStatus = PerformTransactionWithTries(message, messageLen, response, responseLength);
+	if(transactionPacket->transactionStatus == SDI12_STATUS_OK){
+		//get time from response. only if it parsed successfully do we consider this a successful transaction
+		if(SDI12_GetTimeFromResponse(response, &(transactionPacket->waitTime)) ){
+			transactionPacket->numberOfValuesToReturn = SDI12_ParseNumValuesFromResponse(response, responseLength);
+			return true;
 		}
 	}
+	return false;
 }
 
 /*SDI12_GetSensedValues
@@ -221,47 +236,34 @@ bool SDI12_GetSensedValues(struct SDI_transactionPacket *transactionPacket, floa
 		outValues[counter] = NAN;
 	}
 	
-	// send a break to get the sensor ready, or to abort a previous measurement.
-	PORTA.DIRSET.reg = SDI_PIN_PINMASK;
-	PORTA.OUTSET.reg = SDI_PIN_PINMASK;
-	portable_delay_cycles(BREAK_DELAY_CYCLES);
-	
-	//TODO: make the num tries actually work, and exit out when needed.
 	while(numValuesReceived < transactionPacket->numberOfValuesToReturn){
-		uint8_t tries = SDI12_MAX_NUMBER_TRANSACTION_ATTEMPTS;
-		while(tries){
-			tries--;
-			transactionPacket->transactionStatus = SDI12_PerformTransaction(message, messageLen, response, responseLen);
-			if(transactionPacket->transactionStatus == SDI12_STATUS_OK){
-				//star the float parsing after the address character
-				char *floatParsePointer = &response[1];
-				
-				//first check that the query actually starts with a value.
-				//if it doesn't, just try again. otherwise, let's parse them.
-				if((*floatParsePointer == '-') || (*floatParsePointer == '+')){
-					while((*floatParsePointer == '-') || (*floatParsePointer == '+')){
-						//convert next value to float, save it in the outvalues, and move the pointer
-						float parsedValue = strtof(floatParsePointer, &floatParsePointer);
-						outValues[numValuesReceived++]  = parsedValue;
-					}
-					//stop trying for this D_! command, we succeeded.
-					break;
+		transactionPacket->transactionStatus = PerformTransactionWithTries(message, messageLen, response, responseLen);
+		if(transactionPacket->transactionStatus == SDI12_STATUS_OK){
+			//star the float parsing after the address character
+			char *floatParsePointer = &response[1];
+			
+			//first check that the query actually starts with a value.
+			//if it doesn't, just try again. otherwise, let's parse them.
+			if((*floatParsePointer == '-') || (*floatParsePointer == '+')){
+				while((*floatParsePointer == '-') || (*floatParsePointer == '+')){
+					//convert next value to float, save it in the outvalues, and move the pointer
+					float parsedValue = strtof(floatParsePointer, &floatParsePointer);
+					outValues[numValuesReceived++]  = parsedValue;
 				}
-				else{
-					//if the response was good, but didn't seem to have any valid data, return with what we have.
-					return false;
+				//if we've recieved at least the number of values expected, we're done!
+				if(numValuesReceived >= transactionPacket->numberOfValuesToReturn){
+					return true;
 				}
+				message[1] = CharAddParity(message[1] +1);	//increment the index of the D_! command, thus asking for the next values on the next transaction.
 			}
 			else{
-				//retries must wait between 16.67ms and 87ms
-				delay_ms(20);
+				//we got an weird response
+				return false;
 			}
 		}
-		if(tries == 0){
-			//these values couldn't be gathered in the give number of tries, so we'll call this sensor gathering a failure.
+		else{
 			return false;
 		}
-		message[1] = CharAddParity(message[1] +1);	//increment the index of the D_! command, thus asking for the next values on the next transaction.
 	}
 	return true;
 }
