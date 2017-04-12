@@ -160,10 +160,8 @@ static inline void MainLoop(void){
 			DS3231_setAlarmFromTime(&i2cMasterModule, loggerConfig.loggingInterval, &dateTimeBuffer[1]);
 		}
 		
-		// run sap flux system, dendrometers, and power up 5v rail to give sensors time to initialize.
+		//power up the 3v3 rail and run sensors that only rely on it.
 		PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;
-
-		//DHT22 goes first because it has 2s built in delay, giving dend and sap flux time to init
 		RunDht22System();
 		ReadDendrometers();
 		RunSapFluxSystem();
@@ -198,14 +196,13 @@ static inline void MainLoop(void){
 		bod_disable(BOD_BOD33);
 		bod_clear_detected(BOD_BOD33);
 		
-		//disable the SD sercom module
+		//disable the SD sercom module, and the SD CS pin to prevent power leakage
 		SD_SERCOM_MODULE->SPI.CTRLA.reg &= ~SERCOM_SPI_CTRLA_ENABLE;
 		PORTA.OUTCLR.reg = (ALL_GPIO_PINMASK | (1 << SD_CS_PIN)) | SDI_PIN_PINMASK;
 		PORTA.DIRCLR.reg = ALL_DATA_PINMASK;
 		PORTA.DIRSET.reg = SDI_PIN_PINMASK;
 		
 		if(loggerConfig.loggingInterval != 0){
-			EnableExtintWakeup();
 			//with the extint wakeup enabled, go to sleep with the Timer/counter as a backup, set one minute later than DS3231 alarm
 			TimedSleepSeconds(&tcInstance, (loggerConfig.loggingInterval+1) * 60);
 			tc_disable(&tcInstance);

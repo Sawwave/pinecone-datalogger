@@ -65,6 +65,11 @@ void TimedSleepSeconds(struct tc_module *tc_instance, const uint32_t seconds){
 	tc_set_count_value(tc_instance, 0);
 	tc_set_compare_value(tc_instance, TC_COMPARE_CAPTURE_CHANNEL_0, seconds * 250L);
 	tc_enable(tc_instance);
+	
+	//enable extint callback wakeup, in case we need to wake before the timer.
+	extint_chan_enable_callback(DS3231_EIC_LINE, EXTINT_CALLBACK_TYPE_DETECT);
+	system_interrupt_enable_global();
+	
 	//enable and go to sleep mode!
 	system_set_sleepmode(SYSTEM_SLEEPMODE_STANDBY);
 	system_sleep();
@@ -89,10 +94,4 @@ void ExternalInterruptSleep(void){
 	extint_chan_enable_callback(DS3231_EIC_LINE, EXTINT_CALLBACK_TYPE_DETECT);
 	system_set_sleepmode(SYSTEM_SLEEPMODE_STANDBY);
 	system_sleep();
-}
-
-/*enable DS3231 extint wakeup alarm, but don't go to sleep.*/
-void EnableExtintWakeup(void){
-	system_interrupt_enable_global();
-	extint_chan_enable_callback(DS3231_EIC_LINE, EXTINT_CALLBACK_TYPE_DETECT);
 }
