@@ -49,6 +49,8 @@
 #define DS3231_TIME_BUFFER_CENTURY_INDEX	7
 
 
+typedef enum DS3231_packet_direction {PACKET_READ, PACKET_WRITE} packet_direction;
+
 static uint8_t intToBCD(const uint8_t intValue);
 static void writeBCD_regToString(char stringPtr[2], const uint8_t regValue);
 static uint8_t charArrayToBCD(const char tensDigitPtr[2]);

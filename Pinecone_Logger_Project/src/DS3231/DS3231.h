@@ -12,8 +12,6 @@
 #include <asf.h>
 #include <i2c_master.h>
 
-typedef enum DS3231_packet_direction {PACKET_READ, PACKET_WRITE} packet_direction;
-
 /*DS3231_init_i2c
 initialized the i2c hardware for the DS3231. This function should be done after power-on, before use of the RTC.
 */
