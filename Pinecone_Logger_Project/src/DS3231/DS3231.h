@@ -17,6 +17,7 @@ struct Ds3231_alarmTime{
 	uint8_t hours;
 };
 
+typedef enum DS3231_packet_direction {PACKET_READ, PACKET_WRITE} packet_direction;
 
 void DS3231_init_i2c(struct i2c_master_module *i2cMasterModule);
 

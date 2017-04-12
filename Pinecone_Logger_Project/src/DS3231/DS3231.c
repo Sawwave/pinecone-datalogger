@@ -49,37 +49,34 @@
 #define DS3231_TIME_BUFFER_CENTURY_INDEX	7
 
 
+static uint8_t intToBCD(const uint8_t intValue);
+static void writeBCD_regToString(char stringPtr[2], const uint8_t regValue);
+static uint8_t charArrayToBCD(const char tensDigitPtr[2]);
+static uint8_t charArrayToInt(const char *str);
+static bool i2cTransactionWithRetries(struct i2c_master_module *i2cMasterModule, struct i2c_master_packet *packet, packet_direction direction);
 
-static uint8_t intToBCD(const uint8_t intValue){
-	return (intValue % 10) | ((intValue / 10) << 4);
-}
 
-static void writeBCD_regToString(char stringPtr[2], const uint8_t regValue){
-	stringPtr[0] = (regValue >> 4) + '0';
-	stringPtr[1] = (regValue & 0x0F) + '0';
-}
 
-static uint8_t charArrayToBCD(const char tensDigitPtr[2]){
-	uint8_t tensChar = tensDigitPtr[0];
-	uint8_t onesChar = tensDigitPtr[1];
-	return (onesChar -'0') | ((tensChar - '0') << 4);
-}
-
-static uint8_t charArrayToInt(const char *str){
-	return ((str[0] - '0') * 10) + (str[1] - '0');
-}
-
-static bool sendI2cAttempts(struct i2c_master_module *i2cMasterModule, struct i2c_master_packet *packet){
+static bool i2cTransactionWithRetries(struct i2c_master_module *i2cMasterModule, struct i2c_master_packet *packet, packet_direction direction)
+{
+	//define the transaction we're doing from the direction argument
+	enum status_code (*transactionFunction)(struct i2c_master_module *const module, struct i2c_master_packet *const packet);
+	if(direction == PACKET_READ){
+		transactionFunction = &i2c_master_read_packet_wait;
+	}
+	else{
+		transactionFunction = &i2c_master_write_packet_wait;
+	}
+	
 	uint16_t attempts = 1000;
 	enum status_code statusCode;
 	do{
 		attempts--;
-		statusCode = i2c_master_write_packet_wait(i2cMasterModule, packet);
+		statusCode = transactionFunction(i2cMasterModule, packet);
 	}while ((statusCode != STATUS_OK) && (attempts));
 	
 	return (statusCode == STATUS_OK);
 }
-
 
 void DS3231_init_i2c(struct i2c_master_module *i2cMasterModule){
 	struct i2c_master_config i2cConfig;
@@ -112,7 +109,7 @@ void DS3231_setTimeFromString(struct i2c_master_module *i2cMasterModule, const c
 	
 	i2c_master_enable(i2cMasterModule);
 	
-	sendI2cAttempts(i2cMasterModule, &packet);
+	i2cTransactionWithRetries(i2cMasterModule, &packet, PACKET_WRITE);
 	
 	i2c_master_disable(i2cMasterModule);
 }
@@ -120,8 +117,8 @@ void DS3231_setTimeFromString(struct i2c_master_module *i2cMasterModule, const c
 
 
 void DS3231_getTimeToString(struct i2c_master_module *i2cMasterModule, char timeBuffer[19]){
-	//set up the write to re-zero the address register
-	uint8_t data[18];
+	//set up the write to re-zero the address register, but data buffer is big enough to recieve time regs next.
+	uint8_t data[7];
 	data[0] = DS3231_SECONDS_REG_ADDRESS;
 	struct i2c_master_packet packet;
 	packet.address = DS3231_SLAVE_ADDRESS;
@@ -130,42 +127,49 @@ void DS3231_getTimeToString(struct i2c_master_module *i2cMasterModule, char time
 	packet.high_speed = false;
 	packet.ten_bit_address = false;
 	
+	bool transactionSuccess;
+	
 	i2c_master_enable(i2cMasterModule);
 	
-	if(!sendI2cAttempts(i2cMasterModule, &packet)){
-		i2c_master_disable(i2cMasterModule);
-		return;
-	}
-	//now, re-use the same data packet and buffer for the read from the date-time registers.
-	packet.data_length = 18;
-	
-	uint32_t attempt = 1000;
-	enum status_code i2cStatus;
-	do{
-		i2cStatus = i2c_master_read_packet_wait(i2cMasterModule, &packet);
-		if((attempt--) == 0){
-			i2c_master_disable(i2cMasterModule);
-			return;
-		}
+	transactionSuccess = i2cTransactionWithRetries(i2cMasterModule, &packet, PACKET_WRITE);
+	if(transactionSuccess){
+		//now, re-use the same data packet and buffer for the read from the date-time registers (0x00 - 0x06)
+		packet.data_length = 7;
 		
-	}while (i2cStatus != STATUS_OK);
+		transactionSuccess =  i2cTransactionWithRetries(i2cMasterModule, &packet, PACKET_READ);
+	}
 	
+	//no matter the success of the entire transaction, disable the i2c platform.
 	i2c_master_disable(i2cMasterModule);
 	
-	//save the century bit, and strip it off the month.
-	uint8_t centuryChar = (data[5] >> 7) + '0';
-	data[5] &= 0x7F;
-	writeBCD_regToString(&timeBuffer[DS3231_TIME_BUFFER_SECOND_INDEX], data[0]);
-	writeBCD_regToString(&timeBuffer[DS3231_TIME_BUFFER_MINUTE_INDEX], data[1]);
-	writeBCD_regToString(&timeBuffer[DS3231_TIME_BUFFER_HOUR_INDEX], data[2]);
-	//data[3] is day of week, and we don't care about it, so skip it.
-	writeBCD_regToString(&timeBuffer[DS3231_TIME_BUFFER_DAY_INDEX], data[4]);
-	writeBCD_regToString(&timeBuffer[DS3231_TIME_BUFFER_MONTH_INDEX], data[5]);
-	//write the century Char
-	timeBuffer[DS3231_TIME_BUFFER_CENTURY_INDEX] = centuryChar;
-	writeBCD_regToString(&timeBuffer[DS3231_TIME_BUFFER_YEAR_INDEX], data[6]);
-	
-	
+	if(transactionSuccess){
+		//save the century bit, and strip it off the month.
+		uint8_t centuryChar = (data[5] >> 7) + '0';
+		data[5] &= 0x7F;
+		writeBCD_regToString(&timeBuffer[DS3231_TIME_BUFFER_SECOND_INDEX], data[0]);
+		writeBCD_regToString(&timeBuffer[DS3231_TIME_BUFFER_MINUTE_INDEX], data[1]);
+		writeBCD_regToString(&timeBuffer[DS3231_TIME_BUFFER_HOUR_INDEX], data[2]);
+		//data[3] is day of week, and we don't care about it, so skip it.
+		writeBCD_regToString(&timeBuffer[DS3231_TIME_BUFFER_DAY_INDEX], data[4]);
+		writeBCD_regToString(&timeBuffer[DS3231_TIME_BUFFER_MONTH_INDEX], data[5]);
+		//write the century Char
+		timeBuffer[DS3231_TIME_BUFFER_CENTURY_INDEX] = centuryChar;
+		writeBCD_regToString(&timeBuffer[DS3231_TIME_BUFFER_YEAR_INDEX], data[6]);
+	}
+	else{
+		timeBuffer[DS3231_TIME_BUFFER_SECOND_INDEX] = '?';
+		timeBuffer[DS3231_TIME_BUFFER_SECOND_INDEX + 1] = '?';
+		timeBuffer[DS3231_TIME_BUFFER_MINUTE_INDEX] = '?';
+		timeBuffer[DS3231_TIME_BUFFER_MINUTE_INDEX + 1] = '?';
+		timeBuffer[DS3231_TIME_BUFFER_HOUR_INDEX] = '?';
+		timeBuffer[DS3231_TIME_BUFFER_HOUR_INDEX + 1] = '?';
+		timeBuffer[DS3231_TIME_BUFFER_DAY_INDEX] = '?';
+		timeBuffer[DS3231_TIME_BUFFER_DAY_INDEX + 1] = '?';
+		timeBuffer[DS3231_TIME_BUFFER_MONTH_INDEX] = '?';
+		timeBuffer[DS3231_TIME_BUFFER_MONTH_INDEX + 1] = '?';
+		timeBuffer[DS3231_TIME_BUFFER_YEAR_INDEX] = '?';
+		timeBuffer[DS3231_TIME_BUFFER_YEAR_INDEX + 1] = '?';
+	}
 
 }
 
@@ -185,7 +189,6 @@ void DS3231_setAlarm(struct i2c_master_module *i2cMasterModule, const struct Ds3
 	sendBuffer[4] =	DS3231_CTRL_ALARM_INTERRUPT_BITMASK | DS3231_CTRL_ALARM_2_ENABLE_BITMASK;
 	sendBuffer[5] = 0;
 
-
 	struct i2c_master_packet packet;
 	packet.address = DS3231_SLAVE_ADDRESS;
 	packet.data_length = 6;
@@ -195,7 +198,7 @@ void DS3231_setAlarm(struct i2c_master_module *i2cMasterModule, const struct Ds3
 
 	i2c_master_enable(i2cMasterModule);
 
-	sendI2cAttempts(i2cMasterModule, &packet);
+	i2cTransactionWithRetries(i2cMasterModule, &packet, PACKET_WRITE);
 	
 	i2c_master_disable(i2cMasterModule);
 }
@@ -214,7 +217,7 @@ void DS3231_disableAlarm(struct i2c_master_module *i2cMasterModule){
 	
 	i2c_master_enable(i2cMasterModule);
 
-	sendI2cAttempts(i2cMasterModule, &packet);
+	i2cTransactionWithRetries(i2cMasterModule, &packet, PACKET_WRITE);
 	
 	i2c_master_disable(i2cMasterModule);
 }
@@ -248,7 +251,31 @@ void DS3231_setAlarmFromTime(struct i2c_master_module *i2cMasterModule, const ui
 
 	i2c_master_enable(i2cMasterModule);
 
-	sendI2cAttempts(i2cMasterModule, &packet);
+	i2cTransactionWithRetries(i2cMasterModule, &packet, PACKET_WRITE);
 
 	i2c_master_disable(i2cMasterModule);
+}
+
+
+/*
+helper functions to go to/from 2-digit Binary Coded Decimal (BCD) register values
+*/
+
+static uint8_t intToBCD(const uint8_t intValue){
+	return (intValue % 10) | ((intValue / 10) << 4);
+}
+
+static void writeBCD_regToString(char stringPtr[2], const uint8_t regValue){
+	stringPtr[0] = (regValue >> 4) + '0';
+	stringPtr[1] = (regValue & 0x0F) + '0';
+}
+
+static uint8_t charArrayToBCD(const char tensDigitPtr[2]){
+	uint8_t tensChar = tensDigitPtr[0];
+	uint8_t onesChar = tensDigitPtr[1];
+	return (onesChar -'0') | ((tensChar - '0') << 4);
+}
+
+static uint8_t charArrayToInt(const char *str){
+	return ((str[0] - '0') * 10) + (str[1] - '0');
 }

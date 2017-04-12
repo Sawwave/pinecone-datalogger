@@ -342,8 +342,6 @@ Text GLabel 8200 2250 2    39   Input ~ 0
 SWITCHED_3v3
 Text GLabel 6850 5450 2    39   Input ~ 0
 SWITCHED_3v3
-Text GLabel 7650 5300 0    39   Input ~ 0
-SWITCHED_3v3
 Text GLabel 3350 3150 2    39   Input ~ 0
 SWITCHED_5v
 $Comp
@@ -1276,9 +1274,6 @@ Wire Wire Line
 	7650 950  7650 1000
 Wire Wire Line
 	7750 6350 7750 6300
-Connection ~ 7650 5650
-Wire Wire Line
-	7650 5300 7650 5650
 Wire Wire Line
 	5550 5550 5550 5400
 Wire Wire Line
