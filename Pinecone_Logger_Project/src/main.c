@@ -112,7 +112,6 @@ int main (void)
 		LedFlashStatusCode(LED_CODE_SD_CARD_NOT_FOUND);
 	}
 	
-	
 	//if we can read the time file, set the DS3231 time.
 	if(TryReadTimeFile(&dateTimeBuffer[1])){
 		DS3231_setTimeFromString(&i2cMasterModule, &dateTimeBuffer[1]);
@@ -134,17 +133,18 @@ int main (void)
 	SD_SERCOM_MODULE->SPI.CTRLA.reg &= ~SERCOM_SPI_CTRLA_ENABLE;
 	PORTA.OUTCLR.reg = 1 << SD_CS_PIN;
 	
-
+	//If the logger is configured to wait for the start of the next hour, go to sleep immediately.
 	if(loggerConfig.configFlags & CONFIG_FLAGS_START_ON_HOUR){
 		//flash success so that the user knows that, even though it's not logging now, it worked.
 		LedFlashStatusCode(LED_CODE_START_SUCCESS);
 		
 		DS3231_setAlarmOnHour(&i2cMasterModule);
-		ExternalInterruptSleep();
+		//set backup alarm for 1 hour + 1 minute
+		TimedSleepSeconds(&tcInstance, 60*61);
+		tc_disable(&tcInstance);
 		DS3231_disableAlarm(&i2cMasterModule);
 	}
 	
-
 	MainLoop();
 }
 
@@ -208,6 +208,7 @@ static inline void MainLoop(void){
 			EnableExtintWakeup();
 			//with the extint wakeup enabled, go to sleep with the Timer/counter as a backup, set one minute later than DS3231 alarm
 			TimedSleepSeconds(&tcInstance, (loggerConfig.loggingInterval+1) * 60);
+			tc_disable(&tcInstance);
 			//disable the DS3231 alarm
 			DS3231_disableAlarm(&i2cMasterModule);
 		}
