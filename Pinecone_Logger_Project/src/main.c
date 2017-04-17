@@ -167,8 +167,8 @@ static inline void MainLoop(void){
 		RunSapFluxSystem();
 		
 		//SD card requires 3v3, and SDI-12 requires 3v3 and 5v.
+		PORTA.DIRSET.reg = ALL_POWER_ENABLE | SDI_PIN_PINMASK;
 		PORTA.OUTSET.reg = ALL_POWER_ENABLE;
-		PORTA.DIRSET.reg = SDI_PIN_PINMASK;
 		PORTA.OUTCLR.reg = SDI_PIN_PINMASK;
 		//sleep for a second to allow the SDI12 sensors to wake up and initialize if the above sensors were disabled.
 		TimedSleepSeconds(&tcInstance, 1);
@@ -202,14 +202,15 @@ static inline void MainLoop(void){
 		PORTA.DIRCLR.reg = ALL_DATA_PINMASK;
 		PORTA.DIRSET.reg = SDI_PIN_PINMASK;
 		
+		
 		if(loggerConfig.loggingInterval != 0){
-			//with the extint wakeup enabled, go to sleep with the Timer/counter as a backup, set one minute later than DS3231 alarm
+			//with the extint wakeup enabled, go to sleep with the Timer/counter as a backup, 
+			//set one minute later than the latest possible DS3231 alarm
 			TimedSleepSeconds(&tcInstance, (loggerConfig.loggingInterval+1) * 60);
 			tc_disable(&tcInstance);
 			//disable the DS3231 alarm
 			DS3231_disableAlarm(&i2cMasterModule);
 		}
-
 	}
 }
 

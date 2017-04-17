@@ -10,21 +10,23 @@
 #include "SDI12/SDI12.h"
 #include "TimedSleep/TimedSleep.h"
 
-//#ifdef SDI_DEBUG
-//#define BREAK_DELAY_CYCLES							80000	// >= 12ms marking length
-//#define MARKING_8330_DELAY_CYCLES					16080 	//8330us spacing delay
-//#define BIT_TIMING_DELAY_CYCLES						940		//833us bit timing
-//#define BIT_TIMING_HALF_DELAY_CYCLES				400		//416.5us to get halfway into reading a bit
-//
-//#else
+#define SDI_DEBUG
+
+#ifdef SDI_DEBUG
+#define BREAK_DELAY_CYCLES							80000	// >= 12ms marking length
+#define MARKING_8330_DELAY_CYCLES					36080 	//8330us spacing delay
+#define BIT_TIMING_DELAY_CYCLES						940		//833us bit timing
+#define BIT_TIMING_HALF_DELAY_CYCLES				200		//416.5us to get halfway into reading a bit
+
+#else
 #define BREAK_DELAY_CYCLES							30000	// >= 12ms marking length
 #define MARKING_8330_DELAY_CYCLES					20080 	// >= 8330us spacing delay
 #define BIT_TIMING_DELAY_CYCLES						967		//833us bit timing
 #define BIT_TIMING_HALF_DELAY_CYCLES				200		//416.5us to get halfway into reading a bit
-//#endif
+#endif
 
-#define SDI12_MAX_OUTER_TRY_COUNT		4
-#define SDI12_MAX_INNER_TRY_COUNT		7
+#define SDI12_MAX_OUTER_TRY_COUNT		5
+#define SDI12_MAX_INNER_TRY_COUNT		8
 
 
 #define BAUD_1200_SLEEP_TIMING 6667
@@ -32,7 +34,6 @@
 static char CharAddParity(char address);
 static uint8_t SDI12_ParseNumValuesFromResponse(char outBuffer[], uint8_t outBufferLen);
 static bool SDI12_GetTimeFromResponse(const char *response, uint16_t *outTime);
-static bool PerformTransactionWithTries(const char *message, const uint8_t messageLen, char *outBuffer, const uint8_t outBufferLen);
 
 #ifdef SDI12_UNIT_TESTING
 static bool SDI12_TIME_FORMAT_UNIT_TEST(void);
@@ -42,7 +43,7 @@ static bool SDI12_TIME_FORMAT_UNIT_TEST(void);
 
 
 
-static bool PerformTransactionWithTries(const char *message, const uint8_t messageLen, char *outBuffer, const uint8_t outBufferLen){
+enum SDI12_ReturnCode SDI12_PerformTransactionWithRetries(const char *message, const uint8_t messageLen, char *outBuffer, const uint8_t outBufferLen){
 	uint8_t outerTryCount = SDI12_MAX_OUTER_TRY_COUNT;
 	while(outerTryCount--){
 		
@@ -202,7 +203,7 @@ bool SDI12_RequestSensorReading(struct SDI_transactionPacket *transactionPacket)
 	char response[12];
 	memset(response, 0, sizeof(response));
 	
-	transactionPacket->transactionStatus = PerformTransactionWithTries(message, messageLen, response, responseLength);
+	transactionPacket->transactionStatus = SDI12_PerformTransactionWithRetries(message, messageLen, response, responseLength);
 	if(transactionPacket->transactionStatus == SDI12_STATUS_OK){
 		//get time from response. only if it parsed successfully do we consider this a successful transaction
 		if(SDI12_GetTimeFromResponse(response, &(transactionPacket->waitTime)) ){
@@ -237,7 +238,7 @@ bool SDI12_GetSensedValues(struct SDI_transactionPacket *transactionPacket, floa
 	}
 	
 	while(numValuesReceived < transactionPacket->numberOfValuesToReturn){
-		transactionPacket->transactionStatus = PerformTransactionWithTries(message, messageLen, response, responseLen);
+		transactionPacket->transactionStatus = SDI12_PerformTransactionWithRetries(message, messageLen, response, responseLen);
 		if(transactionPacket->transactionStatus == SDI12_STATUS_OK){
 			//star the float parsing after the address character
 			char *floatParsePointer = &response[1];
