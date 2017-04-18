@@ -78,17 +78,18 @@ int main (void)
 {
 	//Initialize SAM D20 on-chip hardware
 	system_init();
-	bod_enable(BOD_BOD33);
 	delay_init();
 	irq_initialize_vectors();
 	cpu_irq_enable();
+	
+	InitBodDetection();
+	bod_enable(BOD_BOD33);
 	
 	//set these as output, and keep it that way, otherwise can power when not expecting to.
 	PORTA.DIRSET.reg = ALL_POWER_ENABLE | HEATER_MOSFET_PINMASK | SDI_PIN_PINMASK;
 	
 	InitSleepTimerCounter(&tcInstance);
 	
-	InitBodDetection();
 	//if we just woke up, and we're in brownout, wait 10 minutes until we try to start. This allows
 	//a solar panel to gather some energy
 	while(bod_is_detected(BOD_BOD33)){
@@ -198,7 +199,7 @@ static inline void MainLoop(void){
 		
 		
 		if(loggerConfig.loggingInterval != 0){
-			//with the extint wakeup enabled, go to sleep with the Timer/counter as a backup, 
+			//with the extint wakeup enabled, go to sleep with the Timer/counter as a backup,
 			//set one minute later than the latest possible DS3231 alarm
 			TimedSleepSeconds(&tcInstance, (loggerConfig.loggingInterval+1) * 60);
 			tc_disable(&tcInstance);
@@ -376,7 +377,6 @@ static inline void InitBodDetection(void){
 	bodConfig.action = BOD_ACTION_NONE;
 	bodConfig.run_in_standby = false;
 	bod_set_config(BOD_BOD33, &bodConfig);
-	bod_disable(BOD_BOD33);
 }
 
 static inline void WriteDataFileNanOrFloat(float value, FIL *datafile){
