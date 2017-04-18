@@ -85,7 +85,8 @@ int main (void)
 	InitBodDetection();
 	bod_enable(BOD_BOD33);
 	
-	//set these as output, and keep it that way, otherwise can power when not expecting to.
+	//set power enable pins as output LOW.
+	PORTA.OUTCLR.reg = ALL_POWER_ENABLE | HEATER_MOSFET_PINMASK | SDI_PIN_PINMASK;
 	PORTA.DIRSET.reg = ALL_POWER_ENABLE | HEATER_MOSFET_PINMASK | SDI_PIN_PINMASK;
 	
 	InitSleepTimerCounter(&tcInstance);
@@ -93,8 +94,9 @@ int main (void)
 	//if we just woke up, and we're in brownout, wait 10 minutes until we try to start. This allows
 	//a solar panel to gather some energy
 	while(bod_is_detected(BOD_BOD33)){
-		bod_clear_detected(BOD_BOD33);
 		TimedSleepSeconds(&tcInstance, 600);
+		bod_clear_detected(BOD_BOD33);
+		delay_us(1);
 	}
 	bod_disable(BOD_BOD33);
 	
@@ -196,7 +198,6 @@ static inline void MainLoop(void){
 		PORTA.OUTCLR.reg = (ALL_GPIO_PINMASK | (1 << SD_CS_PIN)) | SDI_PIN_PINMASK;
 		PORTA.DIRCLR.reg = ALL_DATA_PINMASK;
 		PORTA.DIRSET.reg = SDI_PIN_PINMASK;
-		
 		
 		if(loggerConfig.loggingInterval != 0){
 			//with the extint wakeup enabled, go to sleep with the Timer/counter as a backup,
