@@ -10,17 +10,16 @@
 #include "SDI12/SDI12.h"
 #include "TimedSleep/TimedSleep.h"
 
-#define SDI_DEBUG
 
 #ifdef SDI_DEBUG
-#define BREAK_DELAY_CYCLES							80000	// >= 12ms marking length
+#define BREAK_DELAY_CYCLES							40000	// >= 12ms marking length
 #define MARKING_8330_DELAY_CYCLES					36080 	//8330us spacing delay
-#define BIT_TIMING_DELAY_CYCLES						940		//833us bit timing
+#define BIT_TIMING_DELAY_CYCLES						967		//833us bit timing
 #define BIT_TIMING_HALF_DELAY_CYCLES				200		//416.5us to get halfway into reading a bit
 
 #else
-#define BREAK_DELAY_CYCLES							30000	// >= 12ms marking length
-#define MARKING_8330_DELAY_CYCLES					20080 	// >= 8330us spacing delay
+#define BREAK_DELAY_CYCLES							50000	// >= 12ms marking length
+#define MARKING_8330_DELAY_CYCLES					30080 	// >= 8330us spacing delay
 #define BIT_TIMING_DELAY_CYCLES						967		//833us bit timing
 #define BIT_TIMING_HALF_DELAY_CYCLES				200		//416.5us to get halfway into reading a bit
 #endif

@@ -28,8 +28,6 @@
 * Support and FAQ: visit <a href="http://www.atmel.com/design-support/">Atmel Support</a>
 */
 
-#define SLIM_DEBUG
-
 #include <asf.h>
 #include <math.h>
 #include "DS3231/DS3231.h"
@@ -40,9 +38,6 @@
 #include "Dendro/Dendro.h"
 #include "SD_FileUtils/SD_FileUtils.h"
 #include "LedCodes/LedCodes.h"
-
-
-
 
 //number of loggable values, outside of datetime and sdi-12 values
 #define NUM_LOG_VALUES						14
@@ -66,8 +61,7 @@ static inline void QueryAndRecordSdiValues(FIL *dataFile);
 static inline void InitBodDetection(void);
 static inline void WriteDataFileNanOrFloat(float value, FIL *datafile);
 
-
-struct spi_module spiMasterModule;
+static struct spi_module spiMasterModule;
 static struct spi_slave_inst spiSlaveInstance;
 static struct i2c_master_module i2cMasterModule;
 static struct adc_module adcModule;

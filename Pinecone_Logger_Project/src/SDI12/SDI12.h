@@ -38,6 +38,5 @@ The floats will be loaded into the outValues float array. NOTE!!!! outValues arr
 number of expected values from the transaction packet. Otherwise, Undefined operation or segfaults may occur.*/
 bool SDI12_GetSensedValues(struct SDI_transactionPacket *transactionPacket, float *outValues);
 
-
 enum SDI12_ReturnCode SDI12_PerformTransactionWithRetries(const char *message, const uint8_t messageLen, char *outBuffer, const uint8_t outBufferLen);
 #endif /* SDI12_H_ */
