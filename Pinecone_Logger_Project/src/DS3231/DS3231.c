@@ -55,8 +55,10 @@ static uint8_t charArrayToBCD(const char tensDigitPtr[2]);
 static uint8_t charArrayToInt(const char *str);
 static bool i2cTransactionWithRetries(struct i2c_master_module *i2cMasterModule, struct i2c_master_packet *packet, packet_direction direction);
 
-
-
+/*i2cTransactionWithRetries
+Performs either a i2c read or write, depending on last argument, and will try to keep attempting until success, or
+until a maximum number of attempts has been reached.
+*/
 static bool i2cTransactionWithRetries(struct i2c_master_module *i2cMasterModule, struct i2c_master_packet *packet, packet_direction direction)
 {
 	//define the transaction we're doing from the direction argument
@@ -78,6 +80,9 @@ static bool i2cTransactionWithRetries(struct i2c_master_module *i2cMasterModule,
 	return (statusCode == STATUS_OK);
 }
 
+/*DS3231_init_i2c
+initialized the i2c hardware for the DS3231. This function should be done after power-on, before use of the RTC.
+*/
 void DS3231_init_i2c(struct i2c_master_module *i2cMasterModule){
 	struct i2c_master_config i2cConfig;
 	i2c_master_get_config_defaults(&i2cConfig);
@@ -86,6 +91,10 @@ void DS3231_init_i2c(struct i2c_master_module *i2cMasterModule){
 	i2c_master_init(i2cMasterModule, DS3231_SERCOM_MODULE, &i2cConfig);
 }
 
+/*DS3231_setTimeFromString
+Takes a date time string as used in the logger natively, parses the ASCII into BCD for the DS3231 register,
+and attempts to set the time in the IC. 
+*/
 void DS3231_setTimeFromString(struct i2c_master_module *i2cMasterModule, const char timeBuffer[19]){
 	//find the character for century c in (2cXX) year format, and turn it into a bit 7 set or clear
 	uint8_t centuryBit = (timeBuffer[DS3231_TIME_BUFFER_CENTURY_INDEX] - '0') << 7;
@@ -114,8 +123,10 @@ void DS3231_setTimeFromString(struct i2c_master_module *i2cMasterModule, const c
 	i2c_master_disable(i2cMasterModule);
 }
 
-
-
+/*DS3231_getTimeToString
+Queries the DS3231 RTC for the current time, Parses the BCD register values to ASCII, and writes the received time to the string.
+String format is the same as the logger natively saves, in mm/dd/2yyy,hh:mm:ss
+*/
 void DS3231_getTimeToString(struct i2c_master_module *i2cMasterModule, char timeBuffer[19]){
 	//set up the write to re-zero the address register, but data buffer is big enough to recieve time regs next.
 	uint8_t data[7];
@@ -173,18 +184,14 @@ void DS3231_getTimeToString(struct i2c_master_module *i2cMasterModule, char time
 
 }
 
-void DS3231_setAlarm(struct i2c_master_module *i2cMasterModule, const struct Ds3231_alarmTime *alarmTime){
+/*DS3231_setAlarmOnHour
+Writes to the DS3231 Alarm2 registers, setting the next alarm to trigger on the next hour change (minute 00, second 00)
+*/
+void DS3231_setAlarmOnHour(struct i2c_master_module *i2cMasterModule){
 	uint8_t sendBuffer[6];
 	sendBuffer[0] = DS3231_ALARM2_START_REG;
-	//if alarm time is a null pointer, that means we're starting on the next hour (next time minutes is 00).
-	if(alarmTime){
-		sendBuffer[1] = intToBCD(alarmTime->minutes);
-		sendBuffer[2] = intToBCD(alarmTime->hours);
-	}
-	else{
-		sendBuffer[1] = 0x00;
-		sendBuffer[2] = DS3231_ALARM_SUPRESS_BITMASK;
-	}
+	sendBuffer[1] = 0x00;
+	sendBuffer[2] = DS3231_ALARM_SUPRESS_BITMASK;
 	sendBuffer[3] = DS3231_ALARM_SUPRESS_BITMASK;
 	sendBuffer[4] =	DS3231_CTRL_ALARM_INTERRUPT_BITMASK | DS3231_CTRL_ALARM_2_ENABLE_BITMASK;
 	sendBuffer[5] = 0;
@@ -203,6 +210,9 @@ void DS3231_setAlarm(struct i2c_master_module *i2cMasterModule, const struct Ds3
 	i2c_master_disable(i2cMasterModule);
 }
 
+/*DS3231_disableAlarm
+Writes the the DS3231, disabling the alarm
+*/
 void DS3231_disableAlarm(struct i2c_master_module *i2cMasterModule){
 	uint8_t sendBuffer[2];
 	sendBuffer[0] = DS3231_CONTROL_REG_ADDRESS;
@@ -223,7 +233,10 @@ void DS3231_disableAlarm(struct i2c_master_module *i2cMasterModule){
 }
 
 
-//set the next DS3231 alarm
+/*DS3231_setAlarmFromTime
+Function takes the logging interval in minutes, as well as the stored time buffer, and computes the next hh:mm that an alarm would be scheduled for
+Then, taking that value, the RTC sets ALARM2 for that time.
+*/
 void DS3231_setAlarmFromTime(struct i2c_master_module *i2cMasterModule, const uint16_t loggingInterval, const char timeBuffer[19]){
 	
 	uint32_t minutesIntoDay = charArrayToInt(&timeBuffer[DS3231_TIME_BUFFER_MINUTE_INDEX]) +
@@ -240,7 +253,6 @@ void DS3231_setAlarmFromTime(struct i2c_master_module *i2cMasterModule, const ui
 	sendBuffer[3] = DS3231_ALARM_SUPRESS_BITMASK;
 	sendBuffer[4] =	DS3231_CTRL_ALARM_INTERRUPT_BITMASK | DS3231_CTRL_ALARM_2_ENABLE_BITMASK;
 	sendBuffer[5] = 0;
-
 
 	struct i2c_master_packet packet;
 	packet.address = DS3231_SLAVE_ADDRESS;

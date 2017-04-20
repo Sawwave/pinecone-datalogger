@@ -139,7 +139,7 @@ int main (void)
 		//flash success so that the user knows that, even though it's not logging now, it worked.
 		LedFlashStatusCode(LED_CODE_START_SUCCESS);
 		
-		DS3231_setAlarm(&i2cMasterModule, NULL);
+		DS3231_setAlarmOnHour(&i2cMasterModule);
 		ExternalInterruptSleep();
 		DS3231_disableAlarm(&i2cMasterModule);
 	}
