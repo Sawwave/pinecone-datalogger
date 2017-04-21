@@ -7,12 +7,6 @@
 
 #include <asf.h>
 #include "TimedSleep/TimedSleep.h"
-#include "LedCodes/LedCodes.h"
-#include <tc.h>
-#include <tc_interrupt.h>
-#include <sleepmgr.h>
-#include <power.h>
-#include <extint.h>
 
 
 static void TimerCounterSleepEndFunc(struct tc_module *const module);

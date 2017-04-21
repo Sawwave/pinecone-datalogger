@@ -8,9 +8,6 @@
 #ifndef TIMED_SLEEP_H_
 #define TIMED_SLEEP_H_
 
-#include "extint.h"
-
-#define TIMED_SLEEP_1_HOUR 3600
 
 /*initSleepTimerCounter
 Sets up TimerCounters 4 and 5 to work together as a 32-bit timer.
