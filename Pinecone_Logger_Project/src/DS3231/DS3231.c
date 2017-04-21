@@ -130,7 +130,7 @@ Queries the DS3231 RTC for the current time, Parses the BCD register values to A
 String format is the same as the logger natively saves, in mm/dd/2yyy,hh:mm:ss
 */
 void DS3231_getTimeToString(struct i2c_master_module *i2cMasterModule, char timeBuffer[19]){
-	//set up the write to re-zero the address register, but data buffer is big enough to recieve time regs next.
+	//set up the write to re-zero the address register, but data buffer is big enough to receive time regs next.
 	uint8_t data[7];
 	data[0] = DS3231_SECONDS_REG_ADDRESS;
 	struct i2c_master_packet packet;
