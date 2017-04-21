@@ -110,7 +110,7 @@ int main (void)
 	}
 	
 	//if we can read the time file, set the DS3231 time.
-	if(TryReadTimeFile(&dateTimeBuffer[1])){
+	if(SD_TryReadTimeFile(&dateTimeBuffer[1])){
 		DS3231_setTimeFromString(&i2cMasterModule, &dateTimeBuffer[1]);
 		f_unlink(SD_TIME_FILENAME);
 	}

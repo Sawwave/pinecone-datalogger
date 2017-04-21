@@ -29,7 +29,7 @@ comma is suggested, but any non-numeric, non +- non \n, character should work as
 
 returns false if file didn't exist, or there was an error.
 */
-bool TryReadTimeFile(char timeBuffer[19]);
+bool SD_TryReadTimeFile(char timeBuffer[19]);
 
 /* SD_CreateWithHeaderIfMissing
 Function determines if the datalog file exists. If it doesn't,
