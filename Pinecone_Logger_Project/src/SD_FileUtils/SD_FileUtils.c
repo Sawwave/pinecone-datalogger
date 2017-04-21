@@ -7,7 +7,7 @@
 #include "SD_FileUtils/SD_FileUtils.h"
 #include "DS1302/DS1302.h"
 
-static void SD_FileCreateWithHeader(const struct LoggerConfig *loggerConf);
+static void DataFileCreateWithHeader(const struct LoggerConfig *loggerConf);
 static bool CheckAndFixLastFileLineIntegrity(const uint16_t expectedValues);
 
 /*SdCardInit
@@ -73,12 +73,12 @@ void SD_CreateWithHeaderIfMissing(const struct LoggerConfig *loggerConfig)
 	FRESULT statsResult = f_open(&file, SD_DATALOG_FILENAME, FA_READ | FA_OPEN_EXISTING);
 	f_close(&file);
 	if (statsResult != FR_OK){
-		SD_FileCreateWithHeader(loggerConfig);
+		DataFileCreateWithHeader(loggerConfig);
 	}
 }
 
 
-static void SD_FileCreateWithHeader(const struct LoggerConfig *loggerConf)
+static void DataFileCreateWithHeader(const struct LoggerConfig *loggerConf)
 {
 	//enable the bod. if we're in a brown out state currently, don't even try to create the header,
 	//it would risk SD card corruption.
