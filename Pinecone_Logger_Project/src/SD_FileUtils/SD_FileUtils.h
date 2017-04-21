@@ -20,7 +20,7 @@ second argument, fileResult, will show the result state of the attempted mount.
 
 Returns true on success, false if sd card setup failed (Is there a card in the slot?).
 */
-bool SdCardInit(FATFS *fatFileSys);
+bool SD_CardInit(FATFS *fatFileSys);
 
 /* tryReadTimeFile
 attempts to read the time file, whose filename is defined in boardconf.h.
@@ -80,13 +80,8 @@ Fourth line:
 
 returns true if config file was found, false otherwise.
 */
-bool ReadConfigFile(struct LoggerConfig *config);
+bool SD_ReadConfigFile(struct LoggerConfig *config);
 
 bool SD_CheckIntegrity(const struct LoggerConfig *loggerConfig);
-
-
-#ifdef SD_FILE_UTILS_UNIT_TEST
-int8_t SD_UnitTest(void);
-#endif
 
 #endif /* SD_FILEUTILS_H_ */

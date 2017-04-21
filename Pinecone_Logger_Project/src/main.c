@@ -105,7 +105,7 @@ int main (void)
 
 	PORTA.OUTSET.reg = PWR_3V3_POWER_ENABLE;
 	
-	while(!SdCardInit(&fatFileSys)){
+	while(!SD_CardInit(&fatFileSys)){
 		LedFlashStatusCode(LED_CODE_SD_CARD_NOT_FOUND);
 	}
 	
@@ -114,7 +114,7 @@ int main (void)
 		DS3231_setTimeFromString(&i2cMasterModule, &dateTimeBuffer[1]);
 		f_unlink(SD_TIME_FILENAME);
 	}
-	int configFileSuccess = ReadConfigFile(&loggerConfig);
+	int configFileSuccess = SD_ReadConfigFile(&loggerConfig);
 	if(!configFileSuccess){
 		LedFlashStatusCode(LED_CODE_CONFIG_MISSING);
 	}
@@ -174,7 +174,7 @@ static inline void MainLoop(void){
 		//reinitialize the sd card
 		PORTA.OUTSET.reg = 1 << SD_CS_PIN;
 		SD_SERCOM_MODULE->SPI.CTRLA.reg |= SERCOM_SPI_CTRLA_ENABLE;
-		while(!SdCardInit(&fatFileSys));
+		while(!SD_CardInit(&fatFileSys));
 		
 		bod_enable(BOD_BOD33);
 		

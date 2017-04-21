@@ -15,7 +15,7 @@ Initializes the sd mmc connection, and attempts to mount the fileSystem.
 system will be mounted into first arg, fatFilesys.
 second argument, fileResult, will show the result state of the attempted mount.
 */
-bool SdCardInit(FATFS *fatFileSys)
+bool SD_CardInit(FATFS *fatFileSys)
 {
 	memset(fatFileSys, 0, sizeof(FATFS));
 	sd_mmc_init();
@@ -77,45 +77,6 @@ void SD_CreateWithHeaderIfMissing(const struct LoggerConfig *loggerConfig)
 	}
 }
 
-
-static void DataFileCreateWithHeader(const struct LoggerConfig *loggerConf)
-{
-	//enable the bod. if we're in a brown out state currently, don't even try to create the header,
-	//it would risk SD card corruption.
-	bod_enable(BOD_BOD33);
-	bool brownoutState = bod_is_detected(BOD_BOD33);
-	bod_disable(BOD_BOD33);
-	if(brownoutState){
-		return;
-	}
-	FIL file;
-	f_open(&file, SD_DATALOG_FILENAME, FA_OPEN_ALWAYS | FA_WRITE);
-	//create the header for the data file
-	f_puts("Date,Time,TcBefore1,TcBefore2,TcBefore3,TcBefore4,TcAfter1,TcAfter2,TcAfter3,TcAfter4,Dht1Temp,Dht1Rh,Dht2Temp,Dht2Rh,Dend1,Dend2", &file);
-	char sdiColumnHeader[12] = ",SDI12_A.00";
-	const uint8_t sdiHeaderAddressIndex = 7;
-	const uint8_t sdiHeaderOnesValueIndex = 10;
-	
-	for(uint8_t sdiCounter = 0; sdiCounter < loggerConf->numSdiSensors; sdiCounter++){
-		//reset the value index in the header
-		sdiColumnHeader[sdiHeaderOnesValueIndex] = '0';
-		sdiColumnHeader[sdiHeaderOnesValueIndex - 1] = '0';
-		//slot the address character into the header.
-		sdiColumnHeader[sdiHeaderAddressIndex] = loggerConf->SDI12_SensorAddresses[sdiCounter];
-		
-		//set the value indexes, and write to the data file.
-		for(uint8_t valueCounter = 0;valueCounter < loggerConf->SDI12_SensorNumValues[sdiCounter]; valueCounter++){
-			//we want to show the values on the header 1 indexed.
-			uint8_t oneIndexedValueCounter = valueCounter + 1;
-			//set the ones, then the tens.
-			sdiColumnHeader[sdiHeaderOnesValueIndex] = '0' + (oneIndexedValueCounter % 10);
-			sdiColumnHeader[sdiHeaderOnesValueIndex - 1] = '0' + (oneIndexedValueCounter / 10);
-			f_puts(sdiColumnHeader, &file);
-		}
-	}
-	f_close(&file);
-}
-
 /*readConfigFile
 Reads the Configuration file, and stores the configuration in the given struct.
 Config file is formated as defined below:
@@ -159,7 +120,7 @@ Fourth line:
 
 returns true if config file was found, false otherwise.
 */
-bool ReadConfigFile(struct LoggerConfig *config){
+bool SD_ReadConfigFile(struct LoggerConfig *config){
 	//set config defaults
 	config->loggingInterval = 60; //1 hour
 	config->numSdiSensors = 0;
@@ -335,4 +296,42 @@ static bool CheckAndFixLastFileLineIntegrity(const uint16_t expectedValues)
 	
 	f_close(&file);
 	return true;
+}
+
+static void DataFileCreateWithHeader(const struct LoggerConfig *loggerConf)
+{
+	//enable the bod. if we're in a brown out state currently, don't even try to create the header,
+	//it would risk SD card corruption.
+	bod_enable(BOD_BOD33);
+	bool brownoutState = bod_is_detected(BOD_BOD33);
+	bod_disable(BOD_BOD33);
+	if(brownoutState){
+		return;
+	}
+	FIL file;
+	f_open(&file, SD_DATALOG_FILENAME, FA_OPEN_ALWAYS | FA_WRITE);
+	//create the header for the data file
+	f_puts("Date,Time,TcBefore1,TcBefore2,TcBefore3,TcBefore4,TcAfter1,TcAfter2,TcAfter3,TcAfter4,Dht1Temp,Dht1Rh,Dht2Temp,Dht2Rh,Dend1,Dend2", &file);
+	char sdiColumnHeader[12] = ",SDI12_A.00";
+	const uint8_t sdiHeaderAddressIndex = 7;
+	const uint8_t sdiHeaderOnesValueIndex = 10;
+	
+	for(uint8_t sdiCounter = 0; sdiCounter < loggerConf->numSdiSensors; sdiCounter++){
+		//reset the value index in the header
+		sdiColumnHeader[sdiHeaderOnesValueIndex] = '0';
+		sdiColumnHeader[sdiHeaderOnesValueIndex - 1] = '0';
+		//slot the address character into the header.
+		sdiColumnHeader[sdiHeaderAddressIndex] = loggerConf->SDI12_SensorAddresses[sdiCounter];
+		
+		//set the value indexes, and write to the data file.
+		for(uint8_t valueCounter = 0;valueCounter < loggerConf->SDI12_SensorNumValues[sdiCounter]; valueCounter++){
+			//we want to show the values on the header 1 indexed.
+			uint8_t oneIndexedValueCounter = valueCounter + 1;
+			//set the ones, then the tens.
+			sdiColumnHeader[sdiHeaderOnesValueIndex] = '0' + (oneIndexedValueCounter % 10);
+			sdiColumnHeader[sdiHeaderOnesValueIndex - 1] = '0' + (oneIndexedValueCounter / 10);
+			f_puts(sdiColumnHeader, &file);
+		}
+	}
+	f_close(&file);
 }
