@@ -112,7 +112,10 @@ int main (void)
 	//if we can read the time file, set the DS3231 time.
 	if(SD_TryReadTimeFile(&dateTimeBuffer[1])){
 		DS3231_setTimeFromString(&i2cMasterModule, &dateTimeBuffer[1]);
+		
+		#if DELETE_TIME_FILE_ON_SET
 		f_unlink(SD_TIME_FILENAME);
+		#endif
 	}
 	int configFileSuccess = SD_ReadConfigFile(&loggerConfig);
 	if(!configFileSuccess){
