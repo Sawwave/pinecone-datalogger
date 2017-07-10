@@ -30,6 +30,7 @@
 
 #include <asf.h>
 #include <math.h>
+#include <stdlib.h>
 #include "DS3231/DS3231.h"
 #include "DHT22/DHT22.h"
 #include "MAX31856/MAX31856.h"
