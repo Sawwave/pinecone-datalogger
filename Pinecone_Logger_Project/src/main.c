@@ -49,7 +49,6 @@
 #define LOG_VALUES_DEND1_INDEX				12
 #define LOG_VALUES_DEND2_INDEX				13
 
-#define FLOAT_TO_STR_PRECISION				9
 
 static inline void MainLoop(void);
 static inline void RunSapFluxSystem(void);
@@ -392,7 +391,7 @@ static inline void WriteDataFileNanOrFloat(float value, FIL *datafile){
 		}
 		else{
 			char parseBuffer[24];
-			gcvtf(value, FLOAT_TO_STR_PRECISION, parseBuffer);
+			sprintf(parseBuffer, "%f", value);
 			f_puts(parseBuffer, datafile);
 		}
 	}
