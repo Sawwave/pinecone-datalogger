@@ -9,7 +9,9 @@
 #ifndef MAX31856_H_
 #define MAX31856_H_
 
+#include "FixedPoint/FixedPoint32.h"
 #include "spi/spi.h"
+#include <asf.h>
 
 
 //macros for each supported thermocouple type.
@@ -44,8 +46,9 @@ enum Max31856_Status Max31856ConfigureRegisters(struct spi_module *spiMasterModu
 	It is recommended to just enter standby mode for 1s while the sensor takes the measurement.*/
 enum Max31856_Status Max31856RequestReading(struct spi_module *spiMasterModule, struct spi_slave_inst *slaveInst);
 
+
 /*Max31856GetTemp
 	retrieves the temperature value from the Max31856,, loading it into the outTemp pointer*/
-enum Max31856_Status Max31856GetTemp(struct spi_module *spiMasterModule, struct spi_slave_inst *slaveInst, float *outTemp);
+enum Max31856_Status Max31856GetTemp(struct spi_module *spiMasterModule, struct spi_slave_inst *slaveInst, struct FixedPoint32 *outTemp);
 
 #endif /* MAX31856_H_ */

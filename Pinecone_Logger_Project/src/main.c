@@ -31,6 +31,7 @@
 #include <asf.h>
 #include <math.h>
 #include <stdlib.h>
+#include "FixedPoint/FixedPoint32.h"
 #include "DS3231/DS3231.h"
 #include "DHT22/DHT22.h"
 #include "MAX31856/MAX31856.h"
@@ -53,13 +54,13 @@
 static inline void MainLoop(void);
 static inline void RunSapFluxSystem(void);
 static inline void RunDht22System(void);
-static inline void ReadThermocouples(float *tcValuesOut);
+static inline void ReadThermocouples(struct FixedPoint32 *tcValuesOut);
 static inline void ReadDendrometers(void);
 static inline void RecordDateTime(FIL *dataFile);
 static inline void RecordNonSdiValues(FIL *dataFile);
 static inline void QueryAndRecordSdiValues(FIL *dataFile);
 static inline void InitBodDetection(void);
-static inline void WriteDataFileNanOrFloat(float value, FIL *datafile);
+static inline void WriteFixedPointToFile(const struct FixedPoint32 *value, FIL *datafile);
 
 static struct spi_module spiMasterModule;
 static struct spi_slave_inst spiSlaveInstance;
@@ -71,7 +72,7 @@ FATFS fatFileSys;
 
 #define dateTimeBufferLen  20	//defined as to not variably modify length at file scope.
 static char dateTimeBuffer[dateTimeBufferLen] = "\n00/00/2000,00:00:00";	//buffer starts with \n since this always starts a measurement.
-static float LogValues[NUM_LOG_VALUES];
+static struct FixedPoint32 LogValues[NUM_LOG_VALUES];
 
 
 int main (void)
@@ -81,6 +82,8 @@ int main (void)
 	delay_init();
 	irq_initialize_vectors();
 	cpu_irq_enable();
+
+	//uint32_t debug_test = FixedPoint32UnitTests();
 	
 	InitBodDetection();
 	bod_enable(BOD_BOD33);
@@ -224,15 +227,15 @@ static inline void RunDht22System(void){
 		GetDht22Reading(&(LogValues[LOG_VALUES_DHT1_INDEX]), &(LogValues[LOG_VALUES_DHT1_INDEX + 1]), DHT22_1_PINMASK);
 	}
 	else{
-		LogValues[LOG_VALUES_DHT1_INDEX] = NAN;
-		LogValues[LOG_VALUES_DHT1_INDEX + 1] = NAN;
+		LogValues[LOG_VALUES_DHT1_INDEX].isValid = false;
+		LogValues[LOG_VALUES_DHT1_INDEX + 1].isValid = false;
 	}
 	if(loggerConfig.configFlags & (CONFIG_FLAGS_ENABLE_DHT_2)){
 		GetDht22Reading(&(LogValues[LOG_VALUES_DHT2_INDEX]), &(LogValues[LOG_VALUES_DHT2_INDEX + 1]), DHT22_2_PINMASK);
 	}
 	else{
-		LogValues[LOG_VALUES_DHT2_INDEX] = NAN;
-		LogValues[LOG_VALUES_DHT2_INDEX + 1] = NAN;
+		LogValues[LOG_VALUES_DHT2_INDEX].isValid = false;
+		LogValues[LOG_VALUES_DHT2_INDEX + 1].isValid = false;
 	}
 	//set back to low power mode
 	PORTA.DIRCLR.reg = DHT22_1_PINMASK | DHT22_2_PINMASK;
@@ -253,7 +256,7 @@ static inline void RecordDateTime(FIL *dataFile){
 static inline void RecordNonSdiValues(FIL *dataFile){
 	for(uint8_t logValueIndex = 0; logValueIndex < NUM_LOG_VALUES; logValueIndex++){
 		//at each log value, check for brown out. if it's found, close the file, and leave the function.
-		WriteDataFileNanOrFloat(LogValues[logValueIndex], dataFile);
+		WriteFixedPointToFile(&LogValues[logValueIndex], dataFile);
 	}
 	f_sync(dataFile);
 }
@@ -262,11 +265,11 @@ static inline void QueryAndRecordSdiValues(FIL *dataFile){
 	if(loggerConfig.configFlags & CONFIG_FLAGS_ENABLE_SDI){
 		for(uint8_t sdiIndex = 0; sdiIndex < loggerConfig.numSdiSensors; sdiIndex++){
 			
-			//create the array for the values, and initialize the values to NAN.
+			//create the array for the values, and initialize the values to not valid.
 			const uint8_t numValsForSensor = loggerConfig.SDI12_SensorNumValues[sdiIndex];
-			float sdiValuesForSensor[numValsForSensor];
+			struct FixedPoint32 sdiValuesForSensor[numValsForSensor];
 			for(uint8_t i = 0; i< numValsForSensor;i++){
-				sdiValuesForSensor[i] = NAN;
+				sdiValuesForSensor[i].isValid = false;
 			}
 			struct SDI_transactionPacket transactionPacket;
 			transactionPacket.address = loggerConfig.SDI12_SensorAddresses[sdiIndex];
@@ -281,7 +284,7 @@ static inline void QueryAndRecordSdiValues(FIL *dataFile){
 			}
 			for(uint8_t i=0; i< numValsForSensor;i++){
 				//check for brownout before writing to SD card.
-				WriteDataFileNanOrFloat(sdiValuesForSensor[i], dataFile);
+				WriteFixedPointToFile(&sdiValuesForSensor[i], dataFile);
 			}
 			//write all work so far to the datafile.
 			f_sync(dataFile);
@@ -319,12 +322,12 @@ static inline void RunSapFluxSystem(void){
 	else{
 		//if sap flux is disabled, just write NANs into the values
 		for(uint8_t index = 0; index < 8; index++){
-			LogValues[index] = NAN;
+			LogValues[index].isValid = false;
 		}
 	}
 }
 
-static inline void ReadThermocouples(float *tcValuesOut){
+static inline void ReadThermocouples(struct FixedPoint32 *tcValuesOut){
 	
 	//enable the spi module
 	spi_enable(&spiMasterModule);
@@ -342,12 +345,12 @@ static inline void ReadThermocouples(float *tcValuesOut){
 			//enter standby mode until the reading has been prepared (a bit under 1s)
 			TimedSleepSeconds(&tcInstance, 1);
 			//if successful, Max31856GetTemp will set the out value to the temperature. Otherwise, it will be NAN.
-			float tempValue;
+			struct FixedPoint32 tempValue;
 			Max31856GetTemp(&spiMasterModule, &spiSlaveInstance, &tempValue);
 			tcValuesOut[index] = tempValue;
 		}
 		else{
-			tcValuesOut[index] = NAN;
+			tcValuesOut[index].isValid = false;
 		}
 		PORTA.OUTTGL.reg = (index & 1)? TC_MUX_SELECT_ALL_PINMASK : TC_MUX_SELECT_A_PINMASK;
 	}
@@ -360,17 +363,17 @@ static inline void ReadThermocouples(float *tcValuesOut){
 
 static inline void ReadDendrometers(void){
 	if(loggerConfig.configFlags & CONFIG_FLAGS_ENABLE_DEND_1){
-		LogValues[LOG_VALUES_DEND1_INDEX]	= ReadDendro(&adcModule, DEND_ANALOG_PIN_1);
+			ReadDendro(&adcModule, DEND_ANALOG_PIN_1, DENDROMETER_TRAVEL_DISTANCE_MICROMETERS, &(LogValues[LOG_VALUES_DEND1_INDEX]));
 	}
 	else {
-		LogValues[LOG_VALUES_DEND1_INDEX] = NAN;
+		LogValues[LOG_VALUES_DEND1_INDEX].isValid = false;
 	}
 	
 	if(loggerConfig.configFlags & CONFIG_FLAGS_ENABLE_DEND_2){
-		LogValues[LOG_VALUES_DEND2_INDEX]	= ReadDendro(&adcModule, DEND_ANALOG_PIN_2);
+		ReadDendro(&adcModule, DEND_ANALOG_PIN_2, DENDROMETER_TRAVEL_DISTANCE_MICROMETERS, &LogValues[LOG_VALUES_DEND2_INDEX]);
 	}
 	else{
-		LogValues[LOG_VALUES_DEND2_INDEX] = NAN;
+		LogValues[LOG_VALUES_DEND2_INDEX].isValid = false;
 	}
 }
 
@@ -383,17 +386,12 @@ static inline void InitBodDetection(void){
 	bod_set_config(BOD_BOD33, &bodConfig);
 }
 
-static inline void WriteDataFileNanOrFloat(float value, FIL *datafile){
+static inline void WriteFixedPointToFile(const struct FixedPoint32 *value, FIL *datafile){
 	if(!bod_is_detected(BOD_BOD33)){
 		f_putc(',', datafile);
-		if(isnan(value)){
-			f_puts("NAN",datafile);
-		}
-		else{
-			char parseBuffer[24];
-			sprintf(parseBuffer, "%f", value);
-			f_puts(parseBuffer, datafile);
-		}
+		char parseBuffer[24];
+		FixedPoint32ToString(value, parseBuffer);
+		f_puts(parseBuffer, datafile);
 	}
 	else{
 		f_close(datafile);

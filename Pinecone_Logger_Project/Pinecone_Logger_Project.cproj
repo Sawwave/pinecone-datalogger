@@ -740,6 +740,7 @@
     <Folder Include="src\DS1302" />
     <Folder Include="src\DS3231" />
     <Folder Include="src\LedCodes" />
+    <Folder Include="src\FixedPoint" />
     <Folder Include="src\SD_FileUtils" />
     <Folder Include="src\TimedSleep" />
     <Folder Include="src\SDI12" />
@@ -845,6 +846,12 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\DS3231\DS3231.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\FixedPoint\FixedPoint32.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\FixedPoint\FixedPoint32.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\LedCodes\LedCodes.c">

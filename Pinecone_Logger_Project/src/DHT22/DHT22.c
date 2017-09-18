@@ -42,15 +42,15 @@ third byte: integral temp data
 fourth byte: decimal temp data
 fifth: 8 bit checksum
 checksum should equal the addition of the first 4 bytes */
-enum Dht22Status GetDht22Reading(float *temp, float *relativeHumidity, const uint32_t dhtPinmask)
+enum Dht22Status GetDht22Reading(struct FixedPoint32 *temp, struct FixedPoint32 *relativeHumidity, const uint32_t dhtPinmask)
 {
 	//NOTE! this is probably unnecessary, just ignore for now.
 	//put the pinmask in the correct bits, enable IN, write the mux, and write the pincfg
 	const uint32_t wrConfigInValue = (dhtPinmask << PORT_WRCONFIG_PINMASK_Pos) | PORT_WRCONFIG_INEN  | PORT_WRCONFIG_WRPINCFG;
 	const uint32_t wrConfigPowerSave = (dhtPinmask << PORT_WRCONFIG_PINMASK_Pos)  | PORT_WRCONFIG_WRPINCFG;
 	uint32_t timeTaken = 0;
-	*temp = 0;
-	*relativeHumidity = 0;
+	temp->data = 0;
+	relativeHumidity->data = 0;
 	uint8_t rxBuffer[5];
 	memset(rxBuffer, 0, 5);
 
@@ -77,8 +77,8 @@ enum Dht22Status GetDht22Reading(float *temp, float *relativeHumidity, const uin
 				PORTA.WRCONFIG.reg = wrConfigPowerSave;
 				PORTA.OUTSET.reg = dhtPinmask;
 				
-				*temp = NAN;
-				*relativeHumidity = NAN;
+				temp->isValid = false;
+				relativeHumidity->isValid = false;;
 				return DHT_STATUS_TIMEOUT;
 			}
 		}while(!!(PORTA.IN.reg & dhtPinmask) == (bitCounter & 1));
@@ -99,21 +99,18 @@ enum Dht22Status GetDht22Reading(float *temp, float *relativeHumidity, const uin
 	//now that we have our buffer filled, check the parity byte
 	uint8_t parity = rxBuffer[0] + rxBuffer[1] + rxBuffer[2] + rxBuffer[3];
 	if(parity != rxBuffer[4]){
-		*temp = NAN;
-		*relativeHumidity = NAN;
+		temp->isValid = false;
+		relativeHumidity->isValid = false;
 		
 		return DHT_STATUS_CHECKSUM_ERROR;
 	}
 	
 	//we passed the checksum, now we can parse the rx buffer into output values.
-	uint16_t rawHumidity =		(rxBuffer[0] << 8) + rxBuffer[1];
-	uint16_t rawTemperature =	(rxBuffer[2] << 8) + rxBuffer[3];
-	*relativeHumidity = (float)rawHumidity / 10.0f;
-	bool negativeTemp = (rawTemperature & 0x8000) != 0;
-	rawTemperature &= 0x7FFF;	//AND away the sign bit
-	*temp = (float)rawTemperature / 10.0f;
-	if(negativeTemp){
-		*temp *= -1;
-	}
+	relativeHumidity->data =	(rxBuffer[0] << 8) + rxBuffer[1];
+	relativeHumidity->decimalDigits = 1;
+	relativeHumidity->isValid = true;
+	temp->data =	(rxBuffer[2] << 8) + rxBuffer[3];
+	temp->decimalDigits = 1;
+	temp->isValid = true;
 	return DHT_STATUS_OKAY;
 }

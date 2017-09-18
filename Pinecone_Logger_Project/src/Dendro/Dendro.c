@@ -12,8 +12,6 @@
 #include <math.h>
 
 #define ADC_MAX_VALUE 0xFFF
-#define DENDROMETER_TRAVEL_DISTANCE_MICROMETERS		12700.0	//12.7 millimeters
-#define DENDROMETER_DISTANCE_PER_TICK	DENDROMETER_TRAVEL_DISTANCE_MICROMETERS / ADC_MAX_VALUE
 
 /*ConfigureDendroADC
 Configure the system ADC to read the dendrometer potentiometers.
@@ -34,13 +32,22 @@ void ConfigureDendroADC(struct adc_module *adcModule)
 /*ReadDendro
 uses the adc module defined to read a specific analog pin, and uses the value and dend travel distance to compute dendrometer value.
 use adc_enable and disable before and after reading form the dendros.*/
-double ReadDendro(struct adc_module *const adcModule, const enum adc_positive_input dendAnalogPin)
+void ReadDendro(struct adc_module *const adcModule, const enum adc_positive_input dendAnalogPin, const uint32_t dendroTravelDistance, struct FixedPoint32 *outValue)
 {
+	//uint16_t distancePerTick = dendroTravelDistance;
 	uint16_t adcReadingValue;
 	adc_set_positive_input(adcModule, dendAnalogPin);
 	adc_flush(adcModule);
 	adc_start_conversion(adcModule);
 	//read until the result is finished
 	while(adc_read(adcModule, &adcReadingValue) != STATUS_OK) {;}
-	return adcReadingValue * DENDROMETER_DISTANCE_PER_TICK;
+
+	//final value is reading * (traveldistance/maximum reading)
+	//by multiplying by 10,000 before dividing, we can use the fixed point
+	//structure without truncating.
+	outValue->data = adcReadingValue * dendroTravelDistance;
+	outValue->data *= 10000L;
+	outValue->data >>= 12;
+	outValue->decimalDigits = 4;
+	outValue->isValid = true;
 }

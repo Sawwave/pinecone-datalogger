@@ -50,7 +50,6 @@
 
 #define DELETE_TIME_FILE_ON_SET 0	
 
-
 #define SDI12_MAX_SUPPORTED_SENSORS 24
 //#define BIT_TIMING_DELAY_CYCLES						955		//833us bit timing
 

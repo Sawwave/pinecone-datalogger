@@ -33,10 +33,10 @@ Will load SDI12_STATUS_OK into the packet on success, SDI12_BAD_RESPONSE on fail
 bool SDI12_RequestSensorReading(struct SDI_transactionPacket *transactionPacket);
 
 /*SDI12_GetSensedValues
-After the sensor has had values requested with SDI12_RequestSensorReading, use this function to read the values as floats
-The floats will be loaded into the outValues float array. NOTE!!!! outValues array MUST have a number of indices >= the
-number of expected values from the transaction packet. Otherwise, Undefined operation or segfaults may occur.*/
-bool SDI12_GetSensedValues(struct SDI_transactionPacket *transactionPacket, float *outValues);
+After the sensor has had values requested with SDI12_RequestSensorReading, use this function to read the values as FixedPoint32's
+The FixedPoint32's will be loaded into the outValues array. NOTE!!!! outValues array MUST have a number of indices >= the
+number of expected values from the transaction packet. Otherwise, Undefined operation or bad juju may occur.*/
+bool SDI12_GetSensedValues(struct SDI_transactionPacket *transactionPacket, struct FixedPoint32 *outValues);
 
 enum SDI12_ReturnCode SDI12_PerformTransactionWithRetries(const char *message, const uint8_t messageLen, char *outBuffer, const uint8_t outBufferLen);
 #endif /* SDI12_H_ */

@@ -212,12 +212,11 @@ bool SDI12_RequestSensorReading(struct SDI_transactionPacket *transactionPacket)
 	}
 	return false;
 }
-
 /*SDI12_GetSensedValues
-After the sensor has had values requested with SDI12_RequestSensorReading, use this function to read the values as floats
-The floats will be loaded into the outValues float array. NOTE!!!! outValues array MUST have a number of indices >= the
-number of expected values from the transaction packet. Otherwise, Undefined operation or segfaults may occur.*/
-bool SDI12_GetSensedValues(struct SDI_transactionPacket *transactionPacket, float *outValues){
+After the sensor has had values requested with SDI12_RequestSensorReading, use this function to read the values as FixedPoint32's
+The FixedPoint32's will be loaded into the outValues array. NOTE!!!! outValues array MUST have a number of indices >= the
+number of expected values from the transaction packet. Otherwise, Undefined operation or bad juju may occur.*/
+bool SDI12_GetSensedValues(struct SDI_transactionPacket *transactionPacket, struct FixedPoint32 *outValues){
 	uint8_t dNumberChar = '0';
 	uint8_t numValuesReceived = 0;
 	const uint8_t messageLen = 4;
@@ -231,37 +230,29 @@ bool SDI12_GetSensedValues(struct SDI_transactionPacket *transactionPacket, floa
 	const uint8_t responseLen = 36;
 	char response[36];
 	
-	//load in NANs into all the outvalues,
 	for(uint8_t counter = 0; counter < transactionPacket->numberOfValuesToReturn; counter++){
-		outValues[counter] = NAN;
+		outValues[counter].isValid = false;
 	}
 	
 	while(numValuesReceived < transactionPacket->numberOfValuesToReturn){
 		transactionPacket->transactionStatus = SDI12_PerformTransactionWithRetries(message, messageLen, response, responseLen);
 		if(transactionPacket->transactionStatus == SDI12_STATUS_OK){
-			//star the float parsing after the address character
-			char *floatParsePointer = &response[1];
+			//start the fixed point parsing after the address character
+			char *valueParsePointer = response + 1;
 			
-			//first check that the query actually starts with a value.
-			//if it doesn't, just try again. otherwise, let's parse them.
-			if((*floatParsePointer == '-') || (*floatParsePointer == '+')){
-				while((*floatParsePointer == '-') || (*floatParsePointer == '+')){
-					//convert next value to float, save it in the outvalues, and move the pointer
-					float parsedValue = strtof(floatParsePointer, &floatParsePointer);
-					outValues[numValuesReceived++]  = parsedValue;
-				}
-				//if we've recieved at least the number of values expected, we're done!
-				if(numValuesReceived >= transactionPacket->numberOfValuesToReturn){
-					return true;
-				}
-				message[1] = CharAddParity(message[1] +1);	//increment the index of the D_! command, thus asking for the next values on the next transaction.
+			while((*valueParsePointer == '+') || (*valueParsePointer == '-')){
+				valueParsePointer = StringToFixedPoint32(&outValues[numValuesReceived], valueParsePointer);
+				numValuesReceived++;
 			}
-			else{
-				//we got an weird response
-				return false;
+
+			//if we've received at least the number of values expected, we're done!
+			if(numValuesReceived >= transactionPacket->numberOfValuesToReturn){
+				return true;
 			}
+			message[1] = CharAddParity(message[1] +1);	//increment the index of the D_! command, thus asking for the next values on the next transaction.
 		}
 		else{
+			//we got an weird response
 			return false;
 		}
 	}

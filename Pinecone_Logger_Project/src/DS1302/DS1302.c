@@ -8,8 +8,10 @@
 #include "Ds1302/Ds1302.h"
 #include <asf.h>
 
+ /*WARNING: DEPRECIATED
+	This code is not used in the project currently, and has no guarantees on functionality or correctness.
+ */
 
-//TODO: remove all PORT ASF fucntions, use registers.
 
 #define DS1302_CLOCK_BURST_WRITE_REGISTER 0xBE
 #define DS1302_CLOCK_BURST_READ_REGISTER 0xBF

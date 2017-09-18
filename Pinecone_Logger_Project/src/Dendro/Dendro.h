@@ -9,6 +9,7 @@
 #define DENDRO_H_
 
 #include <stdint.h>
+#include "FixedPoint/FixedPoint32.h"
 
 /*ConfigureDendroADC
 Configure the system ADC to read the dendrometer potentiometers.
@@ -19,6 +20,7 @@ void ConfigureDendroADC(struct adc_module *adcModule);
 /*ReadDendro
 uses the adc module defined to read a specific analog pin, and uses the value and dend travel distance to compute dendrometer value.
 use adc_enable and disable before and after reading form the dendros.*/
-double ReadDendro(struct adc_module *const adcModule, const enum adc_positive_input dendAnalogPin);
+void ReadDendro(struct adc_module *const adcModule, const enum adc_positive_input dendAnalogPin, const uint32_t dendroTravelDistance, struct FixedPoint32 *outValue);
+
 
 #endif /* DENDRO_H_ */

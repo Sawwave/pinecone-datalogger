@@ -84,12 +84,12 @@ enum Max31856_Status Max31856RequestReading(struct spi_module *spiMasterModule, 
 
 /*Max31856GetTemp
 retrieves the temperature value from the Max31856,, loading it into the outTemp pointer*/
-enum Max31856_Status Max31856GetTemp(struct spi_module *spiMasterModule, struct spi_slave_inst *slaveInst, float *outTemp){
+enum Max31856_Status Max31856GetTemp(struct spi_module *spiMasterModule, struct spi_slave_inst *slaveInst, struct FixedPoint32 *outTemp){
 	uint8_t timeout = 200;
 	//wait until the spi bus is free
 	while(spi_is_syncing(spiMasterModule)){
 		if(!timeout--) {
-			*outTemp = NAN;
+			outTemp->isValid = false;
 			return MAX31856_SPI_ERROR;
 		}
 	}
@@ -98,7 +98,7 @@ enum Max31856_Status Max31856GetTemp(struct spi_module *spiMasterModule, struct 
 	uint16_t spiLockAttempts = 50000;
 	while(spi_lock(spiMasterModule) == STATUS_BUSY){
 		if(spiLockAttempts-- == 0){
-			*outTemp = NAN;
+			outTemp->isValid = false;
 			return MAX31856_CONNECTION_ERROR;
 		}
 	}
@@ -113,40 +113,51 @@ enum Max31856_Status Max31856GetTemp(struct spi_module *spiMasterModule, struct 
 	spi_unlock(spiMasterModule);
 	//if we got the temp, translate it to a double.
 	if(status == STATUS_OK){
-		uint32_t intTemp = ((uint32_t)receiveBuffer[1] << 16) | ((uint32_t)receiveBuffer[2] << 8) | ((uint32_t)receiveBuffer[3]);
-		//get the temp sign, and cast it away.
-		uint32_t sign = receiveBuffer[1] >> 7;
-		//mask away the highest byte, and the sign bit
-		intTemp >>= 5;
-
-		*outTemp = (float) intTemp;
-		*outTemp /= 128;
-		if(sign){
-			*outTemp *= -1;
-		}
-		
 		//check the fault byte
 		uint8_t faultByte = receiveBuffer[4];
-		if(faultByte & 0x01){ 
-			*outTemp = NAN;
+		if(faultByte & 0x01){
+			outTemp->isValid = false;
 			return MAX31856_TC_NOT_CONNECTED;
 		}
 		else if (faultByte & 0x02){
-			*outTemp = NAN;
+			outTemp->isValid = false;
 			return MAX31856_FAULT_VOLTAGE;
 		}
 		else if (faultByte & 0x14){
-			*outTemp = NAN;
+			outTemp->isValid = false;
 			return MAX31856_TEMP_TOO_LOW;
 		}
 		else if (faultByte & 0x28){
-			*outTemp = NAN;
+			outTemp->isValid = false;
 			return MAX31856_TEMP_TOO_HIGH;
 		}
-		else return MAX31856_OKAY;
+		else{
+			//get the temp sign, and cast it away.
+			uint32_t sign = receiveBuffer[1] >> 7;
+			receiveBuffer[1] &= 0x7F;
+
+			//assemble the outTemp data
+			outTemp->data = receiveBuffer[1];
+			outTemp->data <<= 8;
+			outTemp->data |= receiveBuffer[2];
+			outTemp->data <<= 8;
+			outTemp->data |= receiveBuffer[3];
+			//shift the data received so that the LSB is actually in bit 0.
+			outTemp->data >>= 5;
+			//multiply by 1000 for the fixed point decimal representation, then shift to divide by 128
+			//since the first 7 bits represent fractional value.
+			outTemp->data *= 1000;
+			outTemp->data >>= 7;
+			//finally, add the sign bit back in.
+			outTemp->data |= (sign<31);
+
+			outTemp->decimalDigits = 3;
+			outTemp->isValid = true;
+			return MAX31856_OKAY;
+		 }
 	}
 	//error condition if spi transfer status was not OK.
-	*outTemp = NAN;
+	outTemp->isValid = false;
 	return MAX31856_SPI_ERROR;
 }
 

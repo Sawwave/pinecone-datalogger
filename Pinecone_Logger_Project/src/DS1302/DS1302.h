@@ -4,7 +4,9 @@
  * Created: 10/19/2016 4:10:27 PM
  *  Author: tim.anderson
  */ 
-
+ /*WARNING: DEPRECIATED
+	This code is not used in the project currently, and has no guarantees on functionality or correctness.
+ */
 
 #ifndef DS1302_H_
 #define DS1302_H_
