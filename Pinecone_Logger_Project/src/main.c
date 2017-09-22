@@ -83,8 +83,6 @@ int main (void)
 	irq_initialize_vectors();
 	cpu_irq_enable();
 
-	//uint32_t debug_test = FixedPoint32UnitTests();
-	
 	InitBodDetection();
 	bod_enable(BOD_BOD33);
 	

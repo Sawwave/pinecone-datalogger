@@ -84,6 +84,14 @@ char *StringToFixedPoint32(struct FixedPoint32 *fixedPoint, char *src){
 		currentSrcIndex = 1;
 	}
 
+	//check to make sure the first non-sign character is valid
+	//returns the address of the character after this illegal char.
+	else if((srcChar < '0' || srcChar > '9')&& srcChar != '.'){
+		fixedPoint->isValid = false;
+		return src + currentSrcIndex + 1;
+
+	}
+
 	//initialize the fixed point
 	fixedPoint->data = 0;
 	fixedPoint->decimalDigits = 0;
@@ -105,17 +113,17 @@ char *StringToFixedPoint32(struct FixedPoint32 *fixedPoint, char *src){
 			hasEncounteredDecimal = true;
 		}
 		else{
-			//it is valid only if this char is a null terminator (0)
-			fixedPoint->isValid = !srcChar;
-			break;
+			//if the next character's not a valid continuation of the number, end here.
+			if(storedSignBit){
+				fixedPoint->data |= (1<<31);
+			}
+			return src + currentSrcIndex;
 		}
-	}
 
-	//add in the sign bit if we started with a -
-	if(storedSignBit){
-		fixedPoint->data |= (1<<31);
 	}
-	return src + currentSrcIndex;
+	
+
+
 }
 
 
